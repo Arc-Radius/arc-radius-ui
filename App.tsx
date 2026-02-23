@@ -15,7 +15,7 @@ import {
   IBMPlexSans_700Bold,
 } from '@expo-google-fonts/ibm-plex-sans';
 
-import { ScreenContent } from 'components/ScreenContent';
+import { HomeScreen } from 'components/HomeScreen';
 
 import './global.css';
 
@@ -44,7 +44,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <View className="flex-1" onLayout={onLayoutRootView}>
-        <ScreenContent title="Home" path="App.tsx" />
+        <HomeScreen />
         <StatusBar style="auto" />
       </View>
     </SafeAreaProvider>

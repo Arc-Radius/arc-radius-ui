@@ -1,100 +1,85 @@
 import React from 'react';
-import { MapPin } from 'lucide-react'; // Assuming this is your icon source
+import { View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
-const ArcRadiusLogo = ({ size = 36, className = '' }: { size?: number; className?: string }) => (
-  <div className={`relative ${className}`} style={{ width: size, height: size }}>
-    {/* Rainbow ring background */}
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="absolute inset-0">
-      <defs>
-        <filter id="topological-warp-large" x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise" />
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="noise"
-            scale="7"
-            xChannelSelector="R"
-            yChannelSelector="G"
-          />
-        </filter>
-      </defs>
-      <g filter="url(#topological-warp-large)" strokeWidth="6" strokeLinecap="round" fill="none">
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          stroke="#E40303"
-          strokeDasharray="48 240"
-          strokeDashoffset="0"
+type ArcRadiusLogoProps = {
+  size?: number;
+  className?: string;
+};
+
+const ArcRadiusLogo = ({ size = 36, className = '' }: ArcRadiusLogoProps) => (
+  <View className={className} style={{ width: size, height: size }}>
+    <Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+      <Circle
+        cx="50"
+        cy="50"
+        r="46"
+        stroke="#E40303"
+        strokeWidth={6}
+        strokeDasharray="48 240"
+        strokeDashoffset={0}
+      />
+      <Circle
+        cx="50"
+        cy="50"
+        r="46"
+        stroke="#FF8C00"
+        strokeWidth={6}
+        strokeDasharray="48 240"
+        strokeDashoffset={-48}
+      />
+      <Circle
+        cx="50"
+        cy="50"
+        r="46"
+        stroke="#FFED00"
+        strokeWidth={6}
+        strokeDasharray="48 240"
+        strokeDashoffset={-96}
+      />
+      <Circle
+        cx="50"
+        cy="50"
+        r="46"
+        stroke="#008026"
+        strokeWidth={6}
+        strokeDasharray="48 240"
+        strokeDashoffset={-144}
+      />
+      <Circle
+        cx="50"
+        cy="50"
+        r="46"
+        stroke="#24408E"
+        strokeWidth={6}
+        strokeDasharray="48 240"
+        strokeDashoffset={-192}
+      />
+      <Circle
+        cx="50"
+        cy="50"
+        r="46"
+        stroke="#732982"
+        strokeWidth={6}
+        strokeDasharray="48 240"
+        strokeDashoffset={-240}
+      />
+    </Svg>
+
+    <View
+      pointerEvents="none"
+      style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size * 0.52} height={size * 0.52} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M20 10c0 6.5-8 12-8 12S4 16.5 4 10a8 8 0 1 1 16 0Z"
+          fill="#1f2937"
+          stroke="#1f2937"
+          strokeWidth={1.6}
         />
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          stroke="#FF8C00"
-          strokeDasharray="48 240"
-          strokeDashoffset="-48"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          stroke="#FFED00"
-          strokeDasharray="48 240"
-          strokeDashoffset="-96"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          stroke="#008026"
-          strokeDasharray="48 240"
-          strokeDashoffset="-144"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          stroke="#24408E"
-          strokeDasharray="48 240"
-          strokeDashoffset="-192"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          stroke="#732982"
-          strokeDasharray="48 240"
-          strokeDashoffset="-240"
-        />
-      </g>
-    </svg>
-    {/* Lucide MapPin (pindrop) icon with circle */}
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="relative">
-        <MapPin
-          size={size * 0.5}
-          className="text-slate-800"
-          strokeWidth={2.5}
-          fill="currentColor"
-        />
-        {/* Circle in the middle of the pin */}
-        <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-slate-800 bg-white"
-          style={{
-            width: `${size * 0.25}px`,
-            height: `${size * 0.25}px`,
-            marginTop: `-${size * 0.05}px`,
-          }}
-        />
-      </div>
-    </div>
-  </div>
+        <Circle cx="12" cy="10" r="2.4" fill="#fff" />
+      </Svg>
+    </View>
+  </View>
 );
 
 export default ArcRadiusLogo;

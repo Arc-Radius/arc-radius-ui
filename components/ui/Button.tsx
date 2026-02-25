@@ -3,6 +3,7 @@ import { Pressable, Text } from 'react-native';
 interface ButtonProps {
   label: string;
   variant?: 'filled' | 'outline';
+  disabled?: boolean;
   onPress?: () => void;
   className?: string;
 }
@@ -18,13 +19,20 @@ const variantStyles = {
   },
 };
 
-export function Button({ label, variant = 'filled', onPress, className = '' }: ButtonProps) {
+export function Button({
+  label,
+  variant = 'filled',
+  disabled = false,
+  onPress,
+  className = '',
+}: ButtonProps) {
   const styles = variantStyles[variant];
 
   return (
     <Pressable
-      className={`flex-row items-center justify-center ${styles.container} ${className}`}
-      onPress={onPress}>
+      className={`flex-row items-center justify-center ${styles.container} ${className} ${disabled ? 'opacity-40' : 'active:opacity-80'}`}
+      onPress={onPress}
+      disabled={disabled}>
       <Text className={styles.text}>{label}</Text>
     </Pressable>
   );

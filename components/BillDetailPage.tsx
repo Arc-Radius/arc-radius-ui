@@ -18,7 +18,7 @@ export function BillDetailPage({ stateName, bill, relatedBills }: BillDetailPage
   return (
     <SafeAreaView className="flex-1 bg-arc-cream">
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
-        <View className="w-full max-w-[880px] self-center px-6">
+        <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
           <View className="pt-10">
             <Text className="font-serif-bold text-xl leading-7 text-stone-900">{bill.title.toUpperCase()}</Text>
             <Text className="mt-1 font-sans text-sm text-stone-500">{stateName}</Text>

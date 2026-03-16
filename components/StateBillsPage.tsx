@@ -43,7 +43,7 @@ export function StateBillsPage({
   return (
     <SafeAreaView className="flex-1 bg-arc-cream">
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
-        <View className="w-full max-w-[880px] self-center px-6">
+        <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
           <View className="items-center pt-8">
             <View className="w-full max-w-96 gap-2.5">
               <Text className="font-sans-semibold text-xs uppercase leading-5 tracking-wide text-stone-500">

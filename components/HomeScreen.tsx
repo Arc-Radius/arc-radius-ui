@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { AccessibilityInfo, ScrollView, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Platform, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FeatureCard } from './FeatureCard';
@@ -40,8 +40,8 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   }, [selected, onNavigateToState]);
 
   return (
-    <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: insets.top }}>
-      <View className="w-full max-w-3xl self-center px-6 pb-10">
+    <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
+      <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
         <View className="mt-4">
           <HeroSection />
         </View>

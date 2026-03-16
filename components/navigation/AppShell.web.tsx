@@ -7,26 +7,21 @@ import AppTabs from './AppTabs';
 
 export default function AppShell() {
   return (
-    <View className="flex-1 bg-arc-cream">
-      <View className="w-full bg-arc-cream px-6 pt-4">
-        <View className="w-full max-w-[1100px] self-center">
-          <Header />
-          <View className="pb-4 pt-3">
-            <AppTabs position="top" />
-          </View>
+    <View className="flex-1 min-h-screen bg-arc-cream">
+      <View className="w-full bg-arc-cream px-4 pt-4 sm:px-6 lg:px-8">
+        <View className="w-full max-w-screen-xl self-center">
+          <Header rightContent={<AppTabs position="header" />} />
         </View>
       </View>
 
-      <View className="flex-1 min-h-0 bg-arc-cream">
-        <View className="min-h-0 w-full flex-1 px-6 pb-8">
-          <View className="min-h-0 w-full max-w-[1100px] flex-1 self-center">
+      <View className="min-h-0 w-full flex-1 bg-arc-cream px-4 pb-10 sm:px-6 lg:px-8">
+        <View className="min-h-0 w-full max-w-screen-xl flex-1 self-center">
             <Slot />
-          </View>
         </View>
       </View>
 
-      <View className="w-full bg-arc-cream px-6 pb-6">
-        <View className="w-full max-w-[1100px] self-center">
+      <View className="w-full bg-arc-cream px-4 pb-6 sm:px-6 lg:px-8">
+        <View className="w-full max-w-screen-xl self-center">
           <Footer />
         </View>
       </View>

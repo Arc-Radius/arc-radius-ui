@@ -5,5 +5,14 @@ import { HomeScreen } from '../components/HomeScreen';
 export default function Home() {
   const router = useRouter();
 
-  return <HomeScreen onNavigateToDashboard={(abbr) => router.push(`/dashboard/${abbr}`)} />;
+  return (
+    <HomeScreen
+      onNavigateToDashboard={(abbr) =>
+        router.push({
+          pathname: '/dashboard/[state]',
+          params: { state: abbr },
+        })
+      }
+    />
+  );
 }

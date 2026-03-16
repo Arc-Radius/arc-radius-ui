@@ -11,7 +11,11 @@ import { StateSearch } from './StateSearch';
 import { TakeAction } from './TakeAction';
 import { STATES, STATUS_STYLES } from '../static/states';
 
-export function HomeScreen() {
+interface HomeScreenProps {
+  onNavigateToDashboard?: (stateAbbr: string) => void;
+}
+
+export function HomeScreen({ onNavigateToDashboard }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
 
   const [zip, setZip] = useState('');
@@ -69,6 +73,10 @@ export function HomeScreen() {
   }, []);
 
   const toggleMap = useCallback(() => setShowMap((v) => !v), []);
+  const handleNavigateToDashboard = useCallback(() => {
+    if (!selected || !onNavigateToDashboard) return;
+    onNavigateToDashboard(selected);
+  }, [selected, onNavigateToDashboard]);
 
   return (
     <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: insets.top }}>
@@ -104,6 +112,7 @@ export function HomeScreen() {
             }
             buttonLabel="View Policies →"
             status={selectedInfo?.status}
+            onPress={selected ? handleNavigateToDashboard : undefined}
           />
           <FeatureCard
             title="Proposed Bills"
@@ -114,6 +123,7 @@ export function HomeScreen() {
             }
             buttonLabel="View Bills →"
             status={selectedInfo?.status}
+            onPress={selected ? handleNavigateToDashboard : undefined}
           />
         </View>
 

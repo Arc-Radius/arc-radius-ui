@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle } from 'react-native-svg';
+import type { LegislativeStatus } from '../static/states';
 
 /*
  * ─────────────────────────────────────────────────────────────
@@ -38,7 +39,6 @@ const C = {
  *  TYPES
  * ─────────────────────────────────────────────────────────────
  */
-type LegislativeStatus = 'supportive' | 'mixed' | 'harmful';
 type TabId = 'home' | 'bills' | 'ask' | 'crisis';
 
 interface BillSummary {
@@ -253,16 +253,21 @@ function BillRow({
   isLast: boolean;
 }) {
   const config = STATUS_CONFIG[bill.status];
+  const isDisabled = !onPress;
 
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center py-3.5 active:opacity-70 ${
+      disabled={isDisabled}
+      className={`flex-row items-center py-3.5 ${
+        isDisabled ? 'opacity-70' : 'active:opacity-70'
+      } ${
         !isLast ? 'border-b' : ''
       }`}
       style={{ borderColor: C.border }}
       accessible
       accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel={`${bill.number}: ${bill.title}, ${config.label}`}
       accessibilityHint="View bill details"
     >
@@ -311,13 +316,19 @@ function BillRow({
  * ─────────────────────────────────────────────────────────────
  */
 function AskCard({ onPress }: { onPress?: () => void }) {
+  const isDisabled = !onPress;
+
   return (
     <Pressable
       onPress={onPress}
-      className="rounded-xl border p-5 flex-row items-center gap-4 active:opacity-80"
+      disabled={isDisabled}
+      className={`rounded-xl border p-5 flex-row items-center gap-4 ${
+        isDisabled ? 'opacity-70' : 'active:opacity-80'
+      }`}
       style={{ backgroundColor: C.surface, borderColor: C.border }}
       accessible
       accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel="Ask about your rights"
       accessibilityHint="Opens the AI-powered question assistant"
     >
@@ -363,8 +374,13 @@ function SectionHeader({
       >
         {title}
       </Text>
-      {actionLabel && (
-        <Pressable onPress={onAction} accessible accessibilityRole="button" accessibilityLabel={actionLabel}>
+      {actionLabel && onAction && (
+        <Pressable
+          onPress={onAction}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+        >
           <Text className="text-xs font-semibold" style={{ color: C.supportive }}>
             {actionLabel}
           </Text>
@@ -530,14 +546,22 @@ export default function StateDashboard({
             className="rounded-xl border px-4 mb-6"
             style={{ backgroundColor: C.surface, borderColor: C.border }}
           >
-            {recentBills.map((bill, i) => (
-              <BillRow
-                key={bill.id}
-                bill={bill}
-                onPress={() => onBillPress?.(bill.id)}
-                isLast={i === recentBills.length - 1}
-              />
-            ))}
+            {recentBills.length === 0 ? (
+              <View className="py-5">
+                <Text className="text-sm text-center" style={{ color: C.text3 }}>
+                  No recent bills available yet for this state.
+                </Text>
+              </View>
+            ) : (
+              recentBills.map((bill, i) => (
+                <BillRow
+                  key={bill.id}
+                  bill={bill}
+                  onPress={onBillPress ? () => onBillPress(bill.id) : undefined}
+                  isLast={i === recentBills.length - 1}
+                />
+              ))
+            )}
           </View>
 
           {/* ─── ASK ────────────────────────────────── */}

@@ -7,9 +7,9 @@ export default function Home() {
 
   return (
     <HomeScreen
-      onNavigateToDashboard={(abbr) =>
+      onNavigateToState={(abbr) =>
         router.push({
-          pathname: '/dashboard/[state]',
+          pathname: '/state/[state]',
           params: { state: abbr },
         })
       }

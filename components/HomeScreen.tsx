@@ -12,58 +12,19 @@ import { TakeAction } from './TakeAction';
 import { STATES, STATUS_STYLES } from '../static/states';
 
 interface HomeScreenProps {
-  onNavigateToDashboard?: (stateAbbr: string) => void;
+  onNavigateToState?: (stateAbbr: string) => void;
 }
 
-export function HomeScreen({ onNavigateToDashboard }: HomeScreenProps) {
+export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
 
-  const [zip, setZip] = useState('');
-  const [zipError, setZipError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
 
-  const isZipValid = zip.length === 5;
-
   const selectedInfo = selected ? STATES[selected] : null;
 
-  const handleZipChange = useCallback((text: string) => {
-    setZip(text.replace(/\D/g, '').slice(0, 5));
-    setZipError(null); // clear error on edit
-  }, []);
-
-  const handleSearch = useCallback(async () => {
-    if (!isZipValid) return;
-
-    setZipError(null);
-    AccessibilityInfo.announceForAccessibility(`Searching for ZIP code ${zip}`);
-
-    try {
-      const res = await fetch(`https://api.zippopotam.us/us/${zip}`);
-      if (!res.ok) {
-        setZipError('ZIP code not found. Please try again.');
-        AccessibilityInfo.announceForAccessibility('ZIP code not found. Please try again.');
-        return;
-      }
-
-      const data = await res.json();
-      const abbr = data?.places?.[0]?.['state abbreviation'];
-
-      if (abbr && STATES[abbr]) {
-        setSelected(abbr);
-        setShowMap(true);
-        AccessibilityInfo.announceForAccessibility(
-          `Found ${STATES[abbr].name}, legislative climate: ${STATUS_STYLES[STATES[abbr].status].label}`
-        );
-      }
-    } catch {
-      setZipError('Search failed. Please check your connection.');
-      AccessibilityInfo.announceForAccessibility('Search failed. Please check your connection.');
-    }
-  }, [zip, isZipValid]);
-
   const handleStateSelect = useCallback((abbr: string) => {
-    setSelected((prev) => (prev === abbr ? null : abbr));
+    setSelected(abbr);
     const info = STATES[abbr];
     if (info) {
       AccessibilityInfo.announceForAccessibility(
@@ -73,10 +34,10 @@ export function HomeScreen({ onNavigateToDashboard }: HomeScreenProps) {
   }, []);
 
   const toggleMap = useCallback(() => setShowMap((v) => !v), []);
-  const handleNavigateToDashboard = useCallback(() => {
-    if (!selected || !onNavigateToDashboard) return;
-    onNavigateToDashboard(selected);
-  }, [selected, onNavigateToDashboard]);
+  const handleNavigateToState = useCallback(() => {
+    if (!selected || !onNavigateToState) return;
+    onNavigateToState(selected);
+  }, [selected, onNavigateToState]);
 
   return (
     <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: insets.top }}>
@@ -89,11 +50,6 @@ export function HomeScreen({ onNavigateToDashboard }: HomeScreenProps) {
 
         <View className="mt-12">
           <StateSearch
-            zip={zip}
-            zipError={zipError}
-            onZipChange={handleZipChange}
-            onSearch={handleSearch}
-            isSearchEnabled={isZipValid}
             showMap={showMap}
             onToggleMap={toggleMap}
             selected={selected}
@@ -112,7 +68,7 @@ export function HomeScreen({ onNavigateToDashboard }: HomeScreenProps) {
             }
             buttonLabel="View Policies →"
             status={selectedInfo?.status}
-            onPress={selected ? handleNavigateToDashboard : undefined}
+            onPress={selected ? handleNavigateToState : undefined}
           />
           <FeatureCard
             title="Proposed Bills"
@@ -123,7 +79,7 @@ export function HomeScreen({ onNavigateToDashboard }: HomeScreenProps) {
             }
             buttonLabel="View Bills →"
             status={selectedInfo?.status}
-            onPress={selected ? handleNavigateToDashboard : undefined}
+            onPress={selected ? handleNavigateToState : undefined}
           />
         </View>
 

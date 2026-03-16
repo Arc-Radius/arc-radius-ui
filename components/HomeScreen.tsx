@@ -1,10 +1,8 @@
 import { useCallback, useState } from 'react';
-import { AccessibilityInfo, ScrollView, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FeatureCard } from './FeatureCard';
-import { Footer } from './Footer';
-import { Header } from './Header';
 import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateSearch } from './StateSearch';
@@ -17,6 +15,8 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 768;
 
   const [selected, setSelected] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -42,9 +42,7 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   return (
     <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: insets.top }}>
       <View className="w-full max-w-3xl self-center px-6 pb-10">
-        <Header />
-
-        <View className="mt-10">
+        <View className="mt-4">
           <HeroSection />
         </View>
 
@@ -58,7 +56,7 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
           />
         </View>
 
-        <View className="mt-10 flex-row flex-wrap gap-4">
+        <View className={[isCompact ? 'mt-10 gap-4' : 'mt-10 flex-row flex-wrap gap-4'].join(' ')}>
           <FeatureCard
             title="Policy Overview"
             description={
@@ -89,10 +87,6 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
 
         <View className="mt-4">
           <PrivacyBanner />
-        </View>
-
-        <View className="mt-10">
-          <Footer />
         </View>
       </View>
     </ScrollView>

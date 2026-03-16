@@ -1,9 +1,8 @@
-// app/dashboard/[state].tsx
 import { useCallback, useMemo } from 'react';
-import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import StateDashboard from '../../components/StateDashboard';
-import { STATES } from '../../static/states';
+
+import StateDashboard from '../../../components/StateDashboard';
+import { STATES } from '../../../static/states';
 
 export default function Dashboard() {
   const { state } = useLocalSearchParams<{ state?: string | string[] }>();
@@ -23,24 +22,33 @@ export default function Dashboard() {
   }, [router]);
 
   const handleAskPress = useCallback(() => {
-    Alert.alert('Coming soon', 'Rights Q&A is not wired yet.');
-  }, []);
+    router.push('/ask');
+  }, [router]);
 
-  const handleBillPress = useCallback((billId: string) => {
-    Alert.alert('Bill details', `Open bill details for ${billId} (not wired yet).`);
-  }, []);
-
-  const handleTabPress = useCallback(
-    (tab: 'home' | 'bills' | 'ask' | 'crisis') => {
-      if (tab === 'home') {
-        router.replace('/');
+  const handleBillPress = useCallback(
+    (billId: string) => {
+      if (!stateAbbr || !STATES[stateAbbr]) {
         return;
       }
 
-      Alert.alert('Coming soon', `${tab[0].toUpperCase()}${tab.slice(1)} is not wired yet.`);
+      router.push({
+        pathname: '/state/[state]/[billId]',
+        params: { state: stateAbbr, billId },
+      });
     },
-    [router]
+    [router, stateAbbr]
   );
+
+  const handleViewAllBills = useCallback(() => {
+    if (!stateAbbr || !STATES[stateAbbr]) {
+      return;
+    }
+
+    router.push({
+      pathname: '/state/[state]',
+      params: { state: stateAbbr },
+    });
+  }, [router, stateAbbr]);
 
   if (!stateInfo) {
     return (
@@ -70,7 +78,7 @@ export default function Dashboard() {
       onBack={handleBack}
       onBillPress={handleBillPress}
       onAskPress={handleAskPress}
-      onTabPress={handleTabPress}
+      onViewAllBills={handleViewAllBills}
     />
   );
 }

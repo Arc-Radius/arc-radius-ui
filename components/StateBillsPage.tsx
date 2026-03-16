@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Footer } from './Footer';
-import { Header } from './Header';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateBillCard } from './StateBillCard';
 import { StateDropdown } from './StateDropdown';
@@ -34,6 +32,9 @@ export function StateBillsPage({
   onBrowseMap,
   onBillPress,
 }: StateBillsPageProps) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 768;
+
   const bills = useMemo(
     () => getBillsForState({ stateAbbr, stateName, status }),
     [stateAbbr, stateName, status]
@@ -43,8 +44,6 @@ export function StateBillsPage({
     <SafeAreaView className="flex-1 bg-arc-cream">
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-[880px] self-center px-6">
-          <Header />
-
           <View className="items-center pt-8">
             <View className="w-full max-w-96 gap-2.5">
               <Text className="font-sans-semibold text-xs uppercase leading-5 tracking-wide text-stone-500">
@@ -82,7 +81,7 @@ export function StateBillsPage({
             </View>
           ) : null}
 
-          <View className="flex-row flex-wrap gap-4 pt-4">
+          <View className={[isCompact ? 'gap-4 pt-4' : 'flex-row flex-wrap gap-4 pt-4'].join(' ')}>
             {bills.slice(1).map((bill) => (
               <StateBillCard key={bill.id} bill={bill} onPress={onBillPress} />
             ))}
@@ -90,10 +89,6 @@ export function StateBillsPage({
 
           <View className="pt-8">
             <PrivacyBanner />
-          </View>
-
-          <View className="pt-10">
-            <Footer />
           </View>
         </View>
       </ScrollView>

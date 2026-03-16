@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { StateBillsPage } from '../../components/StateBillsPage';
-import { STATES } from '../../static/states';
+import { StateBillsPage } from '../../../components/StateBillsPage';
+import { STATES } from '../../../static/states';
 
 export default function StateBillsRoute() {
   const { state } = useLocalSearchParams<{ state?: string | string[] }>();

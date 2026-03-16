@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 
-import { BillDetailPage } from '../../../components/BillDetailPage';
-import { getBillsForState } from '../../../static/bills';
-import { STATES } from '../../../static/states';
+import { BillDetailPage } from '../../../../components/BillDetailPage';
+import { getBillsForState } from '../../../../static/bills';
+import { STATES } from '../../../../static/states';
 
 export default function BillDetailRoute() {
   const { state, billId } = useLocalSearchParams<{
@@ -24,15 +24,21 @@ export default function BillDetailRoute() {
   const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
   const fallbackStateName = stateAbbr || 'Unknown State';
 
-  const context = {
-    stateAbbr: stateAbbr || 'N/A',
-    stateName: stateInfo?.name ?? fallbackStateName,
-    status: stateInfo?.status ?? 'mixed',
-  } as const;
+  const resolvedStateAbbr = stateAbbr || 'N/A';
+  const resolvedStateName = stateInfo?.name ?? fallbackStateName;
+  const resolvedStatus = stateInfo?.status ?? 'mixed';
 
-  const bills = useMemo(() => getBillsForState(context), [context]);
+  const bills = useMemo(
+    () =>
+      getBillsForState({
+        stateAbbr: resolvedStateAbbr,
+        stateName: resolvedStateName,
+        status: resolvedStatus,
+      }),
+    [resolvedStateAbbr, resolvedStateName, resolvedStatus]
+  );
   const bill = bills.find((item) => item.id === normalizedBillId) ?? bills[0];
   const relatedBills = bills.filter((item) => bill.relatedBillIds.includes(item.id));
 
-  return <BillDetailPage stateName={context.stateName} bill={bill} relatedBills={relatedBills} />;
+  return <BillDetailPage stateName={resolvedStateName} bill={bill} relatedBills={relatedBills} />;
 }

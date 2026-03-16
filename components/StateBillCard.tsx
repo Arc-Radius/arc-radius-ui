@@ -3,16 +3,7 @@ import { Text, View } from 'react-native';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import type { LegislativeStatus } from '../static/states';
-
-export type BillTag = 'Healthcare' | 'Education' | 'Identity Documents' | 'Safety' | 'Sports';
-
-export interface BillItem {
-  id: string;
-  title: string;
-  summary: string;
-  tags: BillTag[];
-  status: LegislativeStatus;
-}
+import type { BillItem } from '../static/bills';
 
 const statusCopy: Record<LegislativeStatus, string> = {
   supportive: 'Supportive',

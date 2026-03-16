@@ -1,5 +1,4 @@
 import { useCallback, useMemo } from 'react';
-import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { StateBillsPage } from '../../components/StateBillsPage';
@@ -30,9 +29,19 @@ export default function StateBillsRoute() {
     router.replace('/');
   }, [router]);
 
-  const handleBillPress = useCallback((billId: string) => {
-    Alert.alert('Bill details', `Open bill details for ${billId} (not wired yet).`);
-  }, []);
+  const handleBillPress = useCallback(
+    (billId: string) => {
+      if (!stateAbbr || !STATES[stateAbbr]) {
+        return;
+      }
+
+      router.push({
+        pathname: '/state/[state]/[billId]',
+        params: { state: stateAbbr, billId },
+      });
+    },
+    [router, stateAbbr]
+  );
 
   if (!stateInfo) {
     return (

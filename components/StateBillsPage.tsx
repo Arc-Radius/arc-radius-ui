@@ -8,7 +8,7 @@ import { PrivacyBanner } from './PrivacyBanner';
 import { StateBillCard } from './StateBillCard';
 import { StateDropdown } from './StateDropdown';
 import { Button } from './ui/Button';
-import type { BillItem } from './StateBillCard';
+import { getBillsForState } from '../static/bills';
 import type { LegislativeStatus } from '../static/states';
 
 interface StateBillsPageProps {
@@ -26,34 +26,6 @@ const statusCopy: Record<LegislativeStatus, string> = {
   harmful: 'High Risk',
 };
 
-function getMockBills(stateName: string, status: LegislativeStatus): BillItem[] {
-  const riskLabel = statusCopy[status];
-
-  return [
-    {
-      id: 'bill-1',
-      title: `${stateName} Bill 1`,
-      summary: `${riskLabel} policy update focused on youth protections, school policy, and legal access.`,
-      tags: ['Education', 'Safety'],
-      status,
-    },
-    {
-      id: 'bill-2',
-      title: `${stateName} Bill 2`,
-      summary: 'Proposed changes affecting healthcare access and parental consent requirements.',
-      tags: ['Healthcare', 'Identity Documents'],
-      status: status === 'supportive' ? 'mixed' : status,
-    },
-    {
-      id: 'bill-3',
-      title: `${stateName} Bill 3`,
-      summary: 'Regulation changes tied to youth participation in school and public programs.',
-      tags: ['Sports', 'Education'],
-      status: status === 'harmful' ? 'mixed' : status,
-    },
-  ];
-}
-
 export function StateBillsPage({
   stateAbbr,
   stateName,
@@ -62,7 +34,10 @@ export function StateBillsPage({
   onBrowseMap,
   onBillPress,
 }: StateBillsPageProps) {
-  const bills = useMemo(() => getMockBills(stateName, status), [stateName, status]);
+  const bills = useMemo(
+    () => getBillsForState({ stateAbbr, stateName, status }),
+    [stateAbbr, stateName, status]
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-arc-cream">

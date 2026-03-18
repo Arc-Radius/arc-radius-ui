@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { AccessibilityInfo, Platform, ScrollView, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FeatureCard } from './FeatureCard';
@@ -7,6 +7,7 @@ import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateSearch } from './StateSearch';
 import { TakeAction } from './TakeAction';
+import ArcRadiusLogo from './ui/ArcRadiusLogo';
 import { STATES, STATUS_STYLES } from '../static/states';
 
 interface HomeScreenProps {
@@ -42,6 +43,13 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   return (
     <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
       <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
+        {Platform.OS !== 'web' ? (
+          <View className="mt-2 flex-row items-center gap-2.5">
+            <ArcRadiusLogo size={32} />
+            <Text className="font-serif-bold text-xl leading-8 text-stone-800">Arc Radius</Text>
+          </View>
+        ) : null}
+
         <View className="mt-4">
           <HeroSection />
         </View>

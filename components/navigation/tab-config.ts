@@ -1,6 +1,6 @@
 import type { Href } from 'expo-router';
 
-export type AppTabId = 'home' | 'bills' | 'ask' | 'crisis';
+export type AppTabId = 'home' | 'bills' | 'crisis';
 
 interface TabContext {
   stateAbbr?: string;
@@ -10,7 +10,7 @@ interface AppTabConfig {
   id: AppTabId;
   routeName: string;
   label: string;
-  icon: 'home-outline' | 'document-text-outline' | 'chatbubble-ellipses-outline' | 'warning-outline';
+  icon: 'home-outline' | 'document-text-outline' | 'warning-outline';
   getHref: (context: TabContext) => Href;
   matchesPath: (pathname: string) => boolean;
 }
@@ -36,14 +36,6 @@ export const APP_TABS: AppTabConfig[] = [
       params: { state: stateAbbr ?? DEFAULT_STATE },
     }),
     matchesPath: (pathname) => pathname.startsWith('/state/') || pathname.startsWith('/dashboard/'),
-  },
-  {
-    id: 'ask',
-    routeName: 'ask',
-    label: 'Ask',
-    icon: 'chatbubble-ellipses-outline',
-    getHref: () => '/ask',
-    matchesPath: (pathname) => pathname.startsWith('/ask'),
   },
   {
     id: 'crisis',

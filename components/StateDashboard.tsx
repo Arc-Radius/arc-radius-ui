@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   View,
   Text,
@@ -7,6 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle } from 'react-native-svg';
+import type { LegislativeStatus } from '../static/states';
 
 /*
  * ─────────────────────────────────────────────────────────────
@@ -38,9 +38,6 @@ const C = {
  *  TYPES
  * ─────────────────────────────────────────────────────────────
  */
-type LegislativeStatus = 'supportive' | 'mixed' | 'harmful';
-type TabId = 'home' | 'bills' | 'ask' | 'crisis';
-
 interface BillSummary {
   id: string;
   number: string;
@@ -59,8 +56,7 @@ interface DashboardProps {
   onBack?: () => void;
   onBillPress?: (billId: string) => void;
   onAskPress?: () => void;
-  onTabPress?: (tab: TabId) => void;
-  activeTab?: TabId;
+  onViewAllBills?: () => void;
 }
 
 const STATUS_CONFIG: Record<
@@ -110,43 +106,11 @@ function IconSettings() {
   );
 }
 
-function IconHome({ active }: { active?: boolean }) {
-  const color = active ? C.ink : C.text3;
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-      <Path d="M9 22V12h6v10" />
-    </Svg>
-  );
-}
-
-function IconBills({ active }: { active?: boolean }) {
-  const color = active ? C.ink : C.text3;
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <Path d="M14 2v6h6" />
-      <Path d="M16 13H8" />
-      <Path d="M16 17H8" />
-      <Path d="M10 9H8" />
-    </Svg>
-  );
-}
-
 function IconChat({ active }: { active?: boolean }) {
   const color = active ? C.ink : C.text3;
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-    </Svg>
-  );
-}
-
-function IconCrisis({ active }: { active?: boolean }) {
-  const color = active ? C.harmful : C.text3;
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </Svg>
   );
 }
@@ -253,16 +217,21 @@ function BillRow({
   isLast: boolean;
 }) {
   const config = STATUS_CONFIG[bill.status];
+  const isDisabled = !onPress;
 
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center py-3.5 active:opacity-70 ${
+      disabled={isDisabled}
+      className={`flex-row items-center py-3.5 ${
+        isDisabled ? 'opacity-70' : 'active:opacity-70'
+      } ${
         !isLast ? 'border-b' : ''
       }`}
       style={{ borderColor: C.border }}
       accessible
       accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel={`${bill.number}: ${bill.title}, ${config.label}`}
       accessibilityHint="View bill details"
     >
@@ -311,13 +280,19 @@ function BillRow({
  * ─────────────────────────────────────────────────────────────
  */
 function AskCard({ onPress }: { onPress?: () => void }) {
+  const isDisabled = !onPress;
+
   return (
     <Pressable
       onPress={onPress}
-      className="rounded-xl border p-5 flex-row items-center gap-4 active:opacity-80"
+      disabled={isDisabled}
+      className={`rounded-xl border p-5 flex-row items-center gap-4 ${
+        isDisabled ? 'opacity-70' : 'active:opacity-80'
+      }`}
       style={{ backgroundColor: C.surface, borderColor: C.border }}
       accessible
       accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel="Ask about your rights"
       accessibilityHint="Opens the AI-powered question assistant"
     >
@@ -363,63 +338,18 @@ function SectionHeader({
       >
         {title}
       </Text>
-      {actionLabel && (
-        <Pressable onPress={onAction} accessible accessibilityRole="button" accessibilityLabel={actionLabel}>
+      {actionLabel && onAction && (
+        <Pressable
+          onPress={onAction}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+        >
           <Text className="text-xs font-semibold" style={{ color: C.supportive }}>
             {actionLabel}
           </Text>
         </Pressable>
       )}
-    </View>
-  );
-}
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  BOTTOM TAB BAR
- * ─────────────────────────────────────────────────────────────
- */
-const TABS: { id: TabId; label: string; Icon: React.FC<{ active?: boolean }> }[] = [
-  { id: 'home', label: 'Home', Icon: IconHome },
-  { id: 'bills', label: 'Bills', Icon: IconBills },
-  { id: 'ask', label: 'Ask', Icon: IconChat },
-  { id: 'crisis', label: 'Crisis', Icon: IconCrisis },
-];
-
-function BottomTabBar({
-  activeTab = 'home',
-  onTabPress,
-}: {
-  activeTab?: TabId;
-  onTabPress?: (tab: TabId) => void;
-}) {
-  return (
-    <View
-      className="flex-row border-t pt-2 pb-1"
-      style={{ backgroundColor: C.surface, borderColor: C.border }}
-    >
-      {TABS.map(({ id, label, Icon }) => {
-        const active = activeTab === id;
-        return (
-          <Pressable
-            key={id}
-            onPress={() => onTabPress?.(id)}
-            className="flex-1 items-center py-1.5"
-            accessible
-            accessibilityRole="tab"
-            accessibilityLabel={label}
-            accessibilityState={{ selected: active }}
-          >
-            <Icon active={active} />
-            <Text
-              className="text-xs mt-0.5 font-medium"
-              style={{ color: active ? (id === 'crisis' ? C.harmful : C.ink) : C.text3 }}
-            >
-              {label}
-            </Text>
-          </Pressable>
-        );
-      })}
     </View>
   );
 }
@@ -475,8 +405,7 @@ export default function StateDashboard({
   onBack,
   onBillPress,
   onAskPress,
-  onTabPress,
-  activeTab = 'home',
+  onViewAllBills,
 }: DashboardProps) {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.bg }}>
@@ -524,20 +453,28 @@ export default function StateDashboard({
           <SectionHeader
             title="What's happening"
             actionLabel="View all →"
-            onAction={() => onTabPress?.('bills')}
+            onAction={onViewAllBills}
           />
           <View
             className="rounded-xl border px-4 mb-6"
             style={{ backgroundColor: C.surface, borderColor: C.border }}
           >
-            {recentBills.map((bill, i) => (
-              <BillRow
-                key={bill.id}
-                bill={bill}
-                onPress={() => onBillPress?.(bill.id)}
-                isLast={i === recentBills.length - 1}
-              />
-            ))}
+            {recentBills.length === 0 ? (
+              <View className="py-5">
+                <Text className="text-sm text-center" style={{ color: C.text3 }}>
+                  No recent bills available yet for this state.
+                </Text>
+              </View>
+            ) : (
+              recentBills.map((bill, i) => (
+                <BillRow
+                  key={bill.id}
+                  bill={bill}
+                  onPress={onBillPress ? () => onBillPress(bill.id) : undefined}
+                  isLast={i === recentBills.length - 1}
+                />
+              ))
+            )}
           </View>
 
           {/* ─── ASK ────────────────────────────────── */}
@@ -577,8 +514,6 @@ export default function StateDashboard({
         </View>
       </ScrollView>
 
-      {/* ─── BOTTOM TABS ──────────────────────────── */}
-      <BottomTabBar activeTab={activeTab} onTabPress={onTabPress} />
     </SafeAreaView>
   );
 }

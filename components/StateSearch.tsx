@@ -1,17 +1,13 @@
-import { AccessibilityInfo, Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from './ui/Button';
+import { StateDropdown } from './StateDropdown';
 import { STATES, STATUS_STYLES, MAP_ROWS } from '../static/states';
 import type { LegislativeStatus, StateInfo } from '../static/states';
 import { Key } from 'react';
 
 // ── Props from HomeScreen ────────────────────────
 interface StateSearchProps {
-  zip: string;
-  zipError: string | null;
-  onZipChange: (text: string) => void;
-  onSearch: () => void;
-  isSearchEnabled: boolean;
   showMap: boolean;
   onToggleMap: () => void;
   selected: string | null;
@@ -119,11 +115,6 @@ function StatusBadge({ status }: { status: LegislativeStatus }) {
 
 // ── Main component ───────────────────────────────
 export function StateSearch({
-  zip,
-  zipError,
-  onZipChange,
-  onSearch,
-  isSearchEnabled,
   showMap,
   onToggleMap,
   selected,
@@ -136,27 +127,13 @@ export function StateSearch({
         Find your state
       </Text>
 
-      <View className="max-w-96 flex-row items-start gap-2">
-        <TextInput
-          value={zip}
-          onChangeText={onZipChange}
-          onSubmitEditing={onSearch}
-          className={`flex-1 rounded-lg border bg-white px-3.5 py-2.5 font-sans text-sm text-stone-800 ${
-            zipError ? 'border-red-400' : 'border-stone-300'
-          }`}
-          placeholder="Enter ZIP code"
-          placeholderTextColor="#78716c"
-          keyboardType="number-pad"
-          maxLength={5}
-          returnKeyType="search"
-          accessible
-          accessibilityLabel="ZIP code"
-          accessibilityHint="Enter your 5-digit ZIP code to find your state"
+      <View className="max-w-96">
+        <StateDropdown
+          value={selected}
+          onChange={onStateSelect}
+          placeholder="Select state"
         />
-        <Button label="Search" className="py-3" onPress={onSearch} disabled={!isSearchEnabled} />
       </View>
-
-      {zipError && <Text className="mt-1 font-sans text-xs text-red-500">{zipError}</Text>}
 
       <View className="max-w-96 flex-row items-center gap-3 py-1">
         <View className="h-px flex-1 bg-stone-300" />

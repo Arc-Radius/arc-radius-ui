@@ -1,65 +1,31 @@
 import { useCallback, useState } from 'react';
-import { AccessibilityInfo, ScrollView, View } from 'react-native';
+import { AccessibilityInfo, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FeatureCard } from './FeatureCard';
-import { Footer } from './Footer';
-import { Header } from './Header';
 import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateSearch } from './StateSearch';
 import { TakeAction } from './TakeAction';
+import ArcRadiusLogo from './ui/ArcRadiusLogo';
 import { STATES, STATUS_STYLES } from '../static/states';
 
-export function HomeScreen() {
-  const insets = useSafeAreaInsets();
+interface HomeScreenProps {
+  onNavigateToState?: (stateAbbr: string) => void;
+}
 
-  const [zip, setZip] = useState('');
-  const [zipError, setZipError] = useState<string | null>(null);
+export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 768;
+
   const [selected, setSelected] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
 
-  const isZipValid = zip.length === 5;
-
   const selectedInfo = selected ? STATES[selected] : null;
 
-  const handleZipChange = useCallback((text: string) => {
-    setZip(text.replace(/\D/g, '').slice(0, 5));
-    setZipError(null); // clear error on edit
-  }, []);
-
-  const handleSearch = useCallback(async () => {
-    if (!isZipValid) return;
-
-    setZipError(null);
-    AccessibilityInfo.announceForAccessibility(`Searching for ZIP code ${zip}`);
-
-    try {
-      const res = await fetch(`https://api.zippopotam.us/us/${zip}`);
-      if (!res.ok) {
-        setZipError('ZIP code not found. Please try again.');
-        AccessibilityInfo.announceForAccessibility('ZIP code not found. Please try again.');
-        return;
-      }
-
-      const data = await res.json();
-      const abbr = data?.places?.[0]?.['state abbreviation'];
-
-      if (abbr && STATES[abbr]) {
-        setSelected(abbr);
-        setShowMap(true);
-        AccessibilityInfo.announceForAccessibility(
-          `Found ${STATES[abbr].name}, legislative climate: ${STATUS_STYLES[STATES[abbr].status].label}`
-        );
-      }
-    } catch {
-      setZipError('Search failed. Please check your connection.');
-      AccessibilityInfo.announceForAccessibility('Search failed. Please check your connection.');
-    }
-  }, [zip, isZipValid]);
-
   const handleStateSelect = useCallback((abbr: string) => {
-    setSelected((prev) => (prev === abbr ? null : abbr));
+    setSelected(abbr);
     const info = STATES[abbr];
     if (info) {
       AccessibilityInfo.announceForAccessibility(
@@ -69,23 +35,27 @@ export function HomeScreen() {
   }, []);
 
   const toggleMap = useCallback(() => setShowMap((v) => !v), []);
+  const handleNavigateToState = useCallback(() => {
+    if (!selected || !onNavigateToState) return;
+    onNavigateToState(selected);
+  }, [selected, onNavigateToState]);
 
   return (
-    <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: insets.top }}>
-      <View className="w-full max-w-3xl self-center px-6 pb-10">
-        <Header />
+    <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
+      <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
+        {Platform.OS !== 'web' ? (
+          <View className="mt-2 flex-row items-center gap-2.5">
+            <ArcRadiusLogo size={32} />
+            <Text className="font-serif-bold text-xl leading-8 text-stone-800">Arc Radius</Text>
+          </View>
+        ) : null}
 
-        <View className="mt-10">
+        <View className="mt-4">
           <HeroSection />
         </View>
 
         <View className="mt-12">
           <StateSearch
-            zip={zip}
-            zipError={zipError}
-            onZipChange={handleZipChange}
-            onSearch={handleSearch}
-            isSearchEnabled={isZipValid}
             showMap={showMap}
             onToggleMap={toggleMap}
             selected={selected}
@@ -94,7 +64,7 @@ export function HomeScreen() {
           />
         </View>
 
-        <View className="mt-10 flex-row flex-wrap gap-4">
+        <View className={[isCompact ? 'mt-10 gap-4' : 'mt-10 flex-row flex-wrap gap-4'].join(' ')}>
           <FeatureCard
             title="Policy Overview"
             description={
@@ -104,6 +74,7 @@ export function HomeScreen() {
             }
             buttonLabel="View Policies →"
             status={selectedInfo?.status}
+            onPress={selected ? handleNavigateToState : undefined}
           />
           <FeatureCard
             title="Proposed Bills"
@@ -114,6 +85,7 @@ export function HomeScreen() {
             }
             buttonLabel="View Bills →"
             status={selectedInfo?.status}
+            onPress={selected ? handleNavigateToState : undefined}
           />
         </View>
 
@@ -123,10 +95,6 @@ export function HomeScreen() {
 
         <View className="mt-4">
           <PrivacyBanner />
-        </View>
-
-        <View className="mt-10">
-          <Footer />
         </View>
       </View>
     </ScrollView>

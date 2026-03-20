@@ -21,7 +21,7 @@ export function FeatureCard({
   onPress,
 }: FeatureCardProps) {
   return (
-    <Card className="min-w-[240px] flex-1 gap-3.5">
+    <Card className="min-w-0 flex-1 gap-3.5">
       <View className="flex-row items-start justify-between">
         <Text className="flex-1 font-serif-bold text-base leading-7 text-stone-800">{title}</Text>
         {status && <StatusBadge status={status} />}

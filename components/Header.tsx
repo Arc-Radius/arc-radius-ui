@@ -17,7 +17,9 @@ export function Header({ rightContent }: HeaderProps) {
       </View>
 
       {rightContent ? (
-        <View className="flex-row flex-wrap items-center gap-1.5 md:flex-nowrap">{rightContent}</View>
+        <View className="flex-row flex-wrap items-center gap-1.5 md:flex-nowrap">
+          {rightContent}
+        </View>
       ) : (
         <View className="flex-row flex-wrap items-center gap-1.5 md:flex-nowrap">
           <Pressable className="rounded-lg px-3.5 py-2.5">

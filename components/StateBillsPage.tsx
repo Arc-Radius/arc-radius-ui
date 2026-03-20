@@ -69,7 +69,9 @@ export function StateBillsPage({
           </View>
 
           <View className="pt-10">
-            <Text className="font-serif-bold text-xl leading-7 text-zinc-900">{stateName.toUpperCase()}</Text>
+            <Text className="font-serif-bold text-xl leading-7 text-zinc-900">
+              {stateName.toUpperCase()}
+            </Text>
             <Text className="mt-1 font-sans text-sm text-zinc-500">
               {stateAbbr} • {statusCopy[status]}
             </Text>

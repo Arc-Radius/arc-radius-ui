@@ -1,8 +1,7 @@
-import { useCallback, useState } from 'react';
-import { AccessibilityInfo, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { AccessibilityInfo, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FeatureCard } from './FeatureCard';
 import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateSearch } from './StateSearch';
@@ -16,13 +15,20 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isCompact = width < 768;
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const mapOffsetY = useRef(0);
 
   const [selected, setSelected] = useState<string | null>(null);
-  const [showMap, setShowMap] = useState(false);
 
   const selectedInfo = selected ? STATES[selected] : null;
+
+  const handleFindState = useCallback(() => {
+    scrollViewRef.current?.scrollTo({
+      y: mapOffsetY.current - 16,
+      animated: true,
+    });
+  }, []);
 
   const handleStateSelect = useCallback((abbr: string) => {
     setSelected(abbr);
@@ -34,62 +40,43 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
     }
   }, []);
 
-  const toggleMap = useCallback(() => setShowMap((v) => !v), []);
   const handleNavigateToState = useCallback(() => {
     if (!selected || !onNavigateToState) return;
     onNavigateToState(selected);
   }, [selected, onNavigateToState]);
 
   return (
-    <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
+    <ScrollView
+      ref={scrollViewRef}
+      className="flex-1 bg-zinc-50"
+      style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
       <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
         {Platform.OS !== 'web' ? (
           <View className="mt-2 flex-row items-center gap-2.5">
             <ArcRadiusLogo size={32} />
-            <Text className="font-serif-bold text-xl leading-8 text-stone-800">Arc Radius</Text>
+            <Text className="font-serif-bold text-xl leading-8 text-zinc-800">Arc Radius</Text>
           </View>
         ) : null}
 
         <View className="mt-4">
-          <HeroSection />
+          <HeroSection onFindState={handleFindState} />
         </View>
 
-        <View className="mt-12">
+        <View
+          className="mt-12"
+          onLayout={(e) => {
+            mapOffsetY.current = e.nativeEvent.layout.y;
+          }}>
           <StateSearch
-            showMap={showMap}
-            onToggleMap={toggleMap}
             selected={selected}
             selectedInfo={selectedInfo}
             onStateSelect={handleStateSelect}
+            onNavigateToState={handleNavigateToState}
+            scrollViewRef={scrollViewRef}
           />
         </View>
 
-        <View className={[isCompact ? 'mt-10 gap-4' : 'mt-10 flex-row flex-wrap gap-4'].join(' ')}>
-          <FeatureCard
-            title="Policy Overview"
-            description={
-              selectedInfo
-                ? `Current LGBTQ+ protections and legal landscape in ${selectedInfo.name}.`
-                : 'Select a state to view current LGBTQ+ protections and legal landscape.'
-            }
-            buttonLabel="View Policies →"
-            status={selectedInfo?.status}
-            onPress={selected ? handleNavigateToState : undefined}
-          />
-          <FeatureCard
-            title="Proposed Bills"
-            description={
-              selectedInfo
-                ? `Active legislation that may affect LGBTQ+ youth in ${selectedInfo.name}.`
-                : 'Select a state to track active legislation affecting LGBTQ+ youth.'
-            }
-            buttonLabel="View Bills →"
-            status={selectedInfo?.status}
-            onPress={selected ? handleNavigateToState : undefined}
-          />
-        </View>
-
-        <View className="mt-4">
+        <View className="mt-10">
           <TakeAction />
         </View>
 

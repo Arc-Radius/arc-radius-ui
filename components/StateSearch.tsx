@@ -1,28 +1,53 @@
-import { Pressable, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import Svg, { Rect as SvgRect, Path, Line } from 'react-native-svg';
 
-import { Button } from './ui/Button';
 import { StateDropdown } from './StateDropdown';
 import { STATES, STATUS_STYLES, MAP_ROWS } from '../static/states';
 import type { LegislativeStatus, StateInfo } from '../static/states';
-import { Key } from 'react';
 
-// ── Props from HomeScreen ────────────────────────
+// ── Props ────────────────────────────────────────
 interface StateSearchProps {
-  showMap: boolean;
-  onToggleMap: () => void;
   selected: string | null;
   selectedInfo: StateInfo | null;
   onStateSelect: (abbr: string) => void;
+  onNavigateToState?: () => void;
+  scrollViewRef?: React.RefObject<ScrollView>;
 }
 
-// ── Status visuals ───────────────────────────────
-const STATUS_SYMBOL: Record<LegislativeStatus, string> = {
-  supportive: '●',
-  mixed: '▲',
-  harmful: '■',
+// ── Status colors (optimized for dark zinc background) ─
+// Brighter fills + light text for contrast on zinc-800
+const STATUS_CELL: Record<
+  LegislativeStatus,
+  { bg: string; border: string; selectedBorder: string; text: string }
+> = {
+  supportive: {
+    bg: 'rgba(59,130,246,0.28)',
+    border: 'rgba(59,130,246,0.45)',
+    selectedBorder: '#60a5fa',
+    text: '#93c5fd',
+  },
+  mixed: {
+    bg: 'rgba(255,255,255,0.08)',
+    border: 'rgba(255,255,255,0.18)',
+    selectedBorder: '#a1a1aa',
+    text: '#d4d4d8',
+  },
+  harmful: {
+    bg: 'rgba(249,115,22,0.28)',
+    border: 'rgba(249,115,22,0.45)',
+    selectedBorder: '#fb923c',
+    text: '#fdba74',
+  },
 };
 
-// ── Sub-components ───────────────────────────────
+const STATUS_BADGE: Record<LegislativeStatus, { bg: string; border: string; text: string }> = {
+  supportive: { bg: '#eff6ff', border: '#3b82f6', text: '#1e40af' },
+  mixed: { bg: '#fafafa', border: '#a1a1aa', text: '#52525b' },
+  harmful: { bg: '#fff7ed', border: '#f97316', text: '#9a3412' },
+};
+
+// ── State cell (stable 2px border — no layout shift) ─
 function StateCell({
   abbr,
   selected,
@@ -33,81 +58,198 @@ function StateCell({
   onSelect: (abbr: string) => void;
 }) {
   const info = STATES[abbr];
-  if (!info) return <View className="aspect-square flex-1" />;
+  if (!info) return <View className="w-full" style={{ aspectRatio: 1 }} />;
 
   const isSelected = selected === abbr;
-  const style = STATUS_STYLES[info.status];
+  const cell = STATUS_CELL[info.status];
 
   return (
     <Pressable
       onPress={() => onSelect(abbr)}
-      className={`aspect-square flex-1 items-center justify-center rounded ${
-        isSelected ? 'opacity-100' : 'opacity-90'
-      }`}
-      style={[
-        { backgroundColor: style.cellBg },
-        isSelected && { borderWidth: 2, borderColor: '#2C2820' },
-      ]}
+      className="w-full items-center justify-center"
+      style={{
+        aspectRatio: 1,
+        backgroundColor: cell.bg,
+        borderWidth: 1,
+        borderColor: isSelected ? cell.selectedBorder : cell.border,
+        borderRadius: 8,
+      }}
       accessible
       accessibilityRole="button"
-      accessibilityLabel={`${info.name}, ${style.label}`}
+      accessibilityLabel={`${info.name}, ${STATUS_STYLES[info.status].label}`}
       accessibilityState={{ selected: isSelected }}
       accessibilityHint="Double tap to view policy details">
-      <Text className="text-center font-sans-semibold text-white" style={{ fontSize: 9 }}>
+      <Text className="text-center font-sans-semibold" style={{ fontSize: 9, color: cell.text }}>
         {abbr}
       </Text>
     </Pressable>
   );
 }
 
-function MapLegend() {
+// ── Icons for detail cards ───────────────────────
+function PolicyIcon() {
   return (
-    <View
-      className="mb-5 flex-row flex-wrap items-center gap-3"
-      accessible
-      accessibilityRole="summary"
-      accessibilityLabel="Map legend: Supportive shown in blue, Mixed in amber, High Risk in vermillion">
-      <Text className="font-sans-semibold text-xs uppercase tracking-widest text-stone-500">
-        Legislative climate
-      </Text>
-      <View className="ml-auto flex-row gap-2.5">
-        {(['supportive', 'mixed', 'harmful'] as LegislativeStatus[]).map((status) => {
-          const s = STATUS_STYLES[status];
-          return (
+    <Svg width={16} height={16} viewBox="0 0 18 18" fill="none">
+      <Path
+        d="M3 5C3 3.9 3.9 3 5 3H13C14.1 3 15 3.9 15 5V13C15 14.1 14.1 15 13 15H5C3.9 15 3 14.1 3 13V5Z"
+        fill="#eff6ff"
+        stroke="#3b82f6"
+        strokeWidth={1}
+      />
+      <Line x1={6} y1={8} x2={12} y2={8} stroke="#3b82f6" strokeWidth={0.8} strokeLinecap="round" />
+      <Line
+        x1={6}
+        y1={11}
+        x2={10}
+        y2={11}
+        stroke="#3b82f6"
+        strokeWidth={0.8}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+function BillIcon() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 18 18" fill="none">
+      <SvgRect
+        x={3}
+        y={2}
+        width={12}
+        height={14}
+        rx={2}
+        fill="#fff7ed"
+        stroke="#f97316"
+        strokeWidth={1}
+      />
+      <Line x1={7} y1={7} x2={11} y2={7} stroke="#f97316" strokeWidth={0.8} strokeLinecap="round" />
+      <Line
+        x1={7}
+        y1={10}
+        x2={9}
+        y2={10}
+        stroke="#f97316"
+        strokeWidth={0.8}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+// ── State detail panel ───────────────────────────
+function StateDetailPanel({
+  info,
+  onNavigate,
+  onClose,
+}: {
+  info: StateInfo;
+  onNavigate?: () => void;
+  onClose: () => void;
+}) {
+  const badge = STATUS_BADGE[info.status];
+
+  return (
+    <View className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <View className="p-4">
+        {/* Header */}
+        <View className="mb-3.5 flex-row items-center justify-between">
+          <View className="flex-row items-center gap-2.5">
+            <Text className="font-serif-bold text-lg text-zinc-800">{info.name}</Text>
             <View
-              key={status}
-              className="flex-row items-center gap-1.5 rounded px-2.5 py-1"
-              style={{ backgroundColor: s.bg }}>
-              <Text style={{ color: s.color, fontSize: 8, marginRight: 1 }}>
-                {STATUS_SYMBOL[status]}
-              </Text>
-              <Text
-                className="font-sans-semibold text-xs uppercase tracking-wide"
-                style={{ color: s.color }}>
-                {s.label}
+              className="rounded-full px-2.5 py-0.5"
+              style={{
+                backgroundColor: badge.bg,
+                borderWidth: 0.5,
+                borderColor: badge.border,
+              }}>
+              <Text className="font-sans-semibold text-[11px]" style={{ color: badge.text }}>
+                {STATUS_STYLES[info.status].label}
               </Text>
             </View>
-          );
-        })}
+          </View>
+          <Pressable
+            onPress={onClose}
+            className="h-[22px] w-[22px] items-center justify-center rounded-full bg-zinc-100 active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel="Close state details">
+            <Text className="text-[10px] text-zinc-400">✕</Text>
+          </Pressable>
+        </View>
+
+        {/* Icon cards */}
+        <View className="mb-3 flex-row gap-2">
+          <View className="flex-1 items-center rounded-[10px] border border-zinc-200 py-3">
+            <View
+              className="mb-1.5 h-7 w-7 items-center justify-center rounded-lg"
+              style={{ backgroundColor: '#eff6ff' }}>
+              <PolicyIcon />
+            </View>
+            <Text className="font-sans-semibold text-xs text-zinc-700">Policies</Text>
+            <Text className="mt-0.5 font-sans text-[10px] text-zinc-400">— protections</Text>
+          </View>
+
+          <View className="flex-1 items-center rounded-[10px] border border-zinc-200 py-3">
+            <View
+              className="mb-1.5 h-7 w-7 items-center justify-center rounded-lg"
+              style={{ backgroundColor: '#fff7ed' }}>
+              <BillIcon />
+            </View>
+            <Text className="font-sans-semibold text-xs text-zinc-700">Bills</Text>
+            <Text className="mt-0.5 font-sans text-[10px] text-zinc-400">— active</Text>
+          </View>
+        </View>
+
+        {/* Explore CTA */}
+        <Pressable
+          onPress={onNavigate}
+          className="flex-row items-center justify-center gap-1.5 rounded-[10px] bg-zinc-800 py-3 active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel={`Explore ${info.name}`}>
+          <Text className="font-sans-semibold text-[13px] text-white">Explore {info.name}</Text>
+          <Text className="text-zinc-500">→</Text>
+        </Pressable>
       </View>
     </View>
   );
 }
 
-function StatusBadge({ status }: { status: LegislativeStatus }) {
-  const s = STATUS_STYLES[status];
+// ── Hex map (column-based — stable grid, aligned cells) ──
+const GRID_COLS = Math.max(...MAP_ROWS.map((r: (string | null)[]) => r.length));
+
+function HexMap({
+  selected,
+  onStateSelect,
+}: {
+  selected: string | null;
+  onStateSelect: (abbr: string) => void;
+}) {
   return (
     <View
-      className="flex-row items-center gap-1.5 rounded px-2.5 py-0.5"
-      style={{ backgroundColor: s.bg }}
       accessible
-      accessibilityLabel={`Legislative climate: ${s.label}`}
-      accessibilityRole="text">
-      <View className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
-      <Text
-        className="font-sans-semibold text-xs uppercase tracking-wide"
-        style={{ color: s.color }}>
-        {s.label}
+      accessibilityRole="summary"
+      accessibilityLabel="United States legislative climate map">
+      <View className="flex-row gap-1">
+        {Array.from({ length: GRID_COLS }, (_, colIndex) => (
+          <View key={colIndex} className="min-w-0 flex-1 flex-col gap-1">
+            {MAP_ROWS.map((row, rowIndex) => {
+              const abbr = row[colIndex] ?? null;
+              return abbr ? (
+                <StateCell
+                  key={rowIndex}
+                  abbr={abbr}
+                  selected={selected}
+                  onSelect={onStateSelect}
+                />
+              ) : (
+                <View key={rowIndex} className="w-full" style={{ aspectRatio: 1 }} />
+              );
+            })}
+          </View>
+        ))}
+      </View>
+      <Text className="mt-3 text-center font-sans text-[11px] text-zinc-400">
+        Tap a state to view details
       </Text>
     </View>
   );
@@ -115,75 +257,80 @@ function StatusBadge({ status }: { status: LegislativeStatus }) {
 
 // ── Main component ───────────────────────────────
 export function StateSearch({
-  showMap,
-  onToggleMap,
   selected,
   selectedInfo,
   onStateSelect,
+  onNavigateToState,
+  scrollViewRef,
 }: StateSearchProps) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 768;
+  const detailRef = useRef<View>(null);
+
+  // Auto-scroll to detail panel on mobile when a state is selected
+  useEffect(() => {
+    if (!isCompact || !selected || !selectedInfo || !scrollViewRef?.current) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      detailRef.current?.measureLayout(
+        scrollViewRef.current?.getInnerViewRef?.() as any,
+        (_x: number, y: number) => {
+          scrollViewRef.current?.scrollTo({
+            y: y - 16,
+            animated: true,
+          });
+        },
+        () => {}
+      );
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [selected, selectedInfo, isCompact, scrollViewRef]);
+
+  const handleClose = () => onStateSelect('');
+
   return (
-    <View className="gap-2.5 pt-2">
-      <Text className="font-sans-semibold text-xs uppercase leading-5 tracking-wide text-stone-500">
-        Find your state
-      </Text>
-
-      <View className="max-w-96">
-        <StateDropdown
-          value={selected}
-          onChange={onStateSelect}
-          placeholder="Select state"
-        />
+    <View>
+      {/* Search trigger */}
+      <View className={isCompact ? 'mb-4' : 'mb-5 max-w-sm'}>
+        <StateDropdown value={selected} onChange={onStateSelect} placeholder="Search state..." />
       </View>
 
-      <View className="max-w-96 flex-row items-center gap-3 py-1">
-        <View className="h-px flex-1 bg-stone-300" />
-        <Text className="font-sans text-xs leading-5 text-stone-500">or</Text>
-        <View className="h-px flex-1 bg-stone-300" />
-      </View>
+      {isCompact ? (
+        /* ── Mobile: map card (dark) with detail inside ── */
+        <View className="rounded-xl border border-zinc-700 bg-zinc-800 p-4">
+          <HexMap selected={selected} onStateSelect={onStateSelect} />
 
-      <Button
-        label={showMap ? 'Hide map' : 'Browse interactive map'}
-        variant="outline"
-        className="max-w-96"
-        onPress={onToggleMap}
-      />
-
-      {/* ── Interactive Map ──────────────────────── */}
-      {showMap && (
-        <View className="mt-4 rounded-xl border border-stone-300 bg-white p-6">
-          <MapLegend />
-
-          <View
-            accessible
-            accessibilityRole="summary"
-            accessibilityLabel="United States legislative climate map">
-            <View className="gap-1">
-              {MAP_ROWS.map((row: any[], ri: Key | null | undefined) => (
-                <View key={ri} className="flex-row gap-1">
-                  {row.map((abbr, ci) =>
-                    abbr ? (
-                      <StateCell
-                        key={ci}
-                        abbr={abbr}
-                        selected={selected}
-                        onSelect={onStateSelect}
-                      />
-                    ) : (
-                      <View key={ci} className="aspect-square flex-1" />
-                    )
-                  )}
-                </View>
-              ))}
+          {selected && selectedInfo && (
+            <View ref={detailRef} className="mt-4 border-t border-zinc-700 pt-4">
+              <StateDetailPanel
+                info={selectedInfo}
+                onNavigate={onNavigateToState}
+                onClose={handleClose}
+              />
             </View>
-            <Text className="mt-3 text-center text-xs text-stone-500">
-              Tap any state to view detailed policy information
-            </Text>
+          )}
+        </View>
+      ) : (
+        /* ── Desktop: map (dark) + side panel ── */
+        <View className="flex-row gap-4">
+          <View
+            className={[
+              'rounded-xl border border-zinc-700 bg-zinc-800 p-8',
+              selected && selectedInfo ? 'flex-1' : 'w-full',
+            ].join(' ')}>
+            <HexMap selected={selected} onStateSelect={onStateSelect} />
           </View>
 
           {selected && selectedInfo && (
-            <View className="mt-4 flex-row items-center justify-between border-t border-stone-300 pt-4">
-              <Text className="font-sans-semibold text-stone-800">{selectedInfo.name}</Text>
-              <StatusBadge status={selectedInfo.status} />
+            <View className="w-[320px] flex-shrink-0">
+              <StateDetailPanel
+                info={selectedInfo}
+                onNavigate={onNavigateToState}
+                onClose={handleClose}
+              />
             </View>
           )}
         </View>

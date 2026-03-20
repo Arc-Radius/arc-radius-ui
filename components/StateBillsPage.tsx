@@ -41,12 +41,12 @@ export function StateBillsPage({
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-arc-cream">
+    <SafeAreaView className="flex-1 bg-zinc-50">
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
           <View className="items-center pt-8">
             <View className="w-full max-w-96 gap-2.5">
-              <Text className="font-sans-semibold text-xs uppercase leading-5 tracking-wide text-stone-500">
+              <Text className="font-sans-semibold text-xs uppercase leading-5 tracking-wide text-zinc-500">
                 Find a different state
               </Text>
 
@@ -59,9 +59,9 @@ export function StateBillsPage({
               </View>
 
               <View className="flex-row items-center gap-3 py-1">
-                <View className="h-px flex-1 bg-stone-300" />
-                <Text className="font-sans text-xs leading-5 text-stone-500">or</Text>
-                <View className="h-px flex-1 bg-stone-300" />
+                <View className="h-px flex-1 bg-zinc-300" />
+                <Text className="font-sans text-xs leading-5 text-zinc-500">or</Text>
+                <View className="h-px flex-1 bg-zinc-300" />
               </View>
 
               <Button label="Browse interactive map" variant="outline" onPress={onBrowseMap} />
@@ -69,8 +69,8 @@ export function StateBillsPage({
           </View>
 
           <View className="pt-10">
-            <Text className="font-serif-bold text-xl leading-7 text-stone-900">{stateName.toUpperCase()}</Text>
-            <Text className="mt-1 font-sans text-sm text-stone-500">
+            <Text className="font-serif-bold text-xl leading-7 text-zinc-900">{stateName.toUpperCase()}</Text>
+            <Text className="mt-1 font-sans text-sm text-zinc-500">
               {stateAbbr} • {statusCopy[status]}
             </Text>
           </View>

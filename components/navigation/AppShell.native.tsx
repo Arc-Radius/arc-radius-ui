@@ -6,7 +6,7 @@ import AppTabs from './AppTabs';
 
 export default function AppShell() {
   return (
-    <SafeAreaView className="flex-1 bg-arc-cream" edges={['left', 'right', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-zinc-50" edges={['left', 'right', 'bottom']}>
       <View className="flex-1">
         <Slot />
       </View>

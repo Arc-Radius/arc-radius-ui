@@ -5,11 +5,11 @@ import { Button } from '../../components/ui/Button';
 
 export default function AskRoute() {
   return (
-    <SafeAreaView className="flex-1 bg-arc-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-zinc-50" edges={['top']}>
       <View className="flex-1 px-6 py-8">
       <View className="w-full max-w-[880px] self-center gap-4">
-        <Text className="font-serif-bold text-2xl text-stone-900">Ask about your rights</Text>
-        <Text className="font-sans text-base leading-7 text-stone-600">
+        <Text className="font-serif-bold text-2xl text-zinc-900">Ask about your rights</Text>
+        <Text className="font-sans text-base leading-7 text-zinc-600">
           Ready for AI assistant experience.
         </Text>
         <View className="max-w-64 pt-2">

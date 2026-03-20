@@ -9,25 +9,24 @@ import {
   LibreBaskerville_400Regular,
   LibreBaskerville_700Bold,
 } from '@expo-google-fonts/libre-baskerville';
-import {
-  IBMPlexSans_400Regular,
-  IBMPlexSans_500Medium,
-  IBMPlexSans_600SemiBold,
-  IBMPlexSans_700Bold,
-} from '@expo-google-fonts/ibm-plex-sans';
 
 import '../global.css';
 
 void SplashScreen.preventAutoHideAsync();
 
+// Greycliff CF from fonts/Greycliff/
+const GreycliffFonts = {
+  GreycliffCF_400Regular: require('../fonts/Greycliff/GreycliffCF-Regular.otf'),
+  GreycliffCF_500Medium: require('../fonts/Greycliff/GreycliffCF-Medium.otf'),
+  GreycliffCF_600DemiBold: require('../fonts/Greycliff/GreycliffCF-DemiBold.otf'),
+  GreycliffCF_700Bold: require('../fonts/Greycliff/GreycliffCF-Bold.otf'),
+};
+
 export default function Layout() {
   const [fontsLoaded, fontError] = useFonts({
     LibreBaskerville_400Regular,
     LibreBaskerville_700Bold,
-    IBMPlexSans_400Regular,
-    IBMPlexSans_500Medium,
-    IBMPlexSans_600SemiBold,
-    IBMPlexSans_700Bold,
+    ...GreycliffFonts,
   });
 
   const onLayoutRootView = useCallback(async () => {

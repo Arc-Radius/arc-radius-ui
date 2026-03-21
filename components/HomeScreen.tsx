@@ -48,7 +48,7 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   return (
     <ScrollView
       ref={scrollViewRef}
-      className="bg-app-bg flex-1"
+      className="flex-1 bg-app-bg"
       style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
       <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
         {Platform.OS !== 'web' ? (

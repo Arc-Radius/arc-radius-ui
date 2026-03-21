@@ -1,9 +1,4 @@
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-} from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { LegislativeStatus } from '../static/states';
@@ -90,7 +85,15 @@ const STATUS_CONFIG: Record<
  */
 function IconBack() {
   return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={C.ink}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round">
       <Path d="M19 12H5" />
       <Path d="M12 19l-7-7 7-7" />
     </Svg>
@@ -99,7 +102,15 @@ function IconBack() {
 
 function IconSettings() {
   return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={C.text3} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <Svg
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={C.text3}
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round">
       <Circle cx={12} cy={12} r={3} />
       <Path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
     </Svg>
@@ -109,7 +120,15 @@ function IconSettings() {
 function IconChat({ active }: { active?: boolean }) {
   const color = active ? C.ink : C.text3;
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <Svg
+      width={22}
+      height={22}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round">
       <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
     </Svg>
   );
@@ -117,7 +136,15 @@ function IconChat({ active }: { active?: boolean }) {
 
 function IconChevron() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={C.text3} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={C.text3}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round">
       <Path d="M9 18l6-6-6-6" />
     </Svg>
   );
@@ -125,7 +152,15 @@ function IconChevron() {
 
 function IconAlert() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={C.harmful} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={C.harmful}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round">
       <Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
       <Path d="M12 9v4" />
       <Path d="M12 17h.01" />
@@ -146,13 +181,9 @@ function StatusCard({ status }: { status: LegislativeStatus }) {
       className="rounded-xl p-5"
       style={{ backgroundColor: config.bg }}
       accessible
-      accessibilityLabel={`Legislative climate: ${config.label}. ${config.description}`}
-    >
-      <View className="flex-row items-center gap-2 mb-2">
-        <View
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: config.color }}
-        />
+      accessibilityLabel={`Legislative climate: ${config.label}. ${config.description}`}>
+      <View className="mb-2 flex-row items-center gap-2">
+        <View className="h-3 w-3 rounded-full" style={{ backgroundColor: config.color }} />
         <Text className="text-lg font-bold" style={{ color: config.color }}>
           {config.label}
         </Text>
@@ -169,33 +200,18 @@ function StatusCard({ status }: { status: LegislativeStatus }) {
  *  STAT BOX
  * ─────────────────────────────────────────────────────────────
  */
-function StatBox({
-  value,
-  label,
-  alert,
-}: {
-  value: number;
-  label: string;
-  alert?: boolean;
-}) {
+function StatBox({ value, label, alert }: { value: number; label: string; alert?: boolean }) {
   return (
     <View
-      className="flex-1 rounded-xl border p-4 items-center"
-      style={{ backgroundColor: C.surface, borderColor: C.border }}
-    >
+      className="flex-1 items-center rounded-xl border p-4"
+      style={{ backgroundColor: C.surface, borderColor: C.border }}>
       <View className="flex-row items-center gap-1.5">
         {alert && <IconAlert />}
-        <Text
-          className="text-2xl font-bold"
-          style={{ color: alert ? C.harmful : C.ink }}
-        >
+        <Text className="text-2xl font-bold" style={{ color: alert ? C.harmful : C.ink }}>
           {value}
         </Text>
       </View>
-      <Text
-        className="text-xs font-medium mt-1"
-        style={{ color: C.text3 }}
-      >
+      <Text className="mt-1 text-xs font-medium" style={{ color: C.text3 }}>
         {label}
       </Text>
     </View>
@@ -223,9 +239,7 @@ function BillRow({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      className={`flex-row items-center py-3.5 ${
-        isDisabled ? 'opacity-70' : 'active:opacity-70'
-      } ${
+      className={`flex-row items-center py-3.5 ${isDisabled ? 'opacity-70' : 'active:opacity-70'} ${
         !isLast ? 'border-b' : ''
       }`}
       style={{ borderColor: C.border }}
@@ -233,13 +247,9 @@ function BillRow({
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel={`${bill.number}: ${bill.title}, ${config.label}`}
-      accessibilityHint="View bill details"
-    >
+      accessibilityHint="View bill details">
       {/* Status dot */}
-      <View
-        className="w-2.5 h-2.5 rounded-full mr-3"
-        style={{ backgroundColor: config.color }}
-      />
+      <View className="mr-3 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} />
 
       {/* Bill info */}
       <View className="flex-1">
@@ -248,23 +258,18 @@ function BillRow({
             {bill.number}
           </Text>
           <Text
-            className="text-xs font-semibold px-1.5 py-0.5 rounded"
-            style={{ color: config.color, backgroundColor: config.bg }}
-          >
+            className="rounded px-1.5 py-0.5 text-xs font-semibold"
+            style={{ color: config.color, backgroundColor: config.bg }}>
             {config.label}
           </Text>
         </View>
-        <Text
-          className="text-sm mt-0.5"
-          style={{ color: C.text2 }}
-          numberOfLines={1}
-        >
+        <Text className="mt-0.5 text-sm" style={{ color: C.text2 }} numberOfLines={1}>
           {bill.title}
         </Text>
       </View>
 
       {/* Date + chevron */}
-      <View className="flex-row items-center gap-1 ml-2">
+      <View className="ml-2 flex-row items-center gap-1">
         <Text className="text-xs" style={{ color: C.text3 }}>
           {bill.date}
         </Text>
@@ -286,7 +291,7 @@ function AskCard({ onPress }: { onPress?: () => void }) {
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      className={`rounded-xl border p-5 flex-row items-center gap-4 ${
+      className={`flex-row items-center gap-4 rounded-xl border p-5 ${
         isDisabled ? 'opacity-70' : 'active:opacity-80'
       }`}
       style={{ backgroundColor: C.surface, borderColor: C.border }}
@@ -294,19 +299,17 @@ function AskCard({ onPress }: { onPress?: () => void }) {
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel="Ask about your rights"
-      accessibilityHint="Opens the AI-powered question assistant"
-    >
+      accessibilityHint="Opens the AI-powered question assistant">
       <View
-        className="w-11 h-11 rounded-full items-center justify-center"
-        style={{ backgroundColor: C.surfaceMuted }}
-      >
+        className="h-11 w-11 items-center justify-center rounded-full"
+        style={{ backgroundColor: C.surfaceMuted }}>
         <IconChat />
       </View>
       <View className="flex-1">
         <Text className="text-sm font-bold" style={{ color: C.ink }}>
           Ask about your rights
         </Text>
-        <Text className="text-xs mt-0.5" style={{ color: C.text3 }}>
+        <Text className="mt-0.5 text-xs" style={{ color: C.text3 }}>
           Get answers grounded in real legislative data
         </Text>
       </View>
@@ -330,12 +333,11 @@ function SectionHeader({
   onAction?: () => void;
 }) {
   return (
-    <View className="flex-row justify-between items-center mb-3">
+    <View className="mb-3 flex-row items-center justify-between">
       <Text
         className="text-xs font-semibold uppercase tracking-widest"
         style={{ color: C.text3 }}
-        accessibilityRole="header"
-      >
+        accessibilityRole="header">
         {title}
       </Text>
       {actionLabel && onAction && (
@@ -343,8 +345,7 @@ function SectionHeader({
           onPress={onAction}
           accessible
           accessibilityRole="button"
-          accessibilityLabel={actionLabel}
-        >
+          accessibilityLabel={actionLabel}>
           <Text className="text-xs font-semibold" style={{ color: C.supportive }}>
             {actionLabel}
           </Text>
@@ -413,29 +414,26 @@ export default function StateDashboard({
       <ScrollView
         className="flex-1"
         contentContainerClassName="pb-6"
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="px-5 pt-3 w-full max-w-[640px] self-center">
+        showsVerticalScrollIndicator={false}>
+        <View className="w-full max-w-[640px] self-center px-5 pt-3">
           {/* ─── TOP BAR ────────────────────────────── */}
-          <View className="flex-row justify-between items-center mb-6">
+          <View className="mb-6 flex-row items-center justify-between">
             <Pressable
               onPress={onBack}
               className="flex-row items-center gap-1.5 active:opacity-70"
               accessible
               accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
+              accessibilityLabel="Go back">
               <IconBack />
               <Text className="text-base font-bold" style={{ color: C.ink }}>
                 {stateName}
               </Text>
             </Pressable>
             <Pressable
-              className="p-2 rounded-lg active:opacity-70"
+              className="rounded-lg p-2 active:opacity-70"
               accessible
               accessibilityRole="button"
-              accessibilityLabel="Settings"
-            >
+              accessibilityLabel="Settings">
               <IconSettings />
             </Pressable>
           </View>
@@ -444,7 +442,7 @@ export default function StateDashboard({
           <StatusCard status={overallStatus} />
 
           {/* ─── STATS ──────────────────────────────── */}
-          <View className="flex-row gap-3 mt-4 mb-6">
+          <View className="mb-6 mt-4 flex-row gap-3">
             <StatBox value={activeBills} label="Active bills" />
             <StatBox value={needsAttention} label="Need attention" alert />
           </View>
@@ -456,12 +454,11 @@ export default function StateDashboard({
             onAction={onViewAllBills}
           />
           <View
-            className="rounded-xl border px-4 mb-6"
-            style={{ backgroundColor: C.surface, borderColor: C.border }}
-          >
+            className="mb-6 rounded-xl border px-4"
+            style={{ backgroundColor: C.surface, borderColor: C.border }}>
             {recentBills.length === 0 ? (
               <View className="py-5">
-                <Text className="text-sm text-center" style={{ color: C.text3 }}>
+                <Text className="text-center text-sm" style={{ color: C.text3 }}>
                   No recent bills available yet for this state.
                 </Text>
               </View>
@@ -486,23 +483,25 @@ export default function StateDashboard({
             <SectionHeader title="Quick actions" />
             <View className="gap-2">
               {[
-                { title: 'Contact your representatives', subtitle: 'Send a message to elected officials' },
+                {
+                  title: 'Contact your representatives',
+                  subtitle: 'Send a message to elected officials',
+                },
                 { title: 'Find legal aid', subtitle: 'LGBTQ+-affirming legal services near you' },
               ].map((action) => (
                 <Pressable
                   key={action.title}
-                  className="rounded-xl border px-4 py-3.5 flex-row items-center justify-between active:opacity-80"
+                  className="flex-row items-center justify-between rounded-xl border px-4 py-3.5 active:opacity-80"
                   style={{ backgroundColor: C.surface, borderColor: C.border }}
                   accessible
                   accessibilityRole="button"
                   accessibilityLabel={action.title}
-                  accessibilityHint={action.subtitle}
-                >
+                  accessibilityHint={action.subtitle}>
                   <View className="flex-1">
                     <Text className="text-sm font-semibold" style={{ color: C.ink }}>
                       {action.title}
                     </Text>
-                    <Text className="text-xs mt-0.5" style={{ color: C.text3 }}>
+                    <Text className="mt-0.5 text-xs" style={{ color: C.text3 }}>
                       {action.subtitle}
                     </Text>
                   </View>
@@ -513,7 +512,6 @@ export default function StateDashboard({
           </View>
         </View>
       </ScrollView>
-
     </SafeAreaView>
   );
 }

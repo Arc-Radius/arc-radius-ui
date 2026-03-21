@@ -24,8 +24,7 @@ export default function AppTabs({ position }: AppTabsProps) {
           : isHeader
             ? 'flex-row flex-wrap items-center justify-end gap-1.5 bg-transparent md:flex-nowrap'
             : 'flex-row flex-wrap items-center gap-2 rounded-lg border border-zinc-200/90 bg-white p-2 shadow-sm md:flex-nowrap',
-      ].join(' ')}
-    >
+      ].join(' ')}>
       {APP_TABS.map((tab) => {
         const active = tab.matchesPath(pathname);
         const iconColor = active ? '#1C1917' : tab.id === 'crisis' ? '#B45309' : '#57534E';
@@ -57,8 +56,7 @@ export default function AppTabs({ position }: AppTabsProps) {
                     : '',
               ].join(' ')}
               accessibilityRole="link"
-              accessibilityState={{ selected: active }}
-            >
+              accessibilityState={{ selected: active }}>
               {showIcons ? <Ionicons name={tab.icon} size={20} color={iconColor} /> : null}
               <Text
                 className={[
@@ -78,8 +76,7 @@ export default function AppTabs({ position }: AppTabsProps) {
                       : tab.id === 'crisis'
                         ? 'text-orange-600'
                         : 'text-zinc-600',
-                ].join(' ')}
-              >
+                ].join(' ')}>
                 {label}
               </Text>
             </Pressable>

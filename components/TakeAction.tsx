@@ -187,7 +187,7 @@ function CrisisCallout({ onPress }: { onPress?: () => void }) {
       accessibilityLabel="Crisis resources — need immediate support?">
       <View>
         <Text className="font-sans text-xs text-zinc-500">Need immediate support?</Text>
-          <View className="mt-1 flex-row items-center gap-1.5">
+        <View className="mt-1 flex-row items-center gap-1.5">
           <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#fdba74' }} />
           <Text className="font-sans-semibold text-[13px]" style={{ color: '#9a3412' }}>
             Crisis resources

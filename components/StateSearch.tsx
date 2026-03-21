@@ -251,9 +251,7 @@ function HexMap({
       accessible
       accessibilityRole="summary"
       accessibilityLabel="United States legislative climate map">
-      <Text
-        className="mb-3 font-sans-semibold text-[13px]"
-        style={{ color: '#3f3f46' }}>
+      <Text className="mb-3 font-sans-semibold text-[13px]" style={{ color: '#3f3f46' }}>
         U.S. Legislative Climate Map
       </Text>
       <View className="flex-row gap-1">

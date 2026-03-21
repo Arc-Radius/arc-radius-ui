@@ -31,7 +31,8 @@ interface BillContext {
 }
 
 export function getBillsForState({ stateAbbr, stateName, status }: BillContext): BillDetail[] {
-  const riskLabel = status === 'harmful' ? 'High Risk' : status === 'supportive' ? 'Supportive' : 'Mixed';
+  const riskLabel =
+    status === 'harmful' ? 'High Risk' : status === 'supportive' ? 'Supportive' : 'Mixed';
 
   return [
     {

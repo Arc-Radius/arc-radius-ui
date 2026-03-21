@@ -9,7 +9,8 @@ interface CardProps {
 
 export function Card({ children, className = '' }: CardProps) {
   return (
-    <View className={twMerge('rounded-xl border border-zinc-200/90 bg-white p-6 shadow-sm', className)}>
+    <View
+      className={twMerge('rounded-xl border border-zinc-200/90 bg-white p-6 shadow-sm', className)}>
       {children}
     </View>
   );

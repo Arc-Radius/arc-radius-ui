@@ -23,7 +23,7 @@ export function FeatureCard({
   return (
     <Card className="min-w-0 flex-1 gap-3.5">
       <View className="flex-row items-start justify-between">
-        <Text className="flex-1 font-serif-bold text-base leading-7 text-zinc-800">{title}</Text>
+        <Text className="flex-1 font-sans-bold text-base leading-7 text-zinc-800">{title}</Text>
         {status && <StatusBadge status={status} />}
       </View>
       <View className="pb-1.5">

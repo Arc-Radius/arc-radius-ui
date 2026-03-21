@@ -16,31 +16,31 @@ export function BillDetailPage({ stateName, bill, relatedBills }: BillDetailPage
   const isCompact = width < 768;
 
   return (
-    <SafeAreaView className="flex-1 bg-zinc-50">
+    <SafeAreaView className="flex-1 bg-app-bg">
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
           <View className="pt-10">
-            <Text className="font-serif-bold text-xl leading-7 text-zinc-900">{bill.title.toUpperCase()}</Text>
+            <Text className="font-sans-bold text-xl leading-7 text-zinc-900">{bill.title.toUpperCase()}</Text>
             <Text className="mt-1 font-sans text-sm text-zinc-500">{stateName}</Text>
           </View>
 
           <View className="pt-5">
             <Card className="min-w-0 gap-3.5">
-              <Text className="font-serif-bold text-base leading-7 text-zinc-800">What it means</Text>
+              <Text className="font-sans-bold text-base leading-7 text-zinc-800">What it means</Text>
               <Text className="font-sans text-sm leading-6 text-zinc-500">{bill.whatItMeans}</Text>
             </Card>
           </View>
 
           <View className="pt-4">
             <Card className="min-w-0 gap-3.5">
-              <Text className="font-serif-bold text-base leading-7 text-zinc-800">Why it matters</Text>
+              <Text className="font-sans-bold text-base leading-7 text-zinc-800">Why it matters</Text>
               <Text className="font-sans text-sm leading-6 text-zinc-500">{bill.whyItMatters}</Text>
             </Card>
           </View>
 
           <View className="pt-4">
             <Card className="min-w-0 gap-3.5 p-7">
-              <Text className="font-serif-bold text-base leading-7 text-zinc-800">{bill.takeActionTitle}</Text>
+              <Text className="font-sans-bold text-base leading-7 text-zinc-800">{bill.takeActionTitle}</Text>
               <Text className="font-sans text-sm leading-6 text-zinc-500">{bill.takeActionBody}</Text>
               <View className="pt-3.5">
                 <Pressable
@@ -61,7 +61,7 @@ export function BillDetailPage({ stateName, bill, relatedBills }: BillDetailPage
           </View>
 
           <View className="pt-10">
-            <Text className="font-serif-bold text-xl leading-7 text-zinc-900">RELATED BILLS</Text>
+            <Text className="font-sans-bold text-xl leading-7 text-zinc-900">RELATED BILLS</Text>
           </View>
 
           {relatedBills[0] ? (

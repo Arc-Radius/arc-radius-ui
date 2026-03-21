@@ -15,7 +15,7 @@ interface AppTabConfig {
   matchesPath: (pathname: string) => boolean;
 }
 
-const DEFAULT_STATE = 'CA';
+export const DEFAULT_STATE = 'CA';
 
 export const APP_TABS: AppTabConfig[] = [
   {

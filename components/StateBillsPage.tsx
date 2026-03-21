@@ -41,7 +41,7 @@ export function StateBillsPage({
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-zinc-50">
+    <SafeAreaView className="flex-1 bg-app-bg">
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
           <View className="items-center pt-8">
@@ -69,7 +69,7 @@ export function StateBillsPage({
           </View>
 
           <View className="pt-10">
-            <Text className="font-serif-bold text-xl leading-7 text-zinc-900">
+            <Text className="font-sans-bold text-xl leading-7 text-zinc-900">
               {stateName.toUpperCase()}
             </Text>
             <Text className="mt-1 font-sans text-sm text-zinc-500">

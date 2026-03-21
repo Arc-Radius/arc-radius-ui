@@ -123,19 +123,19 @@ function TimelineCard({
       {/* Card */}
       <Pressable
         onPress={onPress}
-        className="flex-1 flex-row items-start justify-between rounded-xl border border-stone-200 p-3.5 active:opacity-80"
+        className="flex-1 flex-row items-start justify-between rounded-xl border border-zinc-200 p-3.5 active:opacity-80"
         accessibilityRole="button"
         accessibilityLabel={action.title}>
         <View className="flex-1">
           <View className="mb-1.5 flex-row items-center gap-2">
             <ActionIcon type={action.icon} />
-            <Text className="font-sans-semibold text-sm text-stone-800">{action.title}</Text>
+            <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
           </View>
-          <Text className="font-sans text-xs leading-[18px] text-stone-400">
+          <Text className="font-sans text-xs leading-[18px] text-zinc-400">
             {action.description}
           </Text>
         </View>
-        <Text className="ml-2 mt-1 text-stone-300">›</Text>
+        <Text className="ml-2 mt-1 text-zinc-300">›</Text>
       </Pressable>
     </View>
   );
@@ -152,7 +152,7 @@ function HorizontalCard({
   return (
     <Pressable
       onPress={onPress}
-      className="relative flex-1 rounded-xl border border-stone-200 p-4 active:opacity-80"
+      className="relative flex-1 rounded-xl border border-zinc-200 p-4 active:opacity-80"
       accessibilityRole="button"
       accessibilityLabel={action.title}>
       {/* Dot peeks above card */}
@@ -163,10 +163,10 @@ function HorizontalCard({
 
       <View className="mb-2 flex-row items-center gap-2">
         <ActionIcon type={action.icon} />
-        <Text className="font-sans-semibold text-sm text-stone-800">{action.title}</Text>
+        <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
       </View>
 
-      <Text className="mb-2.5 font-sans text-xs leading-[18px] text-stone-400">
+      <Text className="mb-2.5 font-sans text-xs leading-[18px] text-zinc-400">
         {action.description}
       </Text>
 
@@ -182,11 +182,11 @@ function CrisisCallout({ onPress }: { onPress?: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between rounded-xl bg-stone-100 p-3.5 active:opacity-80"
+      className="flex-row items-center justify-between rounded-xl bg-zinc-100 p-3.5 active:opacity-80"
       accessibilityRole="button"
       accessibilityLabel="Crisis resources — need immediate support?">
       <View>
-        <Text className="font-sans text-xs text-stone-500">Need immediate support?</Text>
+        <Text className="font-sans text-xs text-zinc-500">Need immediate support?</Text>
         <View className="mt-1 flex-row items-center gap-1.5">
           <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
           <Text className="font-sans-semibold text-[13px]" style={{ color: '#9a3412' }}>
@@ -226,8 +226,8 @@ export function TakeAction({
     <View>
       {/* Header */}
       <View className="mb-5">
-        <Text className="font-serif-bold text-lg text-stone-800">Make your voice heard</Text>
-        <Text className="mt-1 font-sans text-xs text-stone-400">Three ways to create change</Text>
+        <Text className="font-sans-bold text-lg text-zinc-800">Make your voice heard</Text>
+        <Text className="mt-1 font-sans text-xs text-zinc-400">Three ways to create change</Text>
       </View>
 
       {/* Action cards */}

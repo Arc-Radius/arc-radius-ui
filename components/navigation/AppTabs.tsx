@@ -18,12 +18,12 @@ export default function AppTabs({ position }: AppTabsProps) {
   return (
     <View
       className={[
-        'w-full bg-zinc-50',
+        'w-full bg-app-bg',
         isBottom
           ? 'flex-row border-t border-zinc-300 px-2 pb-2 pt-1'
           : isHeader
             ? 'flex-row flex-wrap items-center justify-end gap-1.5 bg-transparent md:flex-nowrap'
-            : 'flex-row flex-wrap items-center gap-2 rounded-lg border border-zinc-300 bg-white p-2 md:flex-nowrap',
+            : 'flex-row flex-wrap items-center gap-2 rounded-lg border border-zinc-200/90 bg-white p-2 shadow-sm md:flex-nowrap',
       ].join(' ')}
     >
       {APP_TABS.map((tab) => {
@@ -48,11 +48,9 @@ export default function AppTabs({ position }: AppTabsProps) {
                     : 'min-w-[88px] items-center justify-center gap-1.5 px-3 py-2 md:min-w-[104px]',
                 isHeader
                   ? isCrisisButton
-                    ? active
-                      ? 'bg-zinc-700'
-                      : 'bg-zinc-900'
+                    ? 'bg-[rgba(249,115,22,0.1)]'
                     : active
-                      ? 'bg-zinc-100'
+                      ? 'bg-zinc-700'
                       : ''
                   : active
                     ? 'bg-zinc-100'
@@ -71,14 +69,14 @@ export default function AppTabs({ position }: AppTabsProps) {
                       : 'font-sans-medium text-[11px] md:text-xs',
                   isHeader
                     ? isCrisisButton
-                      ? 'text-white'
+                      ? 'text-[#fdba74]'
                       : active
-                        ? 'text-zinc-900'
-                        : 'text-zinc-500'
+                        ? 'text-[#fafafa]'
+                        : 'text-[#a1a1aa]'
                     : active
                       ? 'text-zinc-900'
                       : tab.id === 'crisis'
-                        ? 'text-amber-700'
+                        ? 'text-orange-600'
                         : 'text-zinc-600',
                 ].join(' ')}
               >

@@ -11,6 +11,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // App background: cool blue-gray for depth; white cards pop against it
+        app: { bg: '#f0f2f6' },
         arc: {
           green: '#008026',
           ink: '#1A1814',
@@ -29,8 +31,6 @@ module.exports = {
         },
       },
       fontFamily: {
-        serif: ['LibreBaskerville_400Regular', 'Libre Baskerville', 'serif'],
-        'serif-bold': ['LibreBaskerville_700Bold', 'Libre Baskerville', 'serif'],
         sans: ['GreycliffCF_400Regular', 'Greycliff CF', 'sans-serif'],
         'sans-medium': ['GreycliffCF_500Medium', 'Greycliff CF', 'sans-serif'],
         'sans-semibold': ['GreycliffCF_600DemiBold', 'Greycliff CF', 'sans-serif'],

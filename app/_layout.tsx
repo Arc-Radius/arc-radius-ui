@@ -5,11 +5,6 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import {
-  LibreBaskerville_400Regular,
-  LibreBaskerville_700Bold,
-} from '@expo-google-fonts/libre-baskerville';
-
 import '../global.css';
 
 void SplashScreen.preventAutoHideAsync();
@@ -23,11 +18,7 @@ const GreycliffFonts = {
 };
 
 export default function Layout() {
-  const [fontsLoaded, fontError] = useFonts({
-    LibreBaskerville_400Regular,
-    LibreBaskerville_700Bold,
-    ...GreycliffFonts,
-  });
+  const [fontsLoaded, fontError] = useFonts(GreycliffFonts);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {

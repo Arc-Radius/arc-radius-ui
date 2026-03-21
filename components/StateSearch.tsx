@@ -1,5 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import Svg, { Rect as SvgRect, Path, Line } from 'react-native-svg';
 
 import { StateDropdown } from './StateDropdown';
@@ -242,16 +249,22 @@ const GRID_COLS = Math.max(...MAP_ROWS.map((r: (string | null)[]) => r.length));
 function HexMap({
   selected,
   onStateSelect,
+  isWebDesktop,
 }: {
   selected: string | null;
   onStateSelect: (abbr: string) => void;
+  isWebDesktop?: boolean;
 }) {
+  const titleSize = isWebDesktop ? 17 : 13;
+  const hintSize = isWebDesktop ? 14 : 11;
   return (
     <View
       accessible
       accessibilityRole="summary"
       accessibilityLabel="United States legislative climate map">
-      <Text className="mb-3 font-sans-semibold text-[13px]" style={{ color: '#3f3f46' }}>
+      <Text
+        className="mb-3 font-sans-semibold"
+        style={{ fontSize: titleSize, color: '#3f3f46' }}>
         U.S. Legislative Climate Map
       </Text>
       <View className="flex-row gap-1">
@@ -273,7 +286,9 @@ function HexMap({
           </View>
         ))}
       </View>
-      <Text className="mt-3 text-center font-sans text-[11px]" style={{ color: '#52525b' }}>
+      <Text
+        className="mt-3 text-center font-sans"
+        style={{ fontSize: hintSize, color: '#52525b' }}>
         Tap a state to view details
       </Text>
     </View>
@@ -325,7 +340,11 @@ export function StateSearch({
       {isCompact ? (
         /* ── Mobile: dark map card with detail inside ── */
         <View className="rounded-xl p-4" style={{ backgroundColor: '#18181b' }}>
-          <HexMap selected={selected} onStateSelect={onStateSelect} />
+          <HexMap
+            selected={selected}
+            onStateSelect={onStateSelect}
+            isWebDesktop={Platform.OS === 'web' && !isCompact}
+          />
 
           {selected && selectedInfo && (
             <View ref={detailRef} className="mt-4 border-t pt-4" style={{ borderColor: '#27272a' }}>
@@ -341,9 +360,13 @@ export function StateSearch({
         /* ── Desktop: dark map + dark side panel ── */
         <View className="flex-row gap-4">
           <View
-            className={['rounded-xl p-8', selected && selectedInfo ? 'flex-1' : 'w-full'].join(' ')}
+            className={['rounded-xl p-12', selected && selectedInfo ? 'flex-1' : 'w-full'].join(' ')}
             style={{ backgroundColor: '#18181b' }}>
-            <HexMap selected={selected} onStateSelect={onStateSelect} />
+            <HexMap
+            selected={selected}
+            onStateSelect={onStateSelect}
+            isWebDesktop={Platform.OS === 'web' && !isCompact}
+          />
           </View>
 
           {selected && selectedInfo && (

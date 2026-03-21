@@ -1,5 +1,5 @@
 import { useRouter, usePathname, useSegments } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect, Line } from 'react-native-svg';
 
@@ -139,12 +139,23 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
 
   return (
     <View
-      className="border border-zinc-700/60 shadow-sm"
       style={{
-        paddingBottom: insets.bottom,
+        paddingBottom:
+          Platform.OS === 'web' ? insets.bottom : Math.max(2, insets.bottom * 0.4),
         backgroundColor: '#18181b',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(63, 63, 70, 0.6)',
+        ...(Platform.OS !== 'web' && {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -1 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
+          elevation: 8,
+        }),
       }}>
-      <View className="flex-row px-3 py-1.5">
+      <View
+        className="flex-row px-2 pt-1"
+        style={{ paddingBottom: Platform.OS === 'web' ? 4 : 0 }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key;
           const isCrisis = tab.key === 'crisis';
@@ -179,7 +190,7 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
               accessibilityLabel={tab.label}
               accessibilityState={{ selected: isActive }}>
               <View
-                className="h-8 w-8 items-center justify-center rounded-lg"
+                className="h-7 w-7 items-center justify-center rounded-lg"
                 style={iconCardStyle}>
                 <TabIcon tab={tab.key} active={isActive} />
               </View>

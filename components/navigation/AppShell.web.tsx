@@ -3,15 +3,13 @@ import { View } from 'react-native';
 
 import { BottomNav } from '../BottomNav';
 import { Header } from '../Header';
-import AppTabs from './AppTabs';
 
 export default function AppShell() {
   return (
     <View className="min-h-screen flex-1 bg-app-bg">
-      {/* Same max width as page content (e.g. HomeScreen max-w-screen-lg) */}
       <View className="w-full bg-app-bg">
         <View className="w-full max-w-screen-lg self-center">
-          <Header rightContent={<AppTabs position="header" />} />
+          <Header />
         </View>
       </View>
 

@@ -3,17 +3,17 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomNav } from '../BottomNav';
+import { Header } from '../Header';
 
 export default function AppShell() {
   return (
     <SafeAreaView className="flex-1 bg-app-bg" edges={['left', 'right', 'top']}>
+      <Header />
       <View className="flex-1">
         <Slot />
       </View>
-      <View className="w-full px-4 pb-2">
-        <View className="w-full max-w-screen-lg self-center">
-          <BottomNav />
-        </View>
+      <View className="w-full">
+        <BottomNav />
       </View>
     </SafeAreaView>
   );

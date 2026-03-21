@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
 import { STATES } from '../static/states';
 
@@ -72,7 +72,11 @@ export function StateDropdown({
     <View>
       {/* Trigger — styled as search bar */}
       <Pressable
-        className="flex-row items-center gap-2 rounded-xl bg-zinc-100 px-3.5 py-3 active:opacity-80"
+        className="flex-row items-center gap-2 rounded-xl border border-zinc-200/80 px-3.5 py-3 shadow-sm active:opacity-80"
+        style={[
+          { backgroundColor: 'rgba(255,255,255,0.78)' },
+          Platform.OS === 'web' ? ({ backdropFilter: 'blur(10px)' } as object) : null,
+        ]}
         onPress={() => {
           setQuery('');
           setOpen(true);
@@ -105,7 +109,7 @@ export function StateDropdown({
           <View className="max-h-[80%] w-full max-w-md rounded-2xl bg-white p-5">
             {/* Header */}
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="font-serif-bold text-base text-zinc-800">Find your state</Text>
+              <Text className="font-sans-bold text-base text-zinc-800">Find your state</Text>
               <Pressable
                 onPress={() => setOpen(false)}
                 className="rounded-md px-2 py-1 active:opacity-70"
@@ -123,7 +127,7 @@ export function StateDropdown({
                 placeholder="Search by name or abbreviation"
                 placeholderTextColor="#B4B2A9"
                 className="flex-1 font-sans text-[13px] text-zinc-800"
-                style={{ outlineStyle: 'none' }}
+                style={Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : undefined}
                 autoCapitalize="none"
                 autoCorrect={false}
                 accessibilityLabel="Search states"

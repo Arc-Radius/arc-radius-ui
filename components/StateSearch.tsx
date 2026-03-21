@@ -12,42 +12,43 @@ interface StateSearchProps {
   selectedInfo: StateInfo | null;
   onStateSelect: (abbr: string) => void;
   onNavigateToState?: () => void;
-  scrollViewRef?: React.RefObject<ScrollView>;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
-// ── Status colors (optimized for dark zinc background) ─
-// Brighter fills + light text for contrast on zinc-800
+// ── Status colors ────────────────────────────────
+// Matches HeroSection palette: #93c5fd, #a1a1aa, #fdba74
 const STATUS_CELL: Record<
   LegislativeStatus,
-  { bg: string; border: string; selectedBorder: string; text: string }
+  { bg: string; border: string; text: string; selectedBorder: string }
 > = {
   supportive: {
-    bg: 'rgba(59,130,246,0.28)',
-    border: 'rgba(59,130,246,0.45)',
-    selectedBorder: '#60a5fa',
+    bg: 'rgba(59,130,246,0.1)',
+    border: 'rgba(59,130,246,0.25)',
     text: '#93c5fd',
+    selectedBorder: '#93c5fd',
   },
   mixed: {
-    bg: 'rgba(255,255,255,0.08)',
-    border: 'rgba(255,255,255,0.18)',
+    bg: 'rgba(161,161,170,0.1)',
+    border: 'rgba(161,161,170,0.25)',
+    text: '#a1a1aa',
     selectedBorder: '#a1a1aa',
-    text: '#d4d4d8',
   },
   harmful: {
-    bg: 'rgba(249,115,22,0.28)',
-    border: 'rgba(249,115,22,0.45)',
-    selectedBorder: '#fb923c',
+    bg: 'rgba(249,115,22,0.1)',
+    border: 'rgba(249,115,22,0.25)',
     text: '#fdba74',
+    selectedBorder: '#fdba74',
   },
 };
 
-const STATUS_BADGE: Record<LegislativeStatus, { bg: string; border: string; text: string }> = {
-  supportive: { bg: '#eff6ff', border: '#3b82f6', text: '#1e40af' },
-  mixed: { bg: '#fafafa', border: '#a1a1aa', text: '#52525b' },
-  harmful: { bg: '#fff7ed', border: '#f97316', text: '#9a3412' },
+// Glass tint badges for dark detail panel
+const STATUS_BADGE: Record<LegislativeStatus, { bg: string; text: string }> = {
+  supportive: { bg: 'rgba(147,197,253,0.15)', text: '#93c5fd' },
+  mixed: { bg: 'rgba(161,161,170,0.15)', text: '#a1a1aa' },
+  harmful: { bg: 'rgba(253,186,116,0.15)', text: '#fdba74' },
 };
 
-// ── State cell (stable 2px border — no layout shift) ─
+// ── State cell ───────────────────────────────────
 function StateCell({
   abbr,
   selected,
@@ -70,9 +71,9 @@ function StateCell({
       style={{
         aspectRatio: 1,
         backgroundColor: cell.bg,
-        borderWidth: 1,
-        borderColor: isSelected ? cell.selectedBorder : cell.border,
-        borderRadius: 8,
+        borderWidth: isSelected ? 1 : 0,
+        borderColor: isSelected ? cell.selectedBorder : 'transparent',
+        borderRadius: 6,
       }}
       accessible
       accessibilityRole="button"
@@ -86,23 +87,23 @@ function StateCell({
   );
 }
 
-// ── Icons for detail cards ───────────────────────
+// ── Icons (glass style) ──────────────────────────
 function PolicyIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 18 18" fill="none">
       <Path
         d="M3 5C3 3.9 3.9 3 5 3H13C14.1 3 15 3.9 15 5V13C15 14.1 14.1 15 13 15H5C3.9 15 3 14.1 3 13V5Z"
-        fill="#eff6ff"
-        stroke="#3b82f6"
+        fill="rgba(59,130,246,0.15)"
+        stroke="#60a5fa"
         strokeWidth={1}
       />
-      <Line x1={6} y1={8} x2={12} y2={8} stroke="#3b82f6" strokeWidth={0.8} strokeLinecap="round" />
+      <Line x1={6} y1={8} x2={12} y2={8} stroke="#60a5fa" strokeWidth={0.8} strokeLinecap="round" />
       <Line
         x1={6}
         y1={11}
         x2={10}
         y2={11}
-        stroke="#3b82f6"
+        stroke="#60a5fa"
         strokeWidth={0.8}
         strokeLinecap="round"
       />
@@ -119,17 +120,17 @@ function BillIcon() {
         width={12}
         height={14}
         rx={2}
-        fill="#fff7ed"
-        stroke="#f97316"
+        fill="rgba(249,115,22,0.15)"
+        stroke="#fb923c"
         strokeWidth={1}
       />
-      <Line x1={7} y1={7} x2={11} y2={7} stroke="#f97316" strokeWidth={0.8} strokeLinecap="round" />
+      <Line x1={7} y1={7} x2={11} y2={7} stroke="#fb923c" strokeWidth={0.8} strokeLinecap="round" />
       <Line
         x1={7}
         y1={10}
         x2={9}
         y2={10}
-        stroke="#f97316"
+        stroke="#fb923c"
         strokeWidth={0.8}
         strokeLinecap="round"
       />
@@ -137,7 +138,7 @@ function BillIcon() {
   );
 }
 
-// ── State detail panel ───────────────────────────
+// ── State detail panel (dark glass) ──────────────
 function StateDetailPanel({
   info,
   onNavigate,
@@ -150,19 +151,15 @@ function StateDetailPanel({
   const badge = STATUS_BADGE[info.status];
 
   return (
-    <View className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+    <View className="overflow-hidden rounded-xl" style={{ backgroundColor: '#18181b' }}>
       <View className="p-4">
         {/* Header */}
         <View className="mb-3.5 flex-row items-center justify-between">
           <View className="flex-row items-center gap-2.5">
-            <Text className="font-serif-bold text-lg text-zinc-800">{info.name}</Text>
-            <View
-              className="rounded-full px-2.5 py-0.5"
-              style={{
-                backgroundColor: badge.bg,
-                borderWidth: 0.5,
-                borderColor: badge.border,
-              }}>
+            <Text className="font-serif-bold text-lg" style={{ color: '#fafafa' }}>
+              {info.name}
+            </Text>
+            <View className="rounded-full px-2.5 py-0.5" style={{ backgroundColor: badge.bg }}>
               <Text className="font-sans-semibold text-[11px]" style={{ color: badge.text }}>
                 {STATUS_STYLES[info.status].label}
               </Text>
@@ -170,44 +167,69 @@ function StateDetailPanel({
           </View>
           <Pressable
             onPress={onClose}
-            className="h-[22px] w-[22px] items-center justify-center rounded-full bg-zinc-100 active:opacity-70"
+            className="h-[22px] w-[22px] items-center justify-center rounded-full"
+            style={{ backgroundColor: '#27272a' }}
             accessibilityRole="button"
             accessibilityLabel="Close state details">
-            <Text className="text-[10px] text-zinc-400">✕</Text>
+            <Text className="text-[10px]" style={{ color: '#52525b' }}>
+              ✕
+            </Text>
           </Pressable>
         </View>
 
-        {/* Icon cards */}
+        {/* Glass icon cards */}
         <View className="mb-3 flex-row gap-2">
-          <View className="flex-1 items-center rounded-[10px] border border-zinc-200 py-3">
+          <View
+            className="flex-1 items-center rounded-[10px] py-3"
+            style={{
+              backgroundColor: 'rgba(59,130,246,0.1)',
+              borderWidth: 0.5,
+              borderColor: 'rgba(59,130,246,0.25)',
+            }}>
             <View
               className="mb-1.5 h-7 w-7 items-center justify-center rounded-lg"
-              style={{ backgroundColor: '#eff6ff' }}>
+              style={{ backgroundColor: 'rgba(59,130,246,0.15)' }}>
               <PolicyIcon />
             </View>
-            <Text className="font-sans-semibold text-xs text-zinc-700">Policies</Text>
-            <Text className="mt-0.5 font-sans text-[10px] text-zinc-400">— protections</Text>
+            <Text className="font-sans-semibold text-base" style={{ color: '#93c5fd' }}>
+              14
+            </Text>
+            <Text className="mt-0.5 font-sans text-[10px]" style={{ color: '#52525b' }}>
+              legislations
+            </Text>
           </View>
 
-          <View className="flex-1 items-center rounded-[10px] border border-zinc-200 py-3">
+          <View
+            className="flex-1 items-center rounded-[10px] py-3"
+            style={{
+              backgroundColor: 'rgba(249,115,22,0.1)',
+              borderWidth: 0.5,
+              borderColor: 'rgba(249,115,22,0.25)',
+            }}>
             <View
               className="mb-1.5 h-7 w-7 items-center justify-center rounded-lg"
-              style={{ backgroundColor: '#fff7ed' }}>
+              style={{ backgroundColor: 'rgba(249,115,22,0.15)' }}>
               <BillIcon />
             </View>
-            <Text className="font-sans-semibold text-xs text-zinc-700">Bills</Text>
-            <Text className="mt-0.5 font-sans text-[10px] text-zinc-400">— active</Text>
+            <Text className="font-sans-semibold text-base" style={{ color: '#fdba74' }}>
+              29
+            </Text>
+            <Text className="mt-0.5 font-sans text-[10px]" style={{ color: '#52525b' }}>
+              active bills
+            </Text>
           </View>
         </View>
 
-        {/* Explore CTA */}
+        {/* White CTA */}
         <Pressable
           onPress={onNavigate}
-          className="flex-row items-center justify-center gap-1.5 rounded-[10px] bg-zinc-800 py-3 active:opacity-80"
+          className="flex-row items-center justify-center gap-1.5 rounded-[10px] bg-white py-3 active:opacity-80"
           accessibilityRole="button"
           accessibilityLabel={`Explore ${info.name}`}>
-          <Text className="font-sans-semibold text-[13px] text-white">Explore {info.name}</Text>
-          <Text className="text-zinc-500">→</Text>
+          <Text className="font-sans-semibold text-[13px]" style={{ color: '#18181b' }}>
+            Explore {info.name}
+          </Text>
+          <Text style={{ color: '#71717a' }}>→</Text>
         </Pressable>
       </View>
     </View>
@@ -229,6 +251,11 @@ function HexMap({
       accessible
       accessibilityRole="summary"
       accessibilityLabel="United States legislative climate map">
+      <Text
+        className="mb-3 font-sans-semibold text-[13px]"
+        style={{ color: '#3f3f46' }}>
+        U.S. Legislative Climate Map
+      </Text>
       <View className="flex-row gap-1">
         {Array.from({ length: GRID_COLS }, (_, colIndex) => (
           <View key={colIndex} className="min-w-0 flex-1 flex-col gap-1">
@@ -248,7 +275,7 @@ function HexMap({
           </View>
         ))}
       </View>
-      <Text className="mt-3 text-center font-sans text-[11px] text-zinc-400">
+      <Text className="mt-3 text-center font-sans text-[11px]" style={{ color: '#52525b' }}>
         Tap a state to view details
       </Text>
     </View>
@@ -267,7 +294,6 @@ export function StateSearch({
   const isCompact = width < 768;
   const detailRef = useRef<View>(null);
 
-  // Auto-scroll to detail panel on mobile when a state is selected
   useEffect(() => {
     if (!isCompact || !selected || !selectedInfo || !scrollViewRef?.current) {
       return;
@@ -275,7 +301,7 @@ export function StateSearch({
 
     const timeout = setTimeout(() => {
       detailRef.current?.measureLayout(
-        scrollViewRef.current?.getInnerViewRef?.() as any,
+        (scrollViewRef.current as any)?.getInnerViewRef?.(),
         (_x: number, y: number) => {
           scrollViewRef.current?.scrollTo({
             y: y - 16,
@@ -299,12 +325,12 @@ export function StateSearch({
       </View>
 
       {isCompact ? (
-        /* ── Mobile: map card (dark) with detail inside ── */
-        <View className="rounded-xl border border-zinc-700 bg-zinc-800 p-4">
+        /* ── Mobile: dark map card with detail inside ── */
+        <View className="rounded-xl p-4" style={{ backgroundColor: '#18181b' }}>
           <HexMap selected={selected} onStateSelect={onStateSelect} />
 
           {selected && selectedInfo && (
-            <View ref={detailRef} className="mt-4 border-t border-zinc-700 pt-4">
+            <View ref={detailRef} className="mt-4 border-t pt-4" style={{ borderColor: '#27272a' }}>
               <StateDetailPanel
                 info={selectedInfo}
                 onNavigate={onNavigateToState}
@@ -314,13 +340,11 @@ export function StateSearch({
           )}
         </View>
       ) : (
-        /* ── Desktop: map (dark) + side panel ── */
+        /* ── Desktop: dark map + dark side panel ── */
         <View className="flex-row gap-4">
           <View
-            className={[
-              'rounded-xl border border-zinc-700 bg-zinc-800 p-8',
-              selected && selectedInfo ? 'flex-1' : 'w-full',
-            ].join(' ')}>
+            className={['rounded-xl p-8', selected && selectedInfo ? 'flex-1' : 'w-full'].join(' ')}
+            style={{ backgroundColor: '#18181b' }}>
             <HexMap selected={selected} onStateSelect={onStateSelect} />
           </View>
 

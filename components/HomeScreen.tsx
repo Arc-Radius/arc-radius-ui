@@ -48,13 +48,13 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   return (
     <ScrollView
       ref={scrollViewRef}
-      className="flex-1 bg-zinc-50"
+      className="bg-app-bg flex-1"
       style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
       <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
         {Platform.OS !== 'web' ? (
           <View className="mt-2 flex-row items-center gap-2.5">
             <ArcRadiusLogo size={32} />
-            <Text className="font-serif-bold text-xl leading-8 text-zinc-800">Arc Radius</Text>
+            <Text className="font-sans-bold text-xl leading-8 text-zinc-800">Arc Radius</Text>
           </View>
         ) : null}
 
@@ -62,8 +62,9 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
           <HeroSection onFindState={handleFindState} />
         </View>
 
+        {/* Hairline + padding: visual break between hero CTA and map/search */}
         <View
-          className="mt-12"
+          className="mt-8 border-t border-zinc-300/80 pt-9 sm:mt-16 sm:pt-10"
           onLayout={(e) => {
             mapOffsetY.current = e.nativeEvent.layout.y;
           }}>

@@ -1,12 +1,5 @@
 import { useEffect, useRef } from 'react';
-import {
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Rect as SvgRect, Path, Line } from 'react-native-svg';
 
 import { StateDropdown } from './StateDropdown';
@@ -21,6 +14,21 @@ interface StateSearchProps {
   onNavigateToState?: () => void;
   scrollViewRef?: React.RefObject<ScrollView | null>;
 }
+
+// ── Glass styles ─────────────────────────────────
+// Dark glass base for map container and detail panel
+const GLASS_MAP = {
+  backgroundColor: 'rgba(24,24,27,0.98)',
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.08)',
+} as const;
+
+// Slightly more opaque for the detail panel sitting on top
+const GLASS_DETAIL = {
+  backgroundColor: 'rgba(24,24,27,0.98)',
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.08)',
+} as const;
 
 // ── Status colors ────────────────────────────────
 // Matches HeroSection palette: #93c5fd, #a1a1aa, #fdba74
@@ -48,6 +56,18 @@ const STATUS_CELL: Record<
   },
 };
 
+// Raised card shadow for map cells
+const raisedShadow = Platform.select({
+  ios: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+  },
+  android: { elevation: 4 },
+  default: {},
+});
+
 // Glass tint badges for dark detail panel
 const STATUS_BADGE: Record<LegislativeStatus, { bg: string; text: string }> = {
   supportive: { bg: 'rgba(147,197,253,0.15)', text: '#93c5fd' },
@@ -60,34 +80,40 @@ function StateCell({
   abbr,
   selected,
   onSelect,
+  compact,
 }: {
   abbr: string;
   selected: string | null;
   onSelect: (abbr: string) => void;
+  compact?: boolean;
 }) {
   const info = STATES[abbr];
   if (!info) return <View className="w-full" style={{ aspectRatio: 1 }} />;
 
   const isSelected = selected === abbr;
   const cell = STATUS_CELL[info.status];
+  const fontSize = compact ? 9 : 11;
 
   return (
     <Pressable
       onPress={() => onSelect(abbr)}
       className="w-full items-center justify-center"
-      style={{
-        aspectRatio: 1,
-        backgroundColor: cell.bg,
-        borderWidth: isSelected ? 1 : 0,
-        borderColor: isSelected ? cell.selectedBorder : 'transparent',
-        borderRadius: 6,
-      }}
+      style={[
+        {
+          aspectRatio: 1,
+          backgroundColor: cell.bg,
+          borderWidth: isSelected ? 1.5 : 0,
+          borderColor: isSelected ? cell.selectedBorder : 'transparent',
+          borderRadius: 6,
+        },
+        raisedShadow,
+      ]}
       accessible
       accessibilityRole="button"
       accessibilityLabel={`${info.name}, ${STATUS_STYLES[info.status].label}`}
       accessibilityState={{ selected: isSelected }}
       accessibilityHint="Double tap to view policy details">
-      <Text className="text-center font-sans-semibold" style={{ fontSize: 9, color: cell.text }}>
+      <Text className="text-center font-sans-semibold" style={{ fontSize, color: cell.text }}>
         {abbr}
       </Text>
     </Pressable>
@@ -158,7 +184,7 @@ function StateDetailPanel({
   const badge = STATUS_BADGE[info.status];
 
   return (
-    <View className="overflow-hidden rounded-xl" style={{ backgroundColor: '#18181b' }}>
+    <View className="overflow-hidden rounded-xl" style={GLASS_DETAIL}>
       <View className="p-4">
         {/* Header */}
         <View className="mb-3.5 flex-row items-center justify-between">
@@ -175,7 +201,7 @@ function StateDetailPanel({
           <Pressable
             onPress={onClose}
             className="h-[22px] w-[22px] items-center justify-center rounded-full"
-            style={{ backgroundColor: '#27272a' }}
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
             accessibilityRole="button"
             accessibilityLabel="Close state details">
             <Text className="text-[10px]" style={{ color: '#52525b' }}>
@@ -201,8 +227,8 @@ function StateDetailPanel({
             <Text className="font-sans-semibold text-base" style={{ color: '#93c5fd' }}>
               14
             </Text>
-            <Text className="mt-0.5 font-sans text-[10px]" style={{ color: '#52525b' }}>
-              legislations
+            <Text className="mt-0.5 font-sans text-[11px]" style={{ color: '#e4e4e7' }}>
+              passed bills
             </Text>
           </View>
 
@@ -221,7 +247,7 @@ function StateDetailPanel({
             <Text className="font-sans-semibold text-base" style={{ color: '#fdba74' }}>
               29
             </Text>
-            <Text className="mt-0.5 font-sans text-[10px]" style={{ color: '#52525b' }}>
+            <Text className="mt-0.5 font-sans text-[11px]" style={{ color: '#e4e4e7' }}>
               active bills
             </Text>
           </View>
@@ -255,16 +281,14 @@ function HexMap({
   onStateSelect: (abbr: string) => void;
   isWebDesktop?: boolean;
 }) {
-  const titleSize = isWebDesktop ? 17 : 13;
+  const titleSize = isWebDesktop ? 16 : 12;
   const hintSize = isWebDesktop ? 14 : 11;
   return (
     <View
       accessible
       accessibilityRole="summary"
       accessibilityLabel="United States legislative climate map">
-      <Text
-        className="mb-3 font-sans-semibold"
-        style={{ fontSize: titleSize, color: '#3f3f46' }}>
+      <Text className="mb-3 font-sans-semibold" style={{ fontSize: titleSize, color: '#a1a1aa' }}>
         U.S. Legislative Climate Map
       </Text>
       <View className="flex-row gap-1">
@@ -278,6 +302,7 @@ function HexMap({
                   abbr={abbr}
                   selected={selected}
                   onSelect={onStateSelect}
+                  compact={!isWebDesktop}
                 />
               ) : (
                 <View key={rowIndex} className="w-full" style={{ aspectRatio: 1 }} />
@@ -286,9 +311,7 @@ function HexMap({
           </View>
         ))}
       </View>
-      <Text
-        className="mt-3 text-center font-sans"
-        style={{ fontSize: hintSize, color: '#52525b' }}>
+      <Text className="mt-3 text-center font-sans" style={{ fontSize: hintSize, color: '#a1a1aa' }}>
         Tap a state to view details
       </Text>
     </View>
@@ -307,17 +330,22 @@ export function StateSearch({
   const isCompact = width < 768;
   const detailRef = useRef<View>(null);
 
+  const containerRef = useRef<View>(null);
+
   useEffect(() => {
     if (!isCompact || !selected || !selectedInfo || !scrollViewRef?.current) {
       return;
     }
 
+    const targetRef = Platform.OS === 'web' ? detailRef : containerRef;
+    const offset = Platform.OS === 'web' ? -16 : -12;
+
     const timeout = setTimeout(() => {
-      detailRef.current?.measureLayout(
+      targetRef.current?.measureLayout(
         (scrollViewRef.current as any)?.getInnerViewRef?.(),
         (_x: number, y: number) => {
           scrollViewRef.current?.scrollTo({
-            y: y - 16,
+            y: y + offset,
             animated: true,
           });
         },
@@ -330,16 +358,18 @@ export function StateSearch({
 
   const handleClose = () => onStateSelect('');
 
+  const webBlur = Platform.OS === 'web' ? ({ backdropFilter: 'blur(16px)' } as object) : null;
+
   return (
-    <View>
+    <View ref={containerRef}>
       {/* Search trigger */}
       <View className={isCompact ? 'mb-4' : 'mb-5 max-w-sm'}>
         <StateDropdown value={selected} onChange={onStateSelect} placeholder="Search state..." />
       </View>
 
       {isCompact ? (
-        /* ── Mobile: dark map card with detail inside ── */
-        <View className="rounded-xl p-4" style={{ backgroundColor: '#18181b' }}>
+        /* ── Mobile: glass map card with detail inside ── */
+        <View className="overflow-hidden rounded-xl p-4" style={[GLASS_MAP, webBlur]}>
           <HexMap
             selected={selected}
             onStateSelect={onStateSelect}
@@ -347,7 +377,10 @@ export function StateSearch({
           />
 
           {selected && selectedInfo && (
-            <View ref={detailRef} className="mt-4 border-t pt-4" style={{ borderColor: '#27272a' }}>
+            <View
+              ref={detailRef}
+              className="mt-4 border-t pt-4"
+              style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
               <StateDetailPanel
                 info={selectedInfo}
                 onNavigate={onNavigateToState}
@@ -357,16 +390,19 @@ export function StateSearch({
           )}
         </View>
       ) : (
-        /* ── Desktop: dark map + dark side panel ── */
+        /* ── Desktop: glass map + glass side panel ── */
         <View className="flex-row gap-4">
           <View
-            className={['rounded-xl p-12', selected && selectedInfo ? 'flex-1' : 'w-full'].join(' ')}
-            style={{ backgroundColor: '#18181b' }}>
+            className={[
+              'overflow-hidden rounded-xl p-12',
+              selected && selectedInfo ? 'flex-1' : 'w-full',
+            ].join(' ')}
+            style={[GLASS_MAP, webBlur]}>
             <HexMap
-            selected={selected}
-            onStateSelect={onStateSelect}
-            isWebDesktop={Platform.OS === 'web' && !isCompact}
-          />
+              selected={selected}
+              onStateSelect={onStateSelect}
+              isWebDesktop={Platform.OS === 'web' && !isCompact}
+            />
           </View>
 
           {selected && selectedInfo && (

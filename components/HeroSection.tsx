@@ -1,4 +1,40 @@
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Pressable, Text, View, useWindowDimensions } from 'react-native';
+
+function AnimatedArrowDown() {
+  const bounce = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounce, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounce, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+      { resetBeforeIteration: false }
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [bounce]);
+
+  const translateY = bounce.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 4],
+  });
+
+  return (
+    <Animated.View style={{ marginLeft: 6, transform: [{ translateY }] }}>
+      <Text className="text-sm text-zinc-50">↓</Text>
+    </Animated.View>
+  );
+}
 
 interface HeroSectionProps {
   onFindState?: () => void;
@@ -11,7 +47,7 @@ export function HeroSection({ onFindState }: HeroSectionProps) {
   return (
     <View className={isCompact ? 'px-4 pb-6 pt-8' : 'px-2 pb-8 pt-12'}>
       {/* Kicker */}
-      <Text className="mb-5 font-sans-semibold text-[11px] uppercase tracking-[2.5px] text-zinc-400">
+      <Text className="mb-5 font-sans-semibold text-[11px] uppercase tracking-[2.5px] text-zinc-500">
         LGBTQ+ POLICY NAVIGATOR
       </Text>
 
@@ -27,7 +63,7 @@ export function HeroSection({ onFindState }: HeroSectionProps) {
       {/* Subtitle */}
       <Text
         className={[
-          'font-sans text-zinc-400',
+          'font-sans text-zinc-500',
           isCompact
             ? 'mt-4 max-w-[300px] text-[13px] leading-[21px]'
             : 'mt-3 max-w-[420px] text-sm leading-[23px]',
@@ -44,7 +80,7 @@ export function HeroSection({ onFindState }: HeroSectionProps) {
           accessibilityRole="button"
           accessibilityLabel="Find your state">
           <Text className="font-sans-semibold text-sm text-zinc-50">Find your state</Text>
-          <Text className="ml-1.5 text-sm text-zinc-50">↓</Text>
+          <AnimatedArrowDown />
         </Pressable>
 
         {/* Climate stats — Hero preview palette: #93c5fd, #a1a1aa, #fdba74 */}
@@ -78,7 +114,7 @@ function StatPill({
       <Text className="font-sans-semibold text-[13px]" style={{ color: textColor }}>
         {count}
       </Text>
-      <Text className="font-sans text-xs text-zinc-400">{label}</Text>
+      <Text className="font-sans text-xs text-zinc-500">{label}</Text>
     </View>
   );
 }

@@ -1,517 +1,108 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle } from 'react-native-svg';
+import type { ReactNode } from 'react';
+import { Linking, Pressable, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { Landmark } from 'lucide-react-native';
+
+import { STANCE_HEADER_GLASS } from '../static/billConstants';
 import type { LegislativeStatus } from '../static/states';
 
-/*
- * ─────────────────────────────────────────────────────────────
- *  COLORS
- * ─────────────────────────────────────────────────────────────
- */
-const C = {
-  bg: '#FAFAF8',
-  surface: '#FFFFFF',
-  surfaceMuted: '#F2F0EC',
-
-  border: '#E5E2DC',
-
-  ink: '#2C2820',
-  text: '#1A1814',
-  text2: '#5A564E',
-  text3: '#8A857E',
-
-  supportive: '#0072B2',
-  supportiveBg: '#E8F2FA',
-  mixed: '#E69F00',
-  mixedBg: '#FEF5E0',
-  harmful: '#D55E00',
-  harmfulBg: '#FCEEE4',
-} as const;
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  TYPES
- * ─────────────────────────────────────────────────────────────
- */
-interface BillSummary {
-  id: string;
-  number: string;
-  title: string;
-  status: LegislativeStatus;
-  date: string;
+interface StateInfo {
+  name: string;
+  abbr: string;
+  legislature: string;
+  session: string;
+  sessionWindow: string;
+  billCount: number;
+  lastUpdated: string;
+  stateLink: string;
 }
 
-interface DashboardProps {
-  stateAbbr: string;
-  stateName: string;
-  overallStatus: LegislativeStatus;
-  activeBills: number;
-  needsAttention: number;
-  recentBills: BillSummary[];
-  onBack?: () => void;
-  onBillPress?: (billId: string) => void;
-  onAskPress?: () => void;
-  onViewAllBills?: () => void;
+interface StateDashboardProps {
+  info: StateInfo;
+  status?: LegislativeStatus;
+  headerRight?: ReactNode;
+  headerStacked?: boolean;
 }
 
-const STATUS_CONFIG: Record<
-  LegislativeStatus,
-  { label: string; color: string; bg: string; description: string }
-> = {
-  supportive: {
-    label: 'Supportive',
-    color: C.supportive,
-    bg: C.supportiveBg,
-    description: 'This state has strong protections for LGBTQ+ youth.',
-  },
-  mixed: {
-    label: 'Mixed',
-    color: C.mixed,
-    bg: C.mixedBg,
-    description: 'This state has some protections, but also active risks.',
-  },
-  harmful: {
-    label: 'High Risk',
-    color: C.harmful,
-    bg: C.harmfulBg,
-    description: 'This state has active legislation that may affect your rights.',
-  },
-};
+export function StateDashboard({ info, status = 'mixed', headerRight, headerStacked }: StateDashboardProps) {
+  const fullUrl = info.stateLink
+    ? info.stateLink.startsWith('http')
+      ? info.stateLink
+      : `https://${info.stateLink}`
+    : '';
 
-/*
- * ─────────────────────────────────────────────────────────────
- *  ICONS
- * ─────────────────────────────────────────────────────────────
- */
-function IconBack() {
+  const displayHost = fullUrl
+    ? (() => {
+        try {
+          return new URL(fullUrl).hostname.replace(/^www\./, '');
+        } catch {
+          return info.stateLink;
+        }
+      })()
+    : '';
+
+  const headerStyle = STANCE_HEADER_GLASS[status];
+
   return (
-    <Svg
-      width={20}
-      height={20}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={C.ink}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round">
-      <Path d="M19 12H5" />
-      <Path d="M12 19l-7-7 7-7" />
-    </Svg>
+    <View className="overflow-hidden rounded-xl border bg-white" style={{ borderColor: headerStyle.border }}>
+      {/* ── Header bar (climate-tinted) ── */}
+      <View className="px-4 py-3" style={{ backgroundColor: headerStyle.bg, borderBottomWidth: 0.5, borderBottomColor: headerStyle.border }}>
+        <View
+          className={`gap-3 ${headerStacked ? 'flex-col' : 'flex-row items-center justify-between'}`}>
+          <View className="flex-row items-center gap-2.5">
+            <Landmark size={20} color="#71717a" strokeWidth={2} accessibilityElementsHidden />
+            <Text className="font-sans-bold text-lg leading-tight tracking-tight text-zinc-900">
+              {info.name}
+            </Text>
+            {displayHost ? (
+              <Pressable
+                className="flex-row items-center gap-1 active:opacity-70"
+                onPress={() => Linking.openURL(fullUrl)}>
+                <ExternalLinkIcon />
+                <Text className="font-sans text-xs text-blue-500">{displayHost}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {headerRight}
+        </View>
+      </View>
+
+      {/* ── Stacked stat rows ── */}
+      <View>
+        <StatRow label="Legislature" value={info.legislature} />
+        <StatRow label="Session" value={info.session} />
+        <StatRow label="Window" value={info.sessionWindow} />
+        <StatRow label="Last updated" value={info.lastUpdated || '—'} last />
+      </View>
+    </View>
   );
 }
 
-function IconSettings() {
-  return (
-    <Svg
-      width={20}
-      height={20}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={C.text3}
-      strokeWidth={1.75}
-      strokeLinecap="round"
-      strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={3} />
-      <Path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-    </Svg>
-  );
-}
-
-function IconChat({ active }: { active?: boolean }) {
-  const color = active ? C.ink : C.text3;
-  return (
-    <Svg
-      width={22}
-      height={22}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={1.75}
-      strokeLinecap="round"
-      strokeLinejoin="round">
-      <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-    </Svg>
-  );
-}
-
-function IconChevron() {
-  return (
-    <Svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={C.text3}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round">
-      <Path d="M9 18l6-6-6-6" />
-    </Svg>
-  );
-}
-
-function IconAlert() {
-  return (
-    <Svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={C.harmful}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round">
-      <Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      <Path d="M12 9v4" />
-      <Path d="M12 17h.01" />
-    </Svg>
-  );
-}
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  STATUS CARD
- * ─────────────────────────────────────────────────────────────
- */
-function StatusCard({ status }: { status: LegislativeStatus }) {
-  const config = STATUS_CONFIG[status];
-
+function StatRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
     <View
-      className="rounded-xl p-5"
-      style={{ backgroundColor: config.bg }}
-      accessible
-      accessibilityLabel={`Legislative climate: ${config.label}. ${config.description}`}>
-      <View className="mb-2 flex-row items-center gap-2">
-        <View className="h-3 w-3 rounded-full" style={{ backgroundColor: config.color }} />
-        <Text className="text-lg font-bold" style={{ color: config.color }}>
-          {config.label}
-        </Text>
-      </View>
-      <Text className="text-sm leading-5" style={{ color: C.text2 }}>
-        {config.description}
-      </Text>
+      className="flex-row items-center justify-between px-4 py-2.5"
+      style={!last ? { borderBottomWidth: 0.5, borderBottomColor: '#e4e4e7' } : undefined}>
+      <Text className="font-sans text-xs text-zinc-500">{label}</Text>
+      <Text className="font-sans-medium text-sm text-zinc-900">{value}</Text>
     </View>
   );
 }
 
-/*
- * ─────────────────────────────────────────────────────────────
- *  STAT BOX
- * ─────────────────────────────────────────────────────────────
- */
-function StatBox({ value, label, alert }: { value: number; label: string; alert?: boolean }) {
+function ExternalLinkIcon() {
   return (
-    <View
-      className="flex-1 items-center rounded-xl border p-4"
-      style={{ backgroundColor: C.surface, borderColor: C.border }}>
-      <View className="flex-row items-center gap-1.5">
-        {alert && <IconAlert />}
-        <Text className="text-2xl font-bold" style={{ color: alert ? C.harmful : C.ink }}>
-          {value}
-        </Text>
-      </View>
-      <Text className="mt-1 text-xs font-medium" style={{ color: C.text3 }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  BILL ROW
- * ─────────────────────────────────────────────────────────────
- */
-function BillRow({
-  bill,
-  onPress,
-  isLast,
-}: {
-  bill: BillSummary;
-  onPress?: () => void;
-  isLast: boolean;
-}) {
-  const config = STATUS_CONFIG[bill.status];
-  const isDisabled = !onPress;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={isDisabled}
-      className={`flex-row items-center py-3.5 ${isDisabled ? 'opacity-70' : 'active:opacity-70'} ${
-        !isLast ? 'border-b' : ''
-      }`}
-      style={{ borderColor: C.border }}
-      accessible
-      accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
-      accessibilityLabel={`${bill.number}: ${bill.title}, ${config.label}`}
-      accessibilityHint="View bill details">
-      {/* Status dot */}
-      <View className="mr-3 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} />
-
-      {/* Bill info */}
-      <View className="flex-1">
-        <View className="flex-row items-center gap-2">
-          <Text className="text-sm font-bold" style={{ color: C.ink }}>
-            {bill.number}
-          </Text>
-          <Text
-            className="rounded px-1.5 py-0.5 text-xs font-semibold"
-            style={{ color: config.color, backgroundColor: config.bg }}>
-            {config.label}
-          </Text>
-        </View>
-        <Text className="mt-0.5 text-sm" style={{ color: C.text2 }} numberOfLines={1}>
-          {bill.title}
-        </Text>
-      </View>
-
-      {/* Date + chevron */}
-      <View className="ml-2 flex-row items-center gap-1">
-        <Text className="text-xs" style={{ color: C.text3 }}>
-          {bill.date}
-        </Text>
-        <IconChevron />
-      </View>
-    </Pressable>
-  );
-}
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  ASK CARD
- * ─────────────────────────────────────────────────────────────
- */
-function AskCard({ onPress }: { onPress?: () => void }) {
-  const isDisabled = !onPress;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={isDisabled}
-      className={`flex-row items-center gap-4 rounded-xl border p-5 ${
-        isDisabled ? 'opacity-70' : 'active:opacity-80'
-      }`}
-      style={{ backgroundColor: C.surface, borderColor: C.border }}
-      accessible
-      accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
-      accessibilityLabel="Ask about your rights"
-      accessibilityHint="Opens the AI-powered question assistant">
-      <View
-        className="h-11 w-11 items-center justify-center rounded-full"
-        style={{ backgroundColor: C.surfaceMuted }}>
-        <IconChat />
-      </View>
-      <View className="flex-1">
-        <Text className="text-sm font-bold" style={{ color: C.ink }}>
-          Ask about your rights
-        </Text>
-        <Text className="mt-0.5 text-xs" style={{ color: C.text3 }}>
-          Get answers grounded in real legislative data
-        </Text>
-      </View>
-      <IconChevron />
-    </Pressable>
-  );
-}
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  SECTION HEADER
- * ─────────────────────────────────────────────────────────────
- */
-function SectionHeader({
-  title,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
-  return (
-    <View className="mb-3 flex-row items-center justify-between">
-      <Text
-        className="text-xs font-semibold uppercase tracking-widest"
-        style={{ color: C.text3 }}
-        accessibilityRole="header">
-        {title}
-      </Text>
-      {actionLabel && onAction && (
-        <Pressable
-          onPress={onAction}
-          accessible
-          accessibilityRole="button"
-          accessibilityLabel={actionLabel}>
-          <Text className="text-xs font-semibold" style={{ color: C.supportive }}>
-            {actionLabel}
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  SAMPLE DATA
- * ─────────────────────────────────────────────────────────────
- */
-const SAMPLE_BILLS: BillSummary[] = [
-  {
-    id: '1',
-    number: 'SB 407',
-    title: 'Nondiscrimination protections for trans youth in schools',
-    status: 'supportive',
-    date: 'Feb 12',
-  },
-  {
-    id: '2',
-    number: 'HB 68',
-    title: 'Restrictions on gender-affirming care for minors',
-    status: 'harmful',
-    date: 'Feb 8',
-  },
-  {
-    id: '3',
-    number: 'AB 12',
-    title: 'School bathroom and facilities policy update',
-    status: 'mixed',
-    date: 'Jan 30',
-  },
-  {
-    id: '4',
-    number: 'SB 221',
-    title: 'Conversion therapy ban for minors',
-    status: 'supportive',
-    date: 'Jan 22',
-  },
-];
-
-/*
- * ─────────────────────────────────────────────────────────────
- *  DASHBOARD SCREEN
- * ─────────────────────────────────────────────────────────────
- */
-export default function StateDashboard({
-  stateAbbr = 'CA',
-  stateName = 'California',
-  overallStatus = 'supportive',
-  activeBills = 12,
-  needsAttention = 3,
-  recentBills = SAMPLE_BILLS,
-  onBack,
-  onBillPress,
-  onAskPress,
-  onViewAllBills,
-}: DashboardProps) {
-  return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: C.bg }}>
-      {/* ─── CONTENT ──────────────────────────────── */}
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-6"
-        showsVerticalScrollIndicator={false}>
-        <View className="w-full max-w-[640px] self-center px-5 pt-3">
-          {/* ─── TOP BAR ────────────────────────────── */}
-          <View className="mb-6 flex-row items-center justify-between">
-            <Pressable
-              onPress={onBack}
-              className="flex-row items-center gap-1.5 active:opacity-70"
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel="Go back">
-              <IconBack />
-              <Text className="text-base font-bold" style={{ color: C.ink }}>
-                {stateName}
-              </Text>
-            </Pressable>
-            <Pressable
-              className="rounded-lg p-2 active:opacity-70"
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel="Settings">
-              <IconSettings />
-            </Pressable>
-          </View>
-
-          {/* ─── STATUS CARD ────────────────────────── */}
-          <StatusCard status={overallStatus} />
-
-          {/* ─── STATS ──────────────────────────────── */}
-          <View className="mb-6 mt-4 flex-row gap-3">
-            <StatBox value={activeBills} label="Active bills" />
-            <StatBox value={needsAttention} label="Need attention" alert />
-          </View>
-
-          {/* ─── RECENT BILLS ───────────────────────── */}
-          <SectionHeader
-            title="What's happening"
-            actionLabel="View all →"
-            onAction={onViewAllBills}
-          />
-          <View
-            className="mb-6 rounded-xl border px-4"
-            style={{ backgroundColor: C.surface, borderColor: C.border }}>
-            {recentBills.length === 0 ? (
-              <View className="py-5">
-                <Text className="text-center text-sm" style={{ color: C.text3 }}>
-                  No recent bills available yet for this state.
-                </Text>
-              </View>
-            ) : (
-              recentBills.map((bill, i) => (
-                <BillRow
-                  key={bill.id}
-                  bill={bill}
-                  onPress={onBillPress ? () => onBillPress(bill.id) : undefined}
-                  isLast={i === recentBills.length - 1}
-                />
-              ))
-            )}
-          </View>
-
-          {/* ─── ASK ────────────────────────────────── */}
-          <SectionHeader title="Have a question?" />
-          <AskCard onPress={onAskPress} />
-
-          {/* ─── QUICK ACTIONS ──────────────────────── */}
-          <View className="mt-6">
-            <SectionHeader title="Quick actions" />
-            <View className="gap-2">
-              {[
-                {
-                  title: 'Contact your representatives',
-                  subtitle: 'Send a message to elected officials',
-                },
-                { title: 'Find legal aid', subtitle: 'LGBTQ+-affirming legal services near you' },
-              ].map((action) => (
-                <Pressable
-                  key={action.title}
-                  className="flex-row items-center justify-between rounded-xl border px-4 py-3.5 active:opacity-80"
-                  style={{ backgroundColor: C.surface, borderColor: C.border }}
-                  accessible
-                  accessibilityRole="button"
-                  accessibilityLabel={action.title}
-                  accessibilityHint={action.subtitle}>
-                  <View className="flex-1">
-                    <Text className="text-sm font-semibold" style={{ color: C.ink }}>
-                      {action.title}
-                    </Text>
-                    <Text className="mt-0.5 text-xs" style={{ color: C.text3 }}>
-                      {action.subtitle}
-                    </Text>
-                  </View>
-                  <IconChevron />
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <Svg
+      width={12}
+      height={12}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#3b82f6"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round">
+      <Path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <Path d="M15 3h6v6" />
+      <Path d="M10 14L21 3" />
+    </Svg>
   );
 }

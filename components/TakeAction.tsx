@@ -1,4 +1,6 @@
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { Animated, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 import Svg, { Circle, Path, Rect, Line } from 'react-native-svg';
 
 // ── Action data ──────────────────────────────────
@@ -98,45 +100,36 @@ function ActionIcon({ type }: { type: string }) {
 function TimelineCard({
   action,
   isLast,
-  onPress,
 }: {
   action: (typeof ACTIONS)[number];
   isLast: boolean;
-  onPress?: () => void;
 }) {
   return (
     <View className={`flex-row ${isLast ? '' : 'mb-3'}`}>
-      {/* Dot */}
-      <View className="mr-3.5 w-[9px] items-center pt-[15px]">
+      {/* Dot + line */}
+      <View className="mr-3.5 w-[9px] items-center pt-1.5">
         <View
           className="h-[9px] w-[9px] rounded-full"
           style={{ backgroundColor: action.dotColor }}
         />
-        {!isLast && (
-          <View
-            className="mt-1 w-[1.5px] flex-1 rounded-full"
-            style={{ backgroundColor: action.dotColor, opacity: 0.4 }}
-          />
-        )}
+        <View
+          className="mt-1 w-[1.5px] flex-1 rounded-full"
+          style={{ backgroundColor: action.dotColor, opacity: 0.4 }}
+        />
       </View>
 
       {/* Card */}
-      <Pressable
-        onPress={onPress}
-        className="flex-1 flex-row items-start justify-between rounded-xl border border-zinc-200 p-3.5 active:opacity-80"
-        accessibilityRole="button"
+      <View
+        className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-3.5"
         accessibilityLabel={action.title}>
-        <View className="flex-1">
-          <View className="mb-1.5 flex-row items-center gap-2">
-            <ActionIcon type={action.icon} />
-            <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
-          </View>
-          <Text className="font-sans text-xs leading-[18px] text-zinc-400">
-            {action.description}
-          </Text>
+        <View className="mb-1.5 flex-row items-center gap-2">
+          <ActionIcon type={action.icon} />
+          <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
         </View>
-        <Text className="ml-2 mt-1 text-zinc-300">›</Text>
-      </Pressable>
+        <Text className="font-sans text-xs leading-[18px] text-zinc-600">
+          {action.description}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -144,16 +137,12 @@ function TimelineCard({
 // ── Desktop: horizontal card ─────────────────────
 function HorizontalCard({
   action,
-  onPress,
 }: {
   action: (typeof ACTIONS)[number];
-  onPress?: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      className="relative flex-1 rounded-xl border border-zinc-200 p-4 active:opacity-80"
-      accessibilityRole="button"
+    <View
+      className="relative flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-4"
       accessibilityLabel={action.title}>
       {/* Dot peeks above card */}
       <View
@@ -166,23 +155,32 @@ function HorizontalCard({
         <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
       </View>
 
-      <Text className="mb-2.5 font-sans text-xs leading-[18px] text-zinc-400">
+      <Text className="font-sans text-xs leading-[18px] text-zinc-600">
         {action.description}
       </Text>
-
-      <Text className="font-sans-semibold text-xs" style={{ color: '#1e40af' }}>
-        {action.cta}
-      </Text>
-    </Pressable>
+    </View>
   );
 }
 
 // ── Crisis callout ───────────────────────────────
 function CrisisCallout({ onPress }: { onPress?: () => void }) {
+  const nudge = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(nudge, { toValue: 4, duration: 600, useNativeDriver: true }),
+        Animated.timing(nudge, { toValue: 0, duration: 600, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [nudge]);
+
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between rounded-xl bg-zinc-100 p-3.5 active:opacity-80"
+      className="flex-row items-center justify-between rounded-xl bg-orange-50 border border-orange-200/50 p-3.5 active:opacity-80"
       accessibilityRole="button"
       accessibilityLabel="Crisis resources — need immediate support?">
       <View>
@@ -194,40 +192,30 @@ function CrisisCallout({ onPress }: { onPress?: () => void }) {
           </Text>
         </View>
       </View>
-      <Text style={{ color: '#9a3412' }}>›</Text>
+      <Animated.View style={{ transform: [{ translateX: nudge }] }}>
+        <ChevronRight size={16} color="#9a3412" />
+      </Animated.View>
     </Pressable>
   );
 }
 
 // ── Main component ───────────────────────────────
 interface TakeActionProps {
-  onContactReps?: () => void;
-  onFindLegalAid?: () => void;
-  onJoinCampaign?: () => void;
   onCrisisResources?: () => void;
 }
 
 export function TakeAction({
-  onContactReps,
-  onFindLegalAid,
-  onJoinCampaign,
   onCrisisResources,
 }: TakeActionProps) {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
-
-  const handlers: Record<string, (() => void) | undefined> = {
-    contact: onContactReps,
-    legal: onFindLegalAid,
-    campaign: onJoinCampaign,
-  };
 
   return (
     <View>
       {/* Header */}
       <View className="mb-5">
         <Text className="font-sans-bold text-lg text-zinc-800">Make your voice heard</Text>
-        <Text className="mt-1 font-sans text-xs text-zinc-400">Three ways to create change</Text>
+        <Text className="mt-1 font-sans text-xs text-zinc-500">Three ways to create change</Text>
       </View>
 
       {/* Action cards */}
@@ -238,14 +226,13 @@ export function TakeAction({
               key={action.key}
               action={action}
               isLast={i === ACTIONS.length - 1}
-              onPress={handlers[action.key]}
             />
           ))}
         </View>
       ) : (
         <View className="mb-5 flex-row gap-3">
           {ACTIONS.map((action) => (
-            <HorizontalCard key={action.key} action={action} onPress={handlers[action.key]} />
+            <HorizontalCard key={action.key} action={action} />
           ))}
         </View>
       )}

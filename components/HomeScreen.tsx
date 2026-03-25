@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
@@ -12,6 +13,7 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
+  const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const mapOffsetY = useRef(0);
 
@@ -42,36 +44,59 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   }, [selected, onNavigateToState]);
 
   return (
-    <ScrollView
-      ref={scrollViewRef}
-      className="flex-1 bg-app-bg"
-      style={{ paddingTop: 0 }}>
+    <ScrollView ref={scrollViewRef} className="bg-app-bg flex-1" style={{ paddingTop: 0 }}>
       <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
+        {/* Hero — unchanged */}
         <View className="mt-0">
           <HeroSection onFindState={handleFindState} />
         </View>
 
-        {/* Hairline + padding: visual break between hero CTA and map/search */}
+        {/* State search — blue glass */}
         <View
-          className="mt-8 border-t border-zinc-300/80 pt-9 sm:mt-8 sm:pt-10"
+          className="mt-8 overflow-hidden rounded-2xl pt-0"
+          style={{
+            backgroundColor: 'rgba(59,130,246,0.05)',
+            borderWidth: 1,
+            borderColor: 'rgba(59,130,246,0.1)',
+          }}
           onLayout={(e) => {
             mapOffsetY.current = e.nativeEvent.layout.y;
           }}>
-          <StateSearch
-            selected={selected}
-            selectedInfo={selectedInfo}
-            onStateSelect={handleStateSelect}
-            onNavigateToState={handleNavigateToState}
-            scrollViewRef={scrollViewRef}
-          />
+          <View className="px-4 pb-5 pt-5 sm:px-5">
+            <StateSearch
+              selected={selected}
+              selectedInfo={selectedInfo}
+              onStateSelect={handleStateSelect}
+              onNavigateToState={handleNavigateToState}
+              scrollViewRef={scrollViewRef}
+            />
+          </View>
         </View>
 
-        <View className="mt-10">
-          <TakeAction />
+        {/* Take action — amber glass */}
+        <View
+          className="mt-4 overflow-hidden rounded-2xl"
+          style={{
+            backgroundColor: 'rgba(249,115,22,0.04)',
+            borderWidth: 1,
+            borderColor: 'rgba(249,115,22,0.08)',
+          }}>
+          <View className="px-4 py-5 sm:px-5">
+            <TakeAction onCrisisResources={() => router.push('/crisis' as any)} />
+          </View>
         </View>
 
-        <View className="mt-4">
-          <PrivacyBanner />
+        {/* Privacy — subtle neutral glass */}
+        <View
+          className="mt-4 overflow-hidden rounded-2xl"
+          style={{
+            backgroundColor: 'rgba(161,161,170,0.06)',
+            borderWidth: 1,
+            borderColor: 'rgba(161,161,170,0.12)',
+          }}>
+          <View className="px-4 py-4 sm:px-5">
+            <PrivacyBanner />
+          </View>
         </View>
       </View>
     </ScrollView>

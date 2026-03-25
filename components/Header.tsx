@@ -7,8 +7,8 @@ import { STATES } from '../static/states';
 
 // ── Extract state abbr from pathname ─────────────
 function getStateFromPath(pathname: string): string | undefined {
-  const match = pathname.match(/^\/(state|dashboard)\/([A-Za-z]{2})/);
-  return match ? match[2].toUpperCase() : undefined;
+  const match = pathname.match(/^\/state\/([A-Za-z]{2})/);
+  return match ? match[1].toUpperCase() : undefined;
 }
 
 // ── Contextual status text ───────────────────────
@@ -17,7 +17,7 @@ function useStatusText(): { label: string; dot?: string } {
   const p = pathname.split('?')[0] ?? '';
 
   // State / bills page
-  if (p.startsWith('/state/') || p.startsWith('/dashboard/')) {
+  if (p.startsWith('/state/')) {
     const abbr = getStateFromPath(p);
     if (abbr) {
       const info = STATES[abbr];
@@ -57,7 +57,7 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
         accessibilityRole="link">
         <Text
           className={`text-[13px] ${active ? 'font-sans-semibold' : 'font-sans'}`}
-          style={{ color: active ? '#3b82f6' : '#a1a1aa' }}>
+          style={{ color: active ? '#3b82f6' : '#71717a' }}>
           {label}
         </Text>
       </Pressable>
@@ -79,7 +79,7 @@ function CrisisLink({ active }: { active: boolean }) {
         accessibilityLabel="Crisis help">
         <View className="flex-row items-center gap-1.5">
           <View className="h-[5px] w-[5px] rounded-full" style={{ backgroundColor: '#f97316' }} />
-          <Text className="font-sans-semibold text-[12px]" style={{ color: '#9a3412' }}>
+          <Text className="font-sans-semibold text-[13px]" style={{ color: '#9a3412' }}>
             Crisis
           </Text>
         </View>
@@ -102,12 +102,12 @@ export function Header() {
   const stateAbbr = getStateFromPath(pathname) ?? DEFAULT_STATE;
 
   return (
-    <View className="flex-row items-center justify-between border-b border-zinc-200/80 bg-white px-4 py-2.5 sm:px-6 md:px-8">
+    <View className="flex-row items-center justify-between border-b border-zinc-200/80 bg-app-bg px-4 py-2.5 sm:px-6 md:px-8">
       {/* Left: logo + contextual status */}
       <View className="flex-row items-center gap-2.5">
         <Link href="/" asChild>
           <Pressable className="flex-row items-center gap-2.5 active:opacity-80">
-            <ArcRadiusLogo size={28} />
+            <ArcRadiusLogo size={30} />
             <Text className="font-sans-bold text-[15px] text-zinc-800">Arc Radius</Text>
           </Pressable>
         </Link>
@@ -118,20 +118,10 @@ export function Header() {
           {status.dot && (
             <View className="h-[6px] w-[6px] rounded-sm" style={{ backgroundColor: status.dot }} />
           )}
-          <Text className="font-sans text-[12px] text-zinc-400">{status.label}</Text>
+          <Text className="font-sans text-[12px] text-zinc-600">{status.label}</Text>
         </View>
       </View>
 
-      {/* Right: nav (desktop) or crisis pill (mobile) */}
-      {isCompact ? (
-        <CrisisLink active={activeTab === 'crisis'} />
-      ) : (
-        <View className="flex-row items-center gap-1.5">
-          <NavLink href="/" label="Home" active={activeTab === 'home'} />
-          <NavLink href={`/state/${stateAbbr}`} label="Bills" active={activeTab === 'bills'} />
-          <CrisisLink active={activeTab === 'crisis'} />
-        </View>
-      )}
     </View>
   );
 }

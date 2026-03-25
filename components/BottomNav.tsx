@@ -1,7 +1,12 @@
 import { useRouter, usePathname, useSegments } from 'expo-router';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path, Rect, Line } from 'react-native-svg';
+import {
+  FileText as FileTextIcon,
+  Home as HomeIcon,
+  MessageCircleMore as AskIcon,
+  Phone as PhoneIcon,
+} from 'lucide-react-native';
 
 import { DEFAULT_STATE, getCurrentStateAbbr } from './navigation/tab-config';
 
@@ -12,7 +17,7 @@ interface BottomNavProps {
   onTabPress?: (tab: Tab) => void;
 }
 
-const ICON_SIZE = 22;
+const ICON_SIZE = 20;
 
 // Dark nav — matches state map & state overview card + HeroSection glass palette
 const PALETTE = {
@@ -30,58 +35,13 @@ function TabIcon({ tab, active }: { tab: Tab; active: boolean }) {
 
   switch (tab) {
     case 'home':
-      return (
-        <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 20 20" fill="none">
-          <Path
-            d="M3 10L10 4L17 10"
-            stroke={color}
-            strokeWidth={1.2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <Rect x={5} y={10} width={10} height={7} rx={1} stroke={color} strokeWidth={1.2} />
-        </Svg>
-      );
+      return <HomeIcon size={ICON_SIZE} color={color} strokeWidth={1.4} />;
     case 'bills':
-      return (
-        <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 20 20" fill="none">
-          <Rect x={3} y={3} width={14} height={14} rx={2} stroke={color} strokeWidth={1.2} />
-          <Line x1={7} y1={7} x2={13} y2={7} stroke={color} strokeWidth={1} strokeLinecap="round" />
-          <Line
-            x1={7}
-            y1={10}
-            x2={11}
-            y2={10}
-            stroke={color}
-            strokeWidth={1}
-            strokeLinecap="round"
-          />
-        </Svg>
-      );
+      return <FileTextIcon size={ICON_SIZE} color={color} strokeWidth={1.4} />;
     case 'resources':
-      return (
-        <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 20 20" fill="none">
-          <Circle cx={10} cy={10} r={7} stroke={color} strokeWidth={1.2} />
-          <Path
-            d="M10 7V10L12 12"
-            stroke={color}
-            strokeWidth={1}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </Svg>
-      );
+      return <AskIcon size={ICON_SIZE} color={color} strokeWidth={1.8} />;
     case 'crisis':
-      return (
-        <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 20 20" fill="none">
-          <Path
-            d="M10 4L12 8H17L13 11L14.5 16L10 13L5.5 16L7 11L3 8H8L10 4Z"
-            stroke={color}
-            strokeWidth={1.2}
-            strokeLinejoin="round"
-          />
-        </Svg>
-      );
+      return <PhoneIcon size={ICON_SIZE} color={color} strokeWidth={1.4} />;
     default:
       return null;
   }
@@ -90,14 +50,14 @@ function TabIcon({ tab, active }: { tab: Tab; active: boolean }) {
 const TABS: { key: Tab; label: string }[] = [
   { key: 'home', label: 'Home' },
   { key: 'bills', label: 'Bills' },
-  { key: 'resources', label: 'Resources' },
+  { key: 'resources', label: 'Ask' },
   { key: 'crisis', label: 'Crisis' },
 ];
 
 function activeTabFromPathname(pathname: string): Tab {
   const p = pathname.split('?')[0] ?? '';
   if (p === '/' || p === '') return 'home';
-  if (p.startsWith('/state/') || p.startsWith('/dashboard/')) return 'bills';
+  if (p.startsWith('/state/')) return 'bills';
   if (p.startsWith('/ask')) return 'resources';
   if (p.startsWith('/crisis')) return 'crisis';
   return 'home';
@@ -145,6 +105,10 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
         backgroundColor: '#18181b',
         borderTopWidth: 1,
         borderTopColor: 'rgba(63, 63, 70, 0.6)',
+        ...(Platform.OS === 'web' && {
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+        }),
         ...(Platform.OS !== 'web' && {
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -1 },

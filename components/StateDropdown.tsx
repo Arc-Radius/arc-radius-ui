@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Search } from 'lucide-react-native';
 
 import { STATES } from '../static/states';
 
@@ -7,43 +8,18 @@ interface StateDropdownProps {
   value?: string | null;
   onChange: (abbr: string) => void;
   placeholder?: string;
+  compactDisplay?: boolean;
 }
 
 function SearchIcon() {
-  return (
-    <View style={{ width: 16, height: 16 }}>
-      <View
-        style={{
-          width: 11,
-          height: 11,
-          borderRadius: 5.5,
-          borderWidth: 1.2,
-          borderColor: '#888780',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
-      />
-      <View
-        style={{
-          width: 1.2,
-          height: 5,
-          backgroundColor: '#888780',
-          borderRadius: 1,
-          position: 'absolute',
-          bottom: 0,
-          right: 1.5,
-          transform: [{ rotate: '-45deg' }],
-        }}
-      />
-    </View>
-  );
+  return <Search size={16} color="#71717a" />;
 }
 
 export function StateDropdown({
   value,
   onChange,
   placeholder = 'Search state...',
+  compactDisplay,
 }: StateDropdownProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -70,39 +46,87 @@ export function StateDropdown({
 
   return (
     <View>
-      {/* Trigger — styled as search bar */}
-      <Pressable
-        className="flex-row items-center gap-2 rounded-xl border border-zinc-200/80 px-3.5 py-3 shadow-sm active:opacity-80"
-        style={[
-          { backgroundColor: 'rgba(255,255,255,0.78)' },
-          Platform.OS === 'web' ? ({ backdropFilter: 'blur(10px)' } as object) : null,
-        ]}
-        onPress={() => {
-          setQuery('');
-          setOpen(true);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Search for a state">
-        <SearchIcon />
-        <Text
-          className={`flex-1 font-sans text-[13px] ${selectedLabel ? 'font-sans-semibold text-zinc-800' : 'text-zinc-400'}`}>
-          {selectedLabel ?? placeholder}
-        </Text>
-        {selectedLabel && (
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
-              onChange('');
+      {/* Trigger */}
+      {compactDisplay && value ? (
+        /* Compact pill with arrow */
+        <Pressable
+          className="flex-row items-center gap-2 self-start rounded-full active:opacity-80"
+          style={{
+            paddingVertical: 8,
+            paddingLeft: 12,
+            paddingRight: 12,
+            borderWidth: 0.5,
+            borderColor: '#d4d4d8',
+            backgroundColor: '#fff',
+          }}
+          onPress={() => {
+            setQuery('');
+            setOpen(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Change state">
+          <Text className="font-sans-semibold text-xs" style={{ color: '#71717a' }}>
+            {value}
+          </Text>
+          <Text className="font-sans text-xs" style={{ color: '#a1a1aa' }}>
+            Change
+          </Text>
+          <View
+            style={{
+              width: 6,
+              height: 6,
+              borderRightWidth: 1.2,
+              borderBottomWidth: 1.2,
+              borderColor: '#a1a1aa',
+              transform: [{ rotate: '45deg' }],
+              marginTop: -2,
             }}
-            className="h-5 w-5 items-center justify-center rounded-full bg-zinc-300"
-            accessibilityRole="button"
-            accessibilityLabel="Clear selection">
-            <Text className="text-[10px] text-white">✕</Text>
-          </Pressable>
-        )}
-      </Pressable>
+          />
+        </Pressable>
+      ) : (
+        /* Full search bar — frosted blue-tinted glass for light blue section, contrasts with dark map */
+        <Pressable
+          className="flex-row items-center gap-2 overflow-hidden rounded-xl px-3.5 py-3 active:opacity-80"
+          style={[
+            {
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              borderWidth: 1,
+              borderColor: 'rgba(59,130,246,0.2)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.06,
+              shadowRadius: 4,
+              elevation: 2,
+            },
+            Platform.OS === 'web' ? ({ backdropFilter: 'blur(12px)' } as object) : null,
+          ]}
+          onPress={() => {
+            setQuery('');
+            setOpen(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Search for a state">
+          <SearchIcon />
+          <Text
+            className={`flex-1 font-sans text-[13px] ${selectedLabel ? 'font-sans-semibold text-zinc-800' : 'text-zinc-500'}`}>
+            {selectedLabel ?? placeholder}
+          </Text>
+          {selectedLabel && (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onChange('');
+              }}
+              className="h-5 w-5 items-center justify-center rounded-full bg-zinc-300"
+              accessibilityRole="button"
+              accessibilityLabel="Clear selection">
+              <Text className="text-[10px] text-white">✕</Text>
+            </Pressable>
+          )}
+        </Pressable>
+      )}
 
-      {/* Modal — refined styling */}
+      {/* Modal — unchanged */}
       <Modal visible={open} animationType="fade" transparent onRequestClose={() => setOpen(false)}>
         <View className="flex-1 items-center justify-center bg-black/20 px-4">
           <Pressable className="absolute inset-0" onPress={() => setOpen(false)} />

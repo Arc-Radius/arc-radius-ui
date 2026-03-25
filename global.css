@@ -8,17 +8,38 @@
   #root {
     height: 100%;
     min-height: 100%;
-    background-color: #f5f4f0;
+    background-color: #f0f2f6;
     color: #2c2820;
-    font-family: 'IBM Plex Sans', 'IBMPlexSans_400Regular', sans-serif;
+    font-family: 'Greycliff CF', 'GreycliffCF_400Regular', sans-serif;
   }
 
   body {
     margin: 0;
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   #root {
     overflow: visible;
+  }
+
+  /* Accessible scrollbars — visible for discoverability and navigation */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(161, 161, 170, 0.6) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(161, 161, 170, 0.5);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(161, 161, 170, 0.7);
   }
 }

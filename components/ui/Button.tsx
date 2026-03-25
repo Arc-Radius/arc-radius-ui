@@ -10,12 +10,12 @@ interface ButtonProps {
 
 const variantStyles = {
   filled: {
-    container: 'bg-stone-800 rounded-lg px-5 py-2.5',
+    container: 'bg-zinc-800 rounded-lg px-5 py-2.5',
     text: 'text-center text-white text-sm font-sans-semibold tracking-tight',
   },
   outline: {
-    container: 'rounded-lg border border-stone-300 px-5 py-2',
-    text: 'text-center text-stone-700 text-sm font-sans-medium',
+    container: 'rounded-lg border border-zinc-300 px-5 py-2',
+    text: 'text-center text-zinc-700 text-sm font-sans-medium',
   },
 };
 

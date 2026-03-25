@@ -10,12 +10,12 @@ interface AppTabConfig {
   id: AppTabId;
   routeName: string;
   label: string;
-  icon: 'home-outline' | 'document-text-outline' | 'warning-outline';
+  icon: 'home-outline' | 'document-text-outline' | 'warning-outline' | 'call-outline';
   getHref: (context: TabContext) => Href;
   matchesPath: (pathname: string) => boolean;
 }
 
-const DEFAULT_STATE = 'CA';
+export const DEFAULT_STATE = 'CA';
 
 export const APP_TABS: AppTabConfig[] = [
   {
@@ -35,13 +35,13 @@ export const APP_TABS: AppTabConfig[] = [
       pathname: '/state/[state]',
       params: { state: stateAbbr ?? DEFAULT_STATE },
     }),
-    matchesPath: (pathname) => pathname.startsWith('/state/') || pathname.startsWith('/dashboard/'),
+    matchesPath: (pathname) => pathname.startsWith('/state/'),
   },
   {
     id: 'crisis',
     routeName: 'crisis',
     label: 'Crisis',
-    icon: 'warning-outline',
+    icon: 'call-outline',
     getHref: () => '/crisis',
     matchesPath: (pathname) => pathname.startsWith('/crisis'),
   },
@@ -50,7 +50,7 @@ export const APP_TABS: AppTabConfig[] = [
 export function getCurrentStateAbbr(segments: string[]): string | undefined {
   const cleaned = segments.filter((segment) => segment && !segment.startsWith('('));
 
-  if (cleaned[0] !== 'state' && cleaned[0] !== 'dashboard') {
+  if (cleaned[0] !== 'state') {
     return undefined;
   }
 

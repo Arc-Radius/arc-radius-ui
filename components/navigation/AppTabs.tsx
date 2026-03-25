@@ -18,14 +18,13 @@ export default function AppTabs({ position }: AppTabsProps) {
   return (
     <View
       className={[
-        'w-full bg-arc-cream',
+        'w-full bg-app-bg',
         isBottom
-          ? 'flex-row border-t border-stone-300 px-2 pb-2 pt-1'
+          ? 'flex-row border-t border-zinc-300 px-2 pb-2 pt-1'
           : isHeader
             ? 'flex-row flex-wrap items-center justify-end gap-1.5 bg-transparent md:flex-nowrap'
-            : 'flex-row flex-wrap items-center gap-2 rounded-lg border border-stone-300 bg-white p-2 md:flex-nowrap',
-      ].join(' ')}
-    >
+            : 'flex-row flex-wrap items-center gap-2 rounded-lg border border-zinc-200/90 bg-white p-2 shadow-sm md:flex-nowrap',
+      ].join(' ')}>
       {APP_TABS.map((tab) => {
         const active = tab.matchesPath(pathname);
         const iconColor = active ? '#1C1917' : tab.id === 'crisis' ? '#B45309' : '#57534E';
@@ -48,19 +47,16 @@ export default function AppTabs({ position }: AppTabsProps) {
                     : 'min-w-[88px] items-center justify-center gap-1.5 px-3 py-2 md:min-w-[104px]',
                 isHeader
                   ? isCrisisButton
-                    ? active
-                      ? 'bg-stone-700'
-                      : 'bg-stone-900'
+                    ? 'bg-[rgba(249,115,22,0.1)]'
                     : active
-                      ? 'bg-stone-100'
+                      ? 'bg-zinc-700'
                       : ''
                   : active
-                    ? 'bg-stone-100'
+                    ? 'bg-zinc-100'
                     : '',
               ].join(' ')}
               accessibilityRole="link"
-              accessibilityState={{ selected: active }}
-            >
+              accessibilityState={{ selected: active }}>
               {showIcons ? <Ionicons name={tab.icon} size={20} color={iconColor} /> : null}
               <Text
                 className={[
@@ -71,17 +67,16 @@ export default function AppTabs({ position }: AppTabsProps) {
                       : 'font-sans-medium text-[11px] md:text-xs',
                   isHeader
                     ? isCrisisButton
-                      ? 'text-white'
+                      ? 'text-[#fdba74]'
                       : active
-                        ? 'text-stone-900'
-                        : 'text-stone-500'
+                        ? 'text-[#fafafa]'
+                        : 'text-[#a1a1aa]'
                     : active
-                      ? 'text-stone-900'
+                      ? 'text-zinc-900'
                       : tab.id === 'crisis'
-                        ? 'text-amber-700'
-                        : 'text-stone-600',
-                ].join(' ')}
-              >
+                        ? 'text-orange-600'
+                        : 'text-zinc-600',
+                ].join(' ')}>
                 {label}
               </Text>
             </Pressable>

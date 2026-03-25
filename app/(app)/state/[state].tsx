@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { StateBillsPage } from '../../../components/StateBillsPage';
+import type { BillTab } from '../../../static/billConstants';
 import { STATES } from '../../../static/states';
 
 export default function StateBillsRoute() {
@@ -17,6 +18,10 @@ export default function StateBillsRoute() {
 
   const handleSelectState = useCallback(
     (selectedStateAbbr: string) => {
+      if (!selectedStateAbbr) {
+        router.replace('/');
+        return;
+      }
       router.replace({
         pathname: '/state/[state]',
         params: { state: selectedStateAbbr },
@@ -30,14 +35,14 @@ export default function StateBillsRoute() {
   }, [router]);
 
   const handleBillPress = useCallback(
-    (billId: string) => {
+    (billId: string, billTab: BillTab) => {
       if (!stateAbbr || !STATES[stateAbbr]) {
         return;
       }
 
       router.push({
         pathname: '/state/[state]/[billId]',
-        params: { state: stateAbbr, billId },
+        params: { state: stateAbbr, billId, billTab },
       });
     },
     [router, stateAbbr]

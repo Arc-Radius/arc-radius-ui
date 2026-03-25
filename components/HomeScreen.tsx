@@ -1,13 +1,11 @@
-import { useCallback, useState } from 'react';
-import { AccessibilityInfo, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useRef, useState } from 'react';
+import { AccessibilityInfo, Platform, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { FeatureCard } from './FeatureCard';
 import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateSearch } from './StateSearch';
 import { TakeAction } from './TakeAction';
-import ArcRadiusLogo from './ui/ArcRadiusLogo';
 import { STATES, STATUS_STYLES } from '../static/states';
 
 interface HomeScreenProps {
@@ -15,14 +13,20 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isCompact = width < 768;
+  const router = useRouter();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const mapOffsetY = useRef(0);
 
   const [selected, setSelected] = useState<string | null>(null);
-  const [showMap, setShowMap] = useState(false);
 
   const selectedInfo = selected ? STATES[selected] : null;
+
+  const handleFindState = useCallback(() => {
+    scrollViewRef.current?.scrollTo({
+      y: mapOffsetY.current - 16,
+      animated: true,
+    });
+  }, []);
 
   const handleStateSelect = useCallback((abbr: string) => {
     setSelected(abbr);
@@ -34,67 +38,65 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
     }
   }, []);
 
-  const toggleMap = useCallback(() => setShowMap((v) => !v), []);
   const handleNavigateToState = useCallback(() => {
     if (!selected || !onNavigateToState) return;
     onNavigateToState(selected);
   }, [selected, onNavigateToState]);
 
   return (
-    <ScrollView className="flex-1 bg-arc-cream" style={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}>
+    <ScrollView ref={scrollViewRef} className="bg-app-bg flex-1" style={{ paddingTop: 0 }}>
       <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
-        {Platform.OS !== 'web' ? (
-          <View className="mt-2 flex-row items-center gap-2.5">
-            <ArcRadiusLogo size={32} />
-            <Text className="font-serif-bold text-xl leading-8 text-stone-800">Arc Radius</Text>
+        {/* Hero — unchanged */}
+        <View className="mt-0">
+          <HeroSection onFindState={handleFindState} />
+        </View>
+
+        {/* State search — blue glass */}
+        <View
+          className="mt-8 overflow-hidden rounded-2xl pt-0"
+          style={{
+            backgroundColor: 'rgba(59,130,246,0.05)',
+            borderWidth: 1,
+            borderColor: 'rgba(59,130,246,0.1)',
+          }}
+          onLayout={(e) => {
+            mapOffsetY.current = e.nativeEvent.layout.y;
+          }}>
+          <View className="px-4 pb-5 pt-5 sm:px-5">
+            <StateSearch
+              selected={selected}
+              selectedInfo={selectedInfo}
+              onStateSelect={handleStateSelect}
+              onNavigateToState={handleNavigateToState}
+              scrollViewRef={scrollViewRef}
+            />
           </View>
-        ) : null}
-
-        <View className="mt-4">
-          <HeroSection />
         </View>
 
-        <View className="mt-12">
-          <StateSearch
-            showMap={showMap}
-            onToggleMap={toggleMap}
-            selected={selected}
-            selectedInfo={selectedInfo}
-            onStateSelect={handleStateSelect}
-          />
+        {/* Take action — amber glass */}
+        <View
+          className="mt-4 overflow-hidden rounded-2xl"
+          style={{
+            backgroundColor: 'rgba(249,115,22,0.04)',
+            borderWidth: 1,
+            borderColor: 'rgba(249,115,22,0.08)',
+          }}>
+          <View className="px-4 py-5 sm:px-5">
+            <TakeAction onCrisisResources={() => router.push('/crisis' as any)} />
+          </View>
         </View>
 
-        <View className={[isCompact ? 'mt-10 gap-4' : 'mt-10 flex-row flex-wrap gap-4'].join(' ')}>
-          <FeatureCard
-            title="Policy Overview"
-            description={
-              selectedInfo
-                ? `Current LGBTQ+ protections and legal landscape in ${selectedInfo.name}.`
-                : 'Select a state to view current LGBTQ+ protections and legal landscape.'
-            }
-            buttonLabel="View Policies →"
-            status={selectedInfo?.status}
-            onPress={selected ? handleNavigateToState : undefined}
-          />
-          <FeatureCard
-            title="Proposed Bills"
-            description={
-              selectedInfo
-                ? `Active legislation that may affect LGBTQ+ youth in ${selectedInfo.name}.`
-                : 'Select a state to track active legislation affecting LGBTQ+ youth.'
-            }
-            buttonLabel="View Bills →"
-            status={selectedInfo?.status}
-            onPress={selected ? handleNavigateToState : undefined}
-          />
-        </View>
-
-        <View className="mt-4">
-          <TakeAction />
-        </View>
-
-        <View className="mt-4">
-          <PrivacyBanner />
+        {/* Privacy — subtle neutral glass */}
+        <View
+          className="mt-4 overflow-hidden rounded-2xl"
+          style={{
+            backgroundColor: 'rgba(161,161,170,0.06)',
+            borderWidth: 1,
+            borderColor: 'rgba(161,161,170,0.12)',
+          }}>
+          <View className="px-4 py-4 sm:px-5">
+            <PrivacyBanner />
+          </View>
         </View>
       </View>
     </ScrollView>

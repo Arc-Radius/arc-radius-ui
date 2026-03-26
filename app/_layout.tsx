@@ -9,6 +9,13 @@ import '@/global.css';
 
 void SplashScreen.preventAutoHideAsync();
 
+/**
+ * Fonts + splash: we hide the splash screen only after Greycliff loads (or on font error).
+ * Returning null until then keeps native splash visible; on web it can delay first paint
+ * (static rendering / SEO). If web discoverability becomes a priority, consider
+ * `font-display: swap` or a font subset + non-blocking splash strategy.
+ */
+
 // Greycliff CF from fonts/Greycliff/
 const GreycliffFonts = {
   GreycliffCF_400Regular: require('@/fonts/Greycliff/GreycliffCF-Regular.otf'),

@@ -28,6 +28,7 @@ import {
   LogIn,
 } from 'lucide-react-native';
 
+import { ScreenContent } from '@/components/ui/screen-layout';
 import { BillGraphRecordPlaceholder, type GraphBillRecord } from './BillRecordPlaceholder';
 import type { BillTab } from '@/static/billConstants';
 import {
@@ -579,7 +580,7 @@ export function BillDetailPage({
   return (
     <View className="flex-1 bg-app-bg">
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
-        <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
+        <ScreenContent>
           <View className={Platform.OS === 'web' ? 'pt-4' : 'pt-2'}>
             <View
               className="flex-1 overflow-hidden rounded-xl border bg-white"
@@ -1069,7 +1070,7 @@ export function BillDetailPage({
             </View>
             <RelatedBillsSection relatedBills={bill.relatedBills} />
           </View>
-        </View>
+        </ScreenContent>
       </ScrollView>
 
       {/* ── Report Modal ── */}

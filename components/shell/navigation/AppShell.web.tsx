@@ -1,29 +1,30 @@
 import { Slot } from 'expo-router';
 import { View } from 'react-native';
+import { twMerge } from 'tailwind-merge';
 
 import { BottomNav } from '@/components/shell/BottomNav';
 import { Header } from '@/components/shell/Header';
+import { MaxWidth, screenGutterClass } from '@/components/ui/screen-layout';
 
 export default function AppShell() {
   return (
     <View className="min-h-screen flex-1 bg-app-bg">
       <View className="w-full bg-app-bg">
-        <View className="w-full max-w-screen-lg self-center">
+        <MaxWidth>
           <Header />
-        </View>
+        </MaxWidth>
       </View>
 
-      <View className="min-h-0 w-full flex-1 bg-app-bg px-4 pb-10 sm:px-6 md:px-8">
-        <View className="min-h-0 w-full max-w-screen-lg flex-1 self-center">
+      <View className={twMerge('min-h-0 w-full flex-1 bg-app-bg pb-10', screenGutterClass)}>
+        <MaxWidth className="min-h-0 flex-1">
           <Slot />
-        </View>
+        </MaxWidth>
       </View>
 
-      {/* Same width + horizontal padding as body (max-w-screen-lg) */}
-      <View className="w-full bg-app-bg sm:px-6 md:px-8">
-        <View className="w-full max-w-screen-lg self-center">
+      <View className={twMerge('w-full bg-app-bg', screenGutterClass)}>
+        <MaxWidth>
           <BottomNav />
-        </View>
+        </MaxWidth>
       </View>
     </View>
   );

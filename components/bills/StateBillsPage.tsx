@@ -18,6 +18,7 @@ import { StateBillCard } from './StateBillCard';
 import { StateDashboard } from './StateDashboard';
 import { StateDropdown } from '@/components/shared/StateDropdown';
 import { StanceLegend } from './StanceLegend';
+import { ScreenContent } from '@/components/ui/screen-layout';
 import type { Bill, BillFilters, BillTab, SortOrder } from '@/static/billConstants';
 import { STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
 import { getBillsForState } from '@/static/bills';
@@ -111,7 +112,11 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const toggleStance = useCallback((stance: LegislativeStatus) => {
     setFilters((prev) => {
       const next = new Set(prev.stances);
-      next.has(stance) ? next.delete(stance) : next.add(stance);
+      if (next.has(stance)) {
+        next.delete(stance);
+      } else {
+        next.add(stance);
+      }
       if (next.size === 0)
         return { ...prev, stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']) };
       return { ...prev, stances: next };
@@ -123,7 +128,11 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
       setFilters((prev) => {
         const base =
           prev.categories.size === 0 ? new Set(availableCategories) : new Set(prev.categories);
-        base.has(cat) ? base.delete(cat) : base.add(cat);
+        if (base.has(cat)) {
+          base.delete(cat);
+        } else {
+          base.add(cat);
+        }
         return { ...prev, categories: base.size === 0 ? new Set<string>() : base };
       });
     },
@@ -134,7 +143,11 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     (year: number) => {
       setFilters((prev) => {
         const base = prev.years.size === 0 ? new Set(availableYears) : new Set(prev.years);
-        base.has(year) ? base.delete(year) : base.add(year);
+        if (base.has(year)) {
+          base.delete(year);
+        } else {
+          base.add(year);
+        }
         return { ...prev, years: base.size === 0 ? new Set<number>() : base };
       });
     },
@@ -500,7 +513,7 @@ export function StateBillsPage({
   return (
     <SafeAreaView className="flex-1 bg-app-bg" edges={[]}>
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
-        <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
+        <ScreenContent>
           {/* Dashboard */}
           <View className={Platform.OS === 'web' ? 'pt-4' : 'pt-2'}>
             <StateDashboard
@@ -615,7 +628,7 @@ export function StateBillsPage({
               </View>
             </View>
           </View>
-        </View>
+        </ScreenContent>
       </ScrollView>
 
       {/* Mobile: FAB filter button — positioned above tab bar */}

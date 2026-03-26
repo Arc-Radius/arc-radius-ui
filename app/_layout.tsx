@@ -4,7 +4,9 @@ import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { queryClient } from '@/app/providers/query-client';
 import '@/global.css';
 
 void SplashScreen.preventAutoHideAsync();
@@ -38,11 +40,13 @@ export default function Layout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <View className="flex-1" onLayout={onLayoutRootView}>
-        <Stack screenOptions={{ headerShown: false }} />
-        <StatusBar style="auto" />
-      </View>
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <View className="flex-1" onLayout={onLayoutRootView}>
+          <Stack screenOptions={{ headerShown: false }} />
+          <StatusBar style="auto" />
+        </View>
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }

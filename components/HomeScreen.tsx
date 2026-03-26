@@ -69,6 +69,7 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
               onStateSelect={handleStateSelect}
               onNavigateToState={handleNavigateToState}
               scrollViewRef={scrollViewRef}
+              containerY={mapOffsetY}
             />
           </View>
         </View>

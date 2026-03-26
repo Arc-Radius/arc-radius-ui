@@ -213,7 +213,7 @@ export default function CrisisRoute() {
         <View className="w-full max-w-[880px] gap-5 self-center">
           {/* ── Header ── */}
           <View>
-            <Text className="font-sans-bold text-2xl text-zinc-900">Crisis Support</Text>
+            <Text className="font-sans-bold text-2xl text-zinc-900">Talk to someone</Text>
             <Text className="mt-1 font-sans text-base leading-7 text-zinc-600">
               Immediate help when you need it. All services are free and confidential.
             </Text>

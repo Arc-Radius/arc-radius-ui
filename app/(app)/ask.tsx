@@ -182,7 +182,7 @@ export default function AskRoute() {
             <View className="w-full max-w-[880px] self-center">
               {/* Header */}
               <View className="mb-5">
-                <Text className="font-sans-bold text-2xl text-zinc-900">Ask Anything</Text>
+                <Text className="font-sans-bold text-2xl text-zinc-900">Ask anything</Text>
                 <Text className="mt-1 font-sans text-base leading-7 text-zinc-600">
                   Powered by our Legislative Knowledge Graph.
                 </Text>

@@ -4,7 +4,7 @@ module.exports = {
     './app/**/*.{js,ts,tsx}',
     './App.{js,ts,tsx}',
     './components/**/*.{js,ts,tsx}',
-    './constants/**/*.{js,ts,tsx}',
+    './static/**/*.{js,ts,tsx}',
   ],
 
   presets: [require('nativewind/preset')],

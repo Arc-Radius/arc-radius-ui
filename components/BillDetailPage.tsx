@@ -28,10 +28,7 @@ import {
   LogIn,
 } from 'lucide-react-native';
 
-import {
-  BillGraphRecordPlaceholder,
-  type GraphBillRecord,
-} from './BillRecordPlaceholder';
+import { BillGraphRecordPlaceholder, type GraphBillRecord } from './BillRecordPlaceholder';
 import type { BillTab } from '../static/billConstants';
 import {
   STANCE_BADGE,
@@ -162,7 +159,9 @@ function RelatedBillsSection({
                       : undefined
                   }>
                   <Text className="font-sans-semibold text-[13px] text-zinc-800">{rb.bill_id}</Text>
-                  <Text className="flex-1 text-right font-sans text-xs text-zinc-400" numberOfLines={1}>
+                  <Text
+                    className="flex-1 text-right font-sans text-xs text-zinc-400"
+                    numberOfLines={1}>
                     {rb.summary}
                   </Text>
                 </Pressable>
@@ -828,7 +827,7 @@ export function BillDetailPage({
                           {/* Classification + recipient */}
                           <View className="gap-2">
                             <View className="flex-row items-baseline justify-between">
-                              <Text className="font-sans text-sm text-zinc-500" >Stance:</Text>
+                              <Text className="font-sans text-sm text-zinc-500">Stance:</Text>
                               <Text
                                 className="font-sans-medium text-sm"
                                 style={{ color: STANCE_BADGE[stanceKey].text }}>
@@ -836,7 +835,7 @@ export function BillDetailPage({
                               </Text>
                             </View>
                             <View className="flex-row items-baseline justify-between">
-                              <Text className="font-sans text-sm text-zinc-500" >Confidence:</Text>
+                              <Text className="font-sans text-sm text-zinc-500">Confidence:</Text>
                               <Text
                                 className="font-sans-medium text-sm"
                                 style={{ color: STANCE_BADGE[stanceKey].text }}>
@@ -851,7 +850,7 @@ export function BillDetailPage({
                               </Text>
                             </View>
                             <View className="flex-row items-baseline justify-between">
-                              <Text className="font-sans text-sm text-zinc-500" >To:</Text>
+                              <Text className="font-sans text-sm text-zinc-500">To:</Text>
                               <Text className="font-sans-medium text-sm text-zinc-900">
                                 {bill.sponsorContact?.name ||
                                   bill.sponsors?.[0]?.name ||
@@ -864,7 +863,9 @@ export function BillDetailPage({
                             style={{ borderColor: 'rgba(228,228,231,0.9)' }}
                           />
                           <View>
-                            <Text className="mb-2 font-sans-medium text-xs text-zinc-500">Format</Text>
+                            <Text className="mb-2 font-sans-medium text-xs text-zinc-500">
+                              Format
+                            </Text>
                             <SegmentedToggle
                               options={['email', 'phone'] as const}
                               value={format}
@@ -876,7 +877,9 @@ export function BillDetailPage({
                             />
                           </View>
                           <View>
-                            <Text className="mb-2 font-sans-medium text-xs text-zinc-500">Tone</Text>
+                            <Text className="mb-2 font-sans-medium text-xs text-zinc-500">
+                              Tone
+                            </Text>
                             <SegmentedToggle
                               options={['formal', 'conversational'] as const}
                               value={tone}
@@ -903,7 +906,11 @@ export function BillDetailPage({
                             />
                           </View>
                           <View className="flex-row items-start gap-1.5">
-                            <AlertCircle size={12} color={STANCE_BADGE.harmful.text} style={{ marginTop: 2 }} />
+                            <AlertCircle
+                              size={12}
+                              color={STANCE_BADGE.harmful.text}
+                              style={{ marginTop: 2 }}
+                            />
                             <Text
                               className="font-sans text-[10px]"
                               style={{ color: STANCE_BADGE.harmful.text }}>
@@ -950,7 +957,11 @@ export function BillDetailPage({
                             </Text>
                           </Pressable>
                           <View className="mt-2 flex-row items-start gap-1.5">
-                            <AlertCircle size={12} color={STANCE_BADGE.harmful.text} style={{ marginTop: 2 }} />
+                            <AlertCircle
+                              size={12}
+                              color={STANCE_BADGE.harmful.text}
+                              style={{ marginTop: 2 }}
+                            />
                             <Text
                               className="font-sans text-[10px]"
                               style={{ color: STANCE_BADGE.harmful.text }}>
@@ -975,7 +986,9 @@ export function BillDetailPage({
                               {copied ? (
                                 <View className="flex-row items-center gap-1">
                                   <Check size={11} color="#71717a" />
-                                  <Text className="font-sans-medium text-xs text-zinc-500">Copied</Text>
+                                  <Text className="font-sans-medium text-xs text-zinc-500">
+                                    Copied
+                                  </Text>
                                 </View>
                               ) : (
                                 <Text className="font-sans-medium text-xs text-zinc-500">Copy</Text>
@@ -994,7 +1007,9 @@ export function BillDetailPage({
                               }}
                               className="rounded-lg px-3 py-1.5 active:opacity-90"
                               style={{ backgroundColor: accent.button }}>
-                              <Text className="font-sans-medium text-xs text-white">Open in mail</Text>
+                              <Text className="font-sans-medium text-xs text-white">
+                                Open in mail
+                              </Text>
                             </Pressable>
                           </View>
                         </View>
@@ -1006,7 +1021,9 @@ export function BillDetailPage({
                         </View>
 
                         <View>
-                          <Text className="mb-2 font-sans-medium text-xs text-zinc-500">Refine</Text>
+                          <Text className="mb-2 font-sans-medium text-xs text-zinc-500">
+                            Refine
+                          </Text>
                           <View className="flex-row flex-wrap gap-1.5">
                             {['More formal', 'More casual', 'Shorter', 'Longer'].map((label) => {
                               const active = selectedRefine === label;
@@ -1040,7 +1057,9 @@ export function BillDetailPage({
                           }}
                           className="items-center rounded-xl py-3.5 active:opacity-90"
                           style={{ backgroundColor: accent.button }}>
-                          <Text className="font-sans-medium text-[15px] text-white">Regenerate</Text>
+                          <Text className="font-sans-medium text-[15px] text-white">
+                            Regenerate
+                          </Text>
                         </Pressable>
                       </View>
                     )}
@@ -1063,9 +1082,7 @@ export function BillDetailPage({
           className="flex-1 items-center justify-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
           onPress={() => setReportModal('closed')}>
-          <Pressable
-            className="mx-6 w-full max-w-sm rounded-2xl bg-white p-5"
-            onPress={() => {}}>
+          <Pressable className="mx-6 w-full max-w-sm rounded-2xl bg-white p-5" onPress={() => {}}>
             {reportModal === 'form' && (
               <View className="gap-4">
                 <View className="flex-row items-center justify-between">
@@ -1135,9 +1152,7 @@ export function BillDetailPage({
                   style={{ backgroundColor: STANCE_BADGE.supportive.bg }}>
                   <Check size={20} color={STANCE_BADGE.supportive.text} />
                 </View>
-                <Text className="font-sans-medium text-base text-zinc-900">
-                  Response recorded
-                </Text>
+                <Text className="font-sans-medium text-base text-zinc-900">Response recorded</Text>
                 <Text className="text-center font-sans text-sm text-zinc-500">
                   Thank you for helping improve our classifications.
                 </Text>

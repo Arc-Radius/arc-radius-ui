@@ -44,7 +44,7 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   }, [selected, onNavigateToState]);
 
   return (
-    <ScrollView ref={scrollViewRef} className="bg-app-bg flex-1" style={{ paddingTop: 0 }}>
+    <ScrollView ref={scrollViewRef} className="flex-1 bg-app-bg" style={{ paddingTop: 0 }}>
       <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
         {/* Hero — unchanged */}
         <View className="mt-0">

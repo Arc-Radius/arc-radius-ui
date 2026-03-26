@@ -498,7 +498,7 @@ export function StateBillsPage({
   };
 
   return (
-    <SafeAreaView className="bg-app-bg flex-1" edges={[]}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={[]}>
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-screen-lg self-center px-4 sm:px-6 md:px-8">
           {/* Dashboard */}
@@ -542,10 +542,7 @@ export function StateBillsPage({
                         height: pillSize.h - pillInset * 2,
                         left: slideAnim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [
-                            pillInset,
-                            pillInset + (pillSize.w - pillInset * 2) / 2,
-                          ],
+                          outputRange: [pillInset, pillInset + (pillSize.w - pillInset * 2) / 2],
                         }),
                       },
                     ]}

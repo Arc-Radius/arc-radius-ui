@@ -6,6 +6,5 @@
     "paths": {
       "@/*": ["./*"]
     }
-  },
-  "exclude": ["components/Prototype.tsx"]
+  }
 }

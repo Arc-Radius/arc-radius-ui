@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 
-import { BillDetailPage } from '../../../../components/BillDetailPage';
-import type { BillTab } from '../../../../static/billConstants';
-import { getBillsForState } from '../../../../static/bills';
-import { STATES } from '../../../../static/states';
+import { BillDetailPage } from '@/components/BillDetailPage';
+import type { BillTab } from '@/static/billConstants';
+import { getBillsForState } from '@/static/bills';
+import { STATES } from '@/static/states';
 
 function parseBillTab(raw: string | string[] | undefined): BillTab | undefined {
   const v = Array.isArray(raw) ? raw[0] : raw;
@@ -14,7 +14,11 @@ function parseBillTab(raw: string | string[] | undefined): BillTab | undefined {
 }
 
 export default function BillDetailRoute() {
-  const { state, billId, billTab: billTabParam } = useLocalSearchParams<{
+  const {
+    state,
+    billId,
+    billTab: billTabParam,
+  } = useLocalSearchParams<{
     state?: string | string[];
     billId?: string | string[];
     billTab?: string | string[];

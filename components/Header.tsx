@@ -121,7 +121,6 @@ export function Header() {
           <Text className="font-sans text-[12px] text-zinc-600">{status.label}</Text>
         </View>
       </View>
-
     </View>
   );
 }

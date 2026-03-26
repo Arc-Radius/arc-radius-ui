@@ -2,12 +2,7 @@ import { useCallback, useState } from 'react';
 import { LayoutAnimation, Platform, Pressable, Text, UIManager, View } from 'react-native';
 
 import type { BillFilters, SortOrder } from '../static/billConstants';
-import {
-  ACCENT_BLUE,
-  STANCE_CHECK_BG,
-  STANCE_DOT,
-  STANCE_LABEL,
-} from '../static/billConstants';
+import { ACCENT_BLUE, STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '../static/billConstants';
 import type { LegislativeStatus } from '../static/states';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -72,8 +67,7 @@ export function BillFilterSidebar({
         overflow: 'hidden',
         borderLeftWidth: 1,
         borderLeftColor: 'rgba(212,212,216,0.6)',
-      }}
-    >
+      }}>
       {/* Collapse toggle */}
       <Pressable
         className="items-center justify-center py-2.5"
@@ -85,11 +79,7 @@ export function BillFilterSidebar({
       {!collapsed && (
         <View>
           {/* ── Year ── */}
-          <FilterSection
-            label="Year"
-            open={sections.year}
-            onToggle={() => toggleSection('year')}
-          >
+          <FilterSection label="Year" open={sections.year} onToggle={() => toggleSection('year')}>
             {availableYears.map((y) => (
               <CheckboxRow
                 key={y}
@@ -106,8 +96,7 @@ export function BillFilterSidebar({
           <FilterSection
             label="Stance"
             open={sections.stance}
-            onToggle={() => toggleSection('stance')}
-          >
+            onToggle={() => toggleSection('stance')}>
             {STANCES.map((s) => (
               <CheckboxRow
                 key={s}
@@ -125,8 +114,7 @@ export function BillFilterSidebar({
           <FilterSection
             label="Category"
             open={sections.category}
-            onToggle={() => toggleSection('category')}
-          >
+            onToggle={() => toggleSection('category')}>
             {availableCategories.map((c) => (
               <CheckboxRow
                 key={c}
@@ -140,11 +128,7 @@ export function BillFilterSidebar({
           </FilterSection>
 
           {/* ── Sort ── */}
-          <FilterSection
-            label="Sort"
-            open={sections.sort}
-            onToggle={() => toggleSection('sort')}
-          >
+          <FilterSection label="Sort" open={sections.sort} onToggle={() => toggleSection('sort')}>
             <RadioRow
               label="Newest first"
               selected={filters.sort === 'newest'}
@@ -182,10 +166,7 @@ function FilterSection({
 }) {
   return (
     <View className="border-b border-zinc-200">
-      <Pressable
-        className="flex-row items-center justify-between px-4 py-2.5"
-        onPress={onToggle}
-      >
+      <Pressable className="flex-row items-center justify-between px-4 py-2.5" onPress={onToggle}>
         <Text className="font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-500">
           {label}
         </Text>
@@ -219,8 +200,7 @@ function CheckboxRow({
           borderWidth: 1.5,
           borderColor: checked ? checkColor : '#d4d4d8',
           backgroundColor: checked ? checkColor : 'transparent',
-        }}
-      >
+        }}>
         {checked && <CheckIcon />}
       </View>
       {dot && <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dot }} />}
@@ -243,8 +223,7 @@ function RadioRow({
     <Pressable className="flex-row items-center gap-2 py-[5px]" onPress={onPress}>
       <View
         className="h-3.5 w-3.5 items-center justify-center rounded-full"
-        style={{ borderWidth: 1.5, borderColor: selected ? ACCENT_BLUE : '#d4d4d8' }}
-      >
+        style={{ borderWidth: 1.5, borderColor: selected ? ACCENT_BLUE : '#d4d4d8' }}>
         {selected && (
           <View className="h-[7px] w-[7px] rounded-full" style={{ backgroundColor: ACCENT_BLUE }} />
         )}
@@ -293,13 +272,9 @@ function HamburgerIcon({ rotated }: { rotated: boolean }) {
         height: 12,
         justifyContent: 'space-between',
         transform: [{ rotate: rotated ? '90deg' : '0deg' }],
-      }}
-    >
+      }}>
       {[0, 1, 2].map((i) => (
-        <View
-          key={i}
-          style={{ height: 1.3, backgroundColor: '#a1a1aa', borderRadius: 1 }}
-        />
+        <View key={i} style={{ height: 1.3, backgroundColor: '#a1a1aa', borderRadius: 1 }} />
       ))}
     </View>
   );

@@ -97,13 +97,7 @@ function ActionIcon({ type }: { type: string }) {
 }
 
 // ── Mobile: vertical timeline card ───────────────
-function TimelineCard({
-  action,
-  isLast,
-}: {
-  action: (typeof ACTIONS)[number];
-  isLast: boolean;
-}) {
+function TimelineCard({ action, isLast }: { action: (typeof ACTIONS)[number]; isLast: boolean }) {
   return (
     <View className={`flex-row ${isLast ? '' : 'mb-3'}`}>
       {/* Dot + line */}
@@ -126,20 +120,14 @@ function TimelineCard({
           <ActionIcon type={action.icon} />
           <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
         </View>
-        <Text className="font-sans text-xs leading-[18px] text-zinc-600">
-          {action.description}
-        </Text>
+        <Text className="font-sans text-xs leading-[18px] text-zinc-600">{action.description}</Text>
       </View>
     </View>
   );
 }
 
 // ── Desktop: horizontal card ─────────────────────
-function HorizontalCard({
-  action,
-}: {
-  action: (typeof ACTIONS)[number];
-}) {
+function HorizontalCard({ action }: { action: (typeof ACTIONS)[number] }) {
   return (
     <View
       className="relative flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-4"
@@ -155,9 +143,7 @@ function HorizontalCard({
         <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
       </View>
 
-      <Text className="font-sans text-xs leading-[18px] text-zinc-600">
-        {action.description}
-      </Text>
+      <Text className="font-sans text-xs leading-[18px] text-zinc-600">{action.description}</Text>
     </View>
   );
 }
@@ -180,7 +166,7 @@ function CrisisCallout({ onPress }: { onPress?: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between rounded-xl bg-orange-50 border border-orange-200/50 p-3.5 active:opacity-80"
+      className="flex-row items-center justify-between rounded-xl border border-orange-200/50 bg-orange-50 p-3.5 active:opacity-80"
       accessibilityRole="button"
       accessibilityLabel="Crisis resources — need immediate support?">
       <View>
@@ -204,9 +190,7 @@ interface TakeActionProps {
   onCrisisResources?: () => void;
 }
 
-export function TakeAction({
-  onCrisisResources,
-}: TakeActionProps) {
+export function TakeAction({ onCrisisResources }: TakeActionProps) {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
 
@@ -222,11 +206,7 @@ export function TakeAction({
       {isCompact ? (
         <View className="mb-5">
           {ACTIONS.map((action, i) => (
-            <TimelineCard
-              key={action.key}
-              action={action}
-              isLast={i === ACTIONS.length - 1}
-            />
+            <TimelineCard key={action.key} action={action} isLast={i === ACTIONS.length - 1} />
           ))}
         </View>
       ) : (

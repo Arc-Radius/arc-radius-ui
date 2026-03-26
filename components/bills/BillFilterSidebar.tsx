@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { LayoutAnimation, Platform, Pressable, Text, UIManager, View } from 'react-native';
 
-import type { BillFilters, SortOrder } from '../static/billConstants';
-import { ACCENT_BLUE, STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '../static/billConstants';
-import type { LegislativeStatus } from '../static/states';
+import type { BillFilters, SortOrder } from '@/static/billConstants';
+import { ACCENT_BLUE, STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
+import type { LegislativeStatus } from '@/static/states';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);

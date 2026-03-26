@@ -3,8 +3,8 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Landmark } from 'lucide-react-native';
 
-import { STANCE_HEADER_GLASS } from '../static/billConstants';
-import type { LegislativeStatus } from '../static/states';
+import { STANCE_HEADER_GLASS } from '@/static/billConstants';
+import type { LegislativeStatus } from '@/static/states';
 
 interface StateInfo {
   name: string;

@@ -6,7 +6,7 @@ import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateSearch } from './StateSearch';
 import { TakeAction } from './TakeAction';
-import { STATES, STATUS_STYLES } from '../static/states';
+import { STATES, STATUS_STYLES } from '@/static/states';
 
 interface HomeScreenProps {
   onNavigateToState?: (stateAbbr: string) => void;

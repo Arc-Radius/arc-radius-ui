@@ -11,8 +11,8 @@ import {
 
 import { FileText } from 'lucide-react-native';
 
-import type { Bill } from '../static/billConstants';
-import { STANCE_DOT, STANCE_HEADER_GLASS } from '../static/billConstants';
+import type { Bill } from '@/static/billConstants';
+import { STANCE_DOT, STANCE_HEADER_GLASS } from '@/static/billConstants';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);

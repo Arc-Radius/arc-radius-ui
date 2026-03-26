@@ -1,9 +1,9 @@
 import { Link, usePathname } from 'expo-router';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 
-import ArcRadiusLogo from './ui/ArcRadiusLogo';
-import { APP_TABS, DEFAULT_STATE } from './navigation/tab-config';
-import { STATES } from '../static/states';
+import ArcRadiusLogo from '@/components/ui/ArcRadiusLogo';
+import { APP_TABS, DEFAULT_STATE } from '@/components/shell/navigation/tab-config';
+import { STATES } from '@/static/states';
 
 // ── Extract state abbr from pathname ─────────────
 function getStateFromPath(pathname: string): string | undefined {

@@ -8,7 +8,7 @@ import {
   Phone as PhoneIcon,
 } from 'lucide-react-native';
 
-import { DEFAULT_STATE, getCurrentStateAbbr } from './navigation/tab-config';
+import { DEFAULT_STATE, getCurrentStateAbbr } from '@/components/shell/navigation/tab-config';
 
 type Tab = 'home' | 'bills' | 'resources' | 'crisis';
 

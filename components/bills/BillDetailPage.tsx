@@ -29,15 +29,15 @@ import {
 } from 'lucide-react-native';
 
 import { BillGraphRecordPlaceholder, type GraphBillRecord } from './BillRecordPlaceholder';
-import type { BillTab } from '../static/billConstants';
+import type { BillTab } from '@/static/billConstants';
 import {
   STANCE_BADGE,
   STANCE_DOT,
   STANCE_HEADER_GLASS,
   STANCE_CHECK_BG,
-} from '../static/billConstants';
-import type { RelatedBill } from '../static/bills';
-import type { LegislativeStatus } from '../static/states';
+} from '@/static/billConstants';
+import type { RelatedBill } from '@/static/bills';
+import type { LegislativeStatus } from '@/static/states';
 
 interface Sponsor {
   name: string;

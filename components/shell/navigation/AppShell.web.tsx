@@ -1,8 +1,8 @@
 import { Slot } from 'expo-router';
 import { View } from 'react-native';
 
-import { BottomNav } from '../BottomNav';
-import { Header } from '../Header';
+import { BottomNav } from '@/components/shell/BottomNav';
+import { Header } from '@/components/shell/Header';
 
 export default function AppShell() {
   return (

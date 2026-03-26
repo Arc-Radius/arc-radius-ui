@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 
-import { BillDetailPage } from '@/components/BillDetailPage';
+import { BillDetailPage } from '@/components/bills/BillDetailPage';
 import type { BillTab } from '@/static/billConstants';
 import { getBillsForState } from '@/static/bills';
 import { STATES } from '@/static/states';

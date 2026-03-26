@@ -1,9 +1,9 @@
 import { Text, View } from 'react-native';
 
-import { Button } from './ui/Button';
-import { Card } from './ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { StatusBadge } from './StatusBadge';
-import type { LegislativeStatus } from '../static/states';
+import type { LegislativeStatus } from '@/static/states';
 
 interface FeatureCardProps {
   title: string;

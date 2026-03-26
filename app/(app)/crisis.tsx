@@ -22,7 +22,7 @@ import {
   Users,
 } from 'lucide-react-native';
 
-import { DEFAULT_STATE } from '@/components/navigation/tab-config';
+import { DEFAULT_STATE } from '@/components/shell/navigation/tab-config';
 
 // ── Reusable pieces ──────────────────────────────
 

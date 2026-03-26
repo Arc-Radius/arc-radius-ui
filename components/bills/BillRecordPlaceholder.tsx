@@ -3,8 +3,8 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
 
 import type { GraphBillRecord } from './billRecord';
-import type { LegislativeStatus } from '../static/states';
-import { STANCE_BADGE, STANCE_DOT } from '../static/billConstants';
+import type { LegislativeStatus } from '@/static/states';
+import { STANCE_BADGE, STANCE_DOT } from '@/static/billConstants';
 
 export type { GraphBillRecord } from './billRecord';
 

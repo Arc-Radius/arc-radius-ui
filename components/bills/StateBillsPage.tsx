@@ -16,13 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BillFilterSidebar } from './BillFilterSidebar';
 import { StateBillCard } from './StateBillCard';
 import { StateDashboard } from './StateDashboard';
-import { StateDropdown } from './StateDropdown';
+import { StateDropdown } from '@/components/shared/StateDropdown';
 import { StanceLegend } from './StanceLegend';
-import type { Bill, BillFilters, BillTab, SortOrder } from '../static/billConstants';
-import { STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '../static/billConstants';
-import { getBillsForState } from '../static/bills';
-import type { BillDetail } from '../static/bills';
-import type { LegislativeStatus } from '../static/states';
+import type { Bill, BillFilters, BillTab, SortOrder } from '@/static/billConstants';
+import { STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
+import { getBillsForState } from '@/static/bills';
+import type { BillDetail } from '@/static/bills';
+import type { LegislativeStatus } from '@/static/states';
 
 // ── Constants ────────────────────────────────────
 

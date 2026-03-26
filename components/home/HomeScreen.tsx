@@ -1,12 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
-import { AccessibilityInfo, Platform, ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
+
+import { ScreenScrollBody } from '@/components/ui/screen-layout';
+import { STATES, STATUS_STYLES } from '@/static/states';
 
 import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
 import { StateSearch } from './StateSearch';
 import { TakeAction } from './TakeAction';
-import { STATES, STATUS_STYLES } from '../static/states';
 
 interface HomeScreenProps {
   onNavigateToState?: (stateAbbr: string) => void;
@@ -44,8 +46,8 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
   }, [selected, onNavigateToState]);
 
   return (
-    <ScrollView ref={scrollViewRef} className="bg-app-bg flex-1" style={{ paddingTop: 0 }}>
-      <View className="w-full max-w-screen-lg self-center px-4 pb-10 sm:px-6 md:px-8">
+    <ScrollView ref={scrollViewRef} className="flex-1 bg-app-bg" style={{ paddingTop: 0 }}>
+      <ScreenScrollBody>
         {/* Hero — unchanged */}
         <View className="mt-0">
           <HeroSection onFindState={handleFindState} />
@@ -99,7 +101,7 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
             <PrivacyBanner />
           </View>
         </View>
-      </View>
+      </ScreenScrollBody>
     </ScrollView>
   );
 }

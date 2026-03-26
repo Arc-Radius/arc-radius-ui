@@ -3,8 +3,8 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
 
 import type { GraphBillRecord } from './billRecord';
-import type { LegislativeStatus } from '../static/states';
-import { STANCE_BADGE, STANCE_DOT } from '../static/billConstants';
+import type { LegislativeStatus } from '@/static/states';
+import { STANCE_BADGE, STANCE_DOT } from '@/static/billConstants';
 
 export type { GraphBillRecord } from './billRecord';
 
@@ -49,8 +49,7 @@ function formatPassOrOverall(v: unknown): string {
 /** D → supportive colors, R → harmful. No dot, just the letter in a pill. */
 function PartyChip({ value }: { value: string }) {
   const t = value.trim().toUpperCase();
-  const sk: LegislativeStatus | null =
-    t === 'D' ? 'supportive' : t === 'R' ? 'harmful' : null;
+  const sk: LegislativeStatus | null = t === 'D' ? 'supportive' : t === 'R' ? 'harmful' : null;
   if (!sk) {
     return <Text className="text-xs font-medium text-zinc-800">{value}</Text>;
   }
@@ -249,9 +248,7 @@ export function BillGraphRecordPlaceholder({
               </MetadataCell>
               <MetadataCell label="issue_categories" className="min-w-0 flex-1">
                 <View className="w-full rounded-md bg-zinc-200/90 px-2 py-0.5">
-                  <Text
-                    className="flex-shrink font-mono text-[11px] text-zinc-700"
-                    selectable>
+                  <Text className="flex-shrink font-mono text-[11px] text-zinc-700" selectable>
                     {normalizeCommaSpaces(formatMeta(g.issue_categories))}
                   </Text>
                 </View>

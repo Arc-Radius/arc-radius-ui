@@ -22,7 +22,7 @@ import {
   Users,
 } from 'lucide-react-native';
 
-import { DEFAULT_STATE } from '../../components/navigation/tab-config';
+import { DEFAULT_STATE } from '@/components/shell/navigation/tab-config';
 
 // ── Reusable pieces ──────────────────────────────
 
@@ -202,7 +202,7 @@ export default function CrisisRoute() {
   const isWide = width >= 768;
 
   return (
-    <SafeAreaView className="bg-app-bg flex-1" edges={[]}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={[]}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -234,7 +234,7 @@ export default function CrisisRoute() {
               </View>
               <View className="flex-1">
                 <Text className="font-sans-semibold text-[14px]" style={{ color: '#991b1b' }}>
-                  If you're in immediate danger, call 911
+                  If you&apos;re in immediate danger, call 911
                 </Text>
                 <Text className="mt-0.5 font-sans text-[13px]" style={{ color: '#dc2626' }}>
                   For life-threatening emergencies, always call emergency services first.
@@ -586,7 +586,7 @@ export default function CrisisRoute() {
                 <Text className="mt-2 font-sans text-[13px] leading-6" style={{ color: '#4b5563' }}>
                   All crisis lines are confidential. Most will not contact authorities unless there
                   is immediate danger to life. Trans Lifeline specifically will never contact
-                  authorities without your consent. If you're concerned about phone records,
+                  authorities without your consent. If you&apos;re concerned about phone records,
                   consider using text or online chat options.
                 </Text>
               </View>

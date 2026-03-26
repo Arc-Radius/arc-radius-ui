@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { Search } from 'lucide-react-native';
 
-import { STATES } from '../static/states';
+import { STATES } from '@/static/states';
 
 interface StateDropdownProps {
   value?: string | null;

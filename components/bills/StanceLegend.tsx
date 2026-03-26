@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
-import { STANCE_DOT, STANCE_LABEL } from '../static/billConstants';
-import type { LegislativeStatus } from '../static/states';
+import { STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
+import type { LegislativeStatus } from '@/static/states';
 
 const STANCES: LegislativeStatus[] = ['supportive', 'harmful', 'mixed'];
 

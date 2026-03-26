@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Rect as SvgRect, Path, Line } from 'react-native-svg';
 
-import { StateDropdown } from './StateDropdown';
-import { STATES, STATUS_STYLES, MAP_ROWS } from '../static/states';
-import type { LegislativeStatus, StateInfo } from '../static/states';
+import { StateDropdown } from '@/components/shared/StateDropdown';
+import { STATES, STATUS_STYLES, MAP_ROWS } from '@/static/states';
+import type { LegislativeStatus, StateInfo } from '@/static/states';
 
 // ── Props ────────────────────────────────────────
 interface StateSearchProps {

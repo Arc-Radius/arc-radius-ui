@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import {
-  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,7 +9,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Send, HelpCircle, Database, GitFork, Loader2, MessageCircleMore } from 'lucide-react-native';
+import {
+  Send,
+  HelpCircle,
+  Database,
+  GitFork,
+  Loader2,
+  MessageCircleMore,
+} from 'lucide-react-native';
 
 // ── Mock data ────────────────────────────────────
 const SUGGESTED_QUESTIONS = [
@@ -117,8 +123,7 @@ function ChatBubble({ message }: { message: Message }) {
 function TypingIndicator() {
   return (
     <View className="mb-3 items-start">
-      <View
-        className="flex-row items-center gap-2 rounded-2xl rounded-bl-md border border-zinc-200 bg-white px-4 py-3">
+      <View className="flex-row items-center gap-2 rounded-2xl rounded-bl-md border border-zinc-200 bg-white px-4 py-3">
         <Loader2 size={14} color="#71717a" />
         <Text className="font-sans text-sm text-zinc-400">Querying knowledge graph...</Text>
       </View>
@@ -164,7 +169,7 @@ export default function AskRoute() {
   const isEmpty = messages.length === 0;
 
   return (
-    <SafeAreaView className="bg-app-bg flex-1" edges={[]}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={[]}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -189,69 +194,69 @@ export default function AskRoute() {
               </View>
             </View>
             <View className="w-full max-w-[880px] self-center">
-            {isEmpty && (
-              <View className="py-6 gap-3">
-                <View className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4 gap-3">
-                  <View className="flex-row items-start gap-3">
-                    <View
-                      className="rounded-lg p-2"
-                      style={{ backgroundColor: 'rgba(59,130,246,0.2)' }}>
-                      <GitFork size={20} color="#3b82f6" />
+              {isEmpty && (
+                <View className="gap-3 py-6">
+                  <View className="gap-3 overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
+                    <View className="flex-row items-start gap-3">
+                      <View
+                        className="rounded-lg p-2"
+                        style={{ backgroundColor: 'rgba(59,130,246,0.2)' }}>
+                        <GitFork size={20} color="#3b82f6" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="font-sans-semibold text-[14px] text-gray-800">
+                          Knowledge Graph Reasoning
+                        </Text>
+                        <Text className="mt-0.5 font-sans text-[13px] text-gray-500">
+                          Ask questions about LGBTQ+ bills, rights, and protections.
+                        </Text>
+                      </View>
                     </View>
+                    <View style={{ gap: 6 }}>
+                      {SUGGESTED_QUESTIONS.map((q, i) => (
+                        <Pressable
+                          key={i}
+                          onPress={() => sendMessage(q)}
+                          className="flex-row items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2.5 active:bg-gray-100">
+                          <MessageCircleMore size={14} color="#3b82f6" />
+                          <Text className="flex-1 font-sans text-[13px] text-gray-700">{q}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Graph info */}
+                  <View
+                    className="w-full flex-row items-start gap-2.5 rounded-xl p-3.5"
+                    style={{
+                      backgroundColor: 'rgba(59,130,246,0.05)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(59,130,246,0.1)',
+                    }}>
+                    <Database size={14} color="#3b82f6" style={{ marginTop: 2 }} />
                     <View className="flex-1">
-                      <Text className="font-sans-semibold text-[14px] text-gray-800">
-                        Knowledge Graph Reasoning
-                      </Text>
-                      <Text className="mt-0.5 font-sans text-[13px] text-gray-500">
-                        Ask questions about LGBTQ+ bills, rights, and protections.
+                      <Text className="font-sans-medium text-sm text-zinc-700">How it works</Text>
+                      <Text className="mt-0.5 font-sans text-xs leading-5 text-zinc-600">
+                        Your question is matched against bill entities and policy relationships in
+                        our knowledge graph. Relevant subgraphs are retrieved and used as context
+                        for answer generation.
                       </Text>
                     </View>
                   </View>
-                  <View style={{ gap: 6 }}>
-                    {SUGGESTED_QUESTIONS.map((q, i) => (
-                      <Pressable
-                        key={i}
-                        onPress={() => sendMessage(q)}
-                        className="flex-row items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2.5 active:bg-gray-100">
-                        <MessageCircleMore size={14} color="#3b82f6" />
-                        <Text className="flex-1 font-sans text-[13px] text-gray-700">{q}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
                 </View>
+              )}
 
-                {/* Graph info */}
-                <View
-                  className="w-full flex-row items-start gap-2.5 rounded-xl p-3.5"
-                  style={{
-                    backgroundColor: 'rgba(59,130,246,0.05)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(59,130,246,0.1)',
-                  }}>
-                  <Database size={14} color="#3b82f6" style={{ marginTop: 2 }} />
-                  <View className="flex-1">
-                    <Text className="font-sans-medium text-sm text-zinc-700">
-                      How it works
-                    </Text>
-                    <Text className="mt-0.5 font-sans text-xs leading-5 text-zinc-600">
-                      Your question is matched against bill entities and policy relationships in
-                      our knowledge graph. Relevant subgraphs are retrieved and used as context
-                      for answer generation.
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {messages.map((msg) => (
-              <ChatBubble key={msg.id} message={msg} />
-            ))}
-            {isTyping && <TypingIndicator />}
+              {messages.map((msg) => (
+                <ChatBubble key={msg.id} message={msg} />
+              ))}
+              {isTyping && <TypingIndicator />}
             </View>
           </ScrollView>
 
           {/* Input bar */}
-          <View className="border-t border-zinc-200/80 bg-app-bg pb-2 pt-2" style={{ paddingHorizontal: 24 }}>
+          <View
+            className="border-t border-zinc-200/80 bg-app-bg pb-2 pt-2"
+            style={{ paddingHorizontal: 24 }}>
             <View className="w-full max-w-[880px] flex-row items-end gap-2 self-center">
               <View className="flex-1 flex-row items-end rounded-xl border border-zinc-200 bg-white px-3 py-2">
                 <TextInput

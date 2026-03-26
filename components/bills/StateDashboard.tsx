@@ -3,8 +3,8 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Landmark } from 'lucide-react-native';
 
-import { STANCE_HEADER_GLASS } from '../static/billConstants';
-import type { LegislativeStatus } from '../static/states';
+import { STANCE_HEADER_GLASS } from '@/static/billConstants';
+import type { LegislativeStatus } from '@/static/states';
 
 interface StateInfo {
   name: string;
@@ -24,7 +24,12 @@ interface StateDashboardProps {
   headerStacked?: boolean;
 }
 
-export function StateDashboard({ info, status = 'mixed', headerRight, headerStacked }: StateDashboardProps) {
+export function StateDashboard({
+  info,
+  status = 'mixed',
+  headerRight,
+  headerStacked,
+}: StateDashboardProps) {
   const fullUrl = info.stateLink
     ? info.stateLink.startsWith('http')
       ? info.stateLink
@@ -44,9 +49,17 @@ export function StateDashboard({ info, status = 'mixed', headerRight, headerStac
   const headerStyle = STANCE_HEADER_GLASS[status];
 
   return (
-    <View className="overflow-hidden rounded-xl border bg-white" style={{ borderColor: headerStyle.border }}>
+    <View
+      className="overflow-hidden rounded-xl border bg-white"
+      style={{ borderColor: headerStyle.border }}>
       {/* ── Header bar (climate-tinted) ── */}
-      <View className="px-4 py-3" style={{ backgroundColor: headerStyle.bg, borderBottomWidth: 0.5, borderBottomColor: headerStyle.border }}>
+      <View
+        className="px-4 py-3"
+        style={{
+          backgroundColor: headerStyle.bg,
+          borderBottomWidth: 0.5,
+          borderBottomColor: headerStyle.border,
+        }}>
         <View
           className={`gap-3 ${headerStacked ? 'flex-col' : 'flex-row items-center justify-between'}`}>
           <View className="flex-row items-center gap-2.5">

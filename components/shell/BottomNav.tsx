@@ -8,7 +8,7 @@ import {
   Phone as PhoneIcon,
 } from 'lucide-react-native';
 
-import { DEFAULT_STATE, getCurrentStateAbbr } from './navigation/tab-config';
+import { DEFAULT_STATE, getCurrentStateAbbr } from '@/components/shell/navigation/tab-config';
 
 type Tab = 'home' | 'bills' | 'resources' | 'crisis';
 
@@ -100,8 +100,7 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
   return (
     <View
       style={{
-        paddingBottom:
-          Platform.OS === 'web' ? insets.bottom : Math.max(2, insets.bottom * 0.4),
+        paddingBottom: Platform.OS === 'web' ? insets.bottom : Math.max(2, insets.bottom * 0.4),
         backgroundColor: '#18181b',
         borderTopWidth: 1,
         borderTopColor: 'rgba(63, 63, 70, 0.6)',
@@ -117,9 +116,7 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
           elevation: 8,
         }),
       }}>
-      <View
-        className="flex-row px-2 pt-1"
-        style={{ paddingBottom: Platform.OS === 'web' ? 4 : 0 }}>
+      <View className="flex-row px-2 pt-1" style={{ paddingBottom: Platform.OS === 'web' ? 4 : 0 }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key;
           const isCrisis = tab.key === 'crisis';

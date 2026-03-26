@@ -11,8 +11,8 @@ import {
 
 import { FileText } from 'lucide-react-native';
 
-import type { Bill } from '../static/billConstants';
-import { STANCE_DOT, STANCE_HEADER_GLASS } from '../static/billConstants';
+import type { Bill } from '@/static/billConstants';
+import { STANCE_DOT, STANCE_HEADER_GLASS } from '@/static/billConstants';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -87,7 +87,9 @@ export function StateBillCard({ bill, onPress }: StateBillCardProps) {
   const headerGlass = STANCE_HEADER_GLASS[bill.stance];
 
   return (
-    <View className="overflow-hidden rounded-xl border bg-white" style={{ borderColor: headerGlass.border }}>
+    <View
+      className="overflow-hidden rounded-xl border bg-white"
+      style={{ borderColor: headerGlass.border }}>
       <View
         className="px-3.5 pt-3.5"
         style={{
@@ -119,12 +121,7 @@ export function StateBillCard({ bill, onPress }: StateBillCardProps) {
             className="min-w-0 flex-1 flex-row items-center gap-2.5 active:opacity-90"
             accessibilityRole="button"
             accessibilityLabel={`Open bill: ${bill.title}`}>
-            <FileText
-              size={20}
-              color="#71717a"
-              strokeWidth={2}
-              accessibilityElementsHidden
-            />
+            <FileText size={20} color="#71717a" strokeWidth={2} accessibilityElementsHidden />
             <Text className="min-w-0 flex-1 font-sans-semibold text-[15px] leading-5 text-zinc-900">
               {bill.title}
             </Text>
@@ -133,7 +130,9 @@ export function StateBillCard({ bill, onPress }: StateBillCardProps) {
             onPress={toggleExpand}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel={expanded ? 'Hide inline preview' : 'Show inline preview on this card'}>
+            accessibilityLabel={
+              expanded ? 'Hide inline preview' : 'Show inline preview on this card'
+            }>
             <View className="flex-row items-center gap-1">
               <Text className="font-sans text-[10px] text-zinc-400">Preview</Text>
               <Animated.View style={{ transform: [{ rotate }] }}>
@@ -173,7 +172,9 @@ export function StateBillCard({ bill, onPress }: StateBillCardProps) {
           accessibilityRole="button"
           accessibilityLabel={`Open bill: ${bill.title}`}>
           <View className="border-t border-zinc-100 px-3.5 py-3">
-            <Text className="font-sans text-[13px] leading-5 text-zinc-800">{bill.description}</Text>
+            <Text className="font-sans text-[13px] leading-5 text-zinc-800">
+              {bill.description}
+            </Text>
             <Text className="mt-2 font-sans text-xs text-zinc-500">
               {bill.primary_sponsor} · {bill.last_action}
             </Text>

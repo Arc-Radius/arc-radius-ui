@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
-import { STATUS_STYLES } from '../static/states';
-import type { LegislativeStatus } from '../static/states';
+import { STATUS_STYLES } from '@/static/states';
+import type { LegislativeStatus } from '@/static/states';
 
 export function StatusBadge({ status }: { status: LegislativeStatus }) {
   const s = STATUS_STYLES[status];

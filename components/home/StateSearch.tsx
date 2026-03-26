@@ -13,6 +13,7 @@ interface StateSearchProps {
   onStateSelect: (abbr: string) => void;
   onNavigateToState?: () => void;
   scrollViewRef?: React.RefObject<ScrollView | null>;
+  containerY?: React.RefObject<number>;
 }
 
 // ── Glass styles ─────────────────────────────────
@@ -325,6 +326,7 @@ export function StateSearch({
   onStateSelect,
   onNavigateToState,
   scrollViewRef,
+  containerY,
 }: StateSearchProps) {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
@@ -333,19 +335,26 @@ export function StateSearch({
   const containerRef = useRef<View>(null);
 
   useEffect(() => {
-    if (!isCompact || !selected || !selectedInfo || !scrollViewRef?.current) {
+    if (!selected || !selectedInfo || !scrollViewRef?.current) {
       return;
     }
 
-    const targetRef = Platform.OS === 'web' ? detailRef : containerRef;
-    const offset = Platform.OS === 'web' ? -16 : -12;
+    if (containerY?.current != null) {
+      const timeout = setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          y: containerY.current - 16,
+          animated: true,
+        });
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
 
     const timeout = setTimeout(() => {
-      targetRef.current?.measureLayout(
+      containerRef.current?.measureLayout(
         (scrollViewRef.current as any)?.getInnerViewRef?.(),
         (_x: number, y: number) => {
           scrollViewRef.current?.scrollTo({
-            y: y + offset,
+            y: y - 12,
             animated: true,
           });
         },

@@ -980,10 +980,10 @@ export function BillDetailPage({
                           <Text className="font-sans-medium text-sm text-zinc-800">
                             Generated {format === 'email' ? 'email' : 'phone script'}
                           </Text>
-                          <View className="flex-row gap-1.5">
+                          <View className="flex-row items-center gap-1.5">
                             <Pressable
                               onPress={() => copyToClipboard(draftLetter)}
-                              className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 active:bg-zinc-50">
+                              className="items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-1.5 active:bg-zinc-50">
                               {copied ? (
                                 <View className="flex-row items-center gap-1">
                                   <Check size={11} color="#71717a" />
@@ -1006,7 +1006,7 @@ export function BillDetailPage({
                                     `mailto:${email}?subject=${subject}&body=${encodeURIComponent(draftLetter)}`
                                   );
                               }}
-                              className="rounded-lg px-3 py-1.5 active:opacity-90"
+                              className="items-center justify-center rounded-lg px-3 py-1.5 active:opacity-90"
                               style={{ backgroundColor: accent.button }}>
                               <Text className="font-sans-medium text-xs text-white">
                                 Open in mail
@@ -1150,8 +1150,8 @@ export function BillDetailPage({
               <View className="items-center gap-3 py-2">
                 <View
                   className="h-10 w-10 items-center justify-center rounded-full"
-                  style={{ backgroundColor: STANCE_BADGE.supportive.bg }}>
-                  <Check size={20} color={STANCE_BADGE.supportive.text} />
+                  style={{ backgroundColor: STANCE_BADGE[stanceKey].bg }}>
+                  <Check size={20} color={STANCE_BADGE[stanceKey].text} />
                 </View>
                 <Text className="font-sans-medium text-base text-zinc-900">Response recorded</Text>
                 <Text className="text-center font-sans text-sm text-zinc-500">

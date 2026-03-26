@@ -17,7 +17,7 @@ interface BottomNavProps {
   onTabPress?: (tab: Tab) => void;
 }
 
-const ICON_SIZE = 20;
+const ICON_SIZE = 22;
 
 // Dark nav — matches state map & state overview card + HeroSection glass palette
 const PALETTE = {
@@ -51,7 +51,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'home', label: 'Home' },
   { key: 'bills', label: 'Bills' },
   { key: 'resources', label: 'Ask' },
-  { key: 'crisis', label: 'Crisis' },
+  { key: 'crisis', label: 'Get Help' },
 ];
 
 function activeTabFromPathname(pathname: string): Tab {
@@ -151,13 +151,13 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
               accessibilityLabel={tab.label}
               accessibilityState={{ selected: isActive }}>
               <View
-                className="h-7 w-7 items-center justify-center rounded-lg"
+                className="h-8 w-8 items-center justify-center rounded-lg"
                 style={iconCardStyle}>
                 <TabIcon tab={tab.key} active={isActive} />
               </View>
 
               <Text
-                className="font-sans text-[10px]"
+                className="font-sans text-[11px]"
                 style={{
                   color: labelColor,
                   fontWeight: isActive || isCrisis ? '500' : '400',

@@ -1,5 +1,6 @@
 import { Link, usePathname } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Linking, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Compass } from 'lucide-react-native';
 import { twMerge } from 'tailwind-merge';
 
 import ArcRadiusLogo from '@/components/ui/ArcRadiusLogo';
@@ -36,10 +37,10 @@ function useStatusText(): { label: string; dot?: string } {
   }
 
   // Ask page
-  if (p.startsWith('/ask')) return { label: 'Ask a question' };
+  if (p.startsWith('/ask')) return { label: 'Bills Q & A' };
 
   // Crisis
-  if (p.startsWith('/crisis')) return { label: 'Crisis resources', dot: '#f97316' };
+  if (p.startsWith('/crisis')) return { label: 'Help & Support', dot: '#f97316' };
 
   // Home / default
   return { label: '50 states tracked' };
@@ -47,6 +48,8 @@ function useStatusText(): { label: string; dot?: string } {
 
 // ── Header ───────────────────────────────────────
 export function Header() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 768;
   const status = useStatusText();
 
   return (
@@ -73,6 +76,18 @@ export function Header() {
           <Text className="font-sans text-[12px] text-zinc-600">{status.label}</Text>
         </View>
       </View>
+      {/* Right: About us */}
+      {!isCompact && (
+        <Pressable
+          onPress={() => Linking.openURL('https://ambroquach29.github.io/spring26-mids-capstone/#about')}
+          className="flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:opacity-70"
+          style={{ borderWidth: 1, borderColor: 'rgba(59,130,246,0.25)' }}>
+          <Compass size={13} color="#3b82f6" />
+          <Text className="font-sans-medium text-[12px]" style={{ color: '#3b82f6' }}>
+            About
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 }

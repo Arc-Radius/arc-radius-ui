@@ -28,12 +28,12 @@ export const APP_TABS: AppTabConfig[] = [
   },
   {
     id: 'bills',
-    routeName: 'state/[state]',
+    routeName: 'state/[stateAbbr]',
     label: 'Bills',
     icon: 'document-text-outline',
     getHref: ({ stateAbbr }) => ({
-      pathname: '/state/[state]',
-      params: { state: stateAbbr ?? DEFAULT_STATE },
+      pathname: '/state/[stateAbbr]',
+      params: { stateAbbr: stateAbbr ?? DEFAULT_STATE },
     }),
     matchesPath: (pathname) => pathname.startsWith('/state/'),
   },

@@ -6,13 +6,13 @@ import type { BillTab } from '@/static/billConstants';
 import { STATES } from '@/static/states';
 
 export default function StateBillsRoute() {
-  const { state } = useLocalSearchParams<{ state?: string | string[] }>();
+  const { stateAbbr: stateParam } = useLocalSearchParams<{ stateAbbr?: string | string[] }>();
   const router = useRouter();
 
   const stateAbbr = useMemo(() => {
-    const rawState = Array.isArray(state) ? state[0] : state;
+    const rawState = Array.isArray(stateParam) ? stateParam[0] : stateParam;
     return typeof rawState === 'string' ? rawState.trim().toUpperCase() : '';
-  }, [state]);
+  }, [stateParam]);
 
   const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
 
@@ -23,8 +23,8 @@ export default function StateBillsRoute() {
         return;
       }
       router.replace({
-        pathname: '/state/[state]',
-        params: { state: selectedStateAbbr },
+        pathname: '/state/[stateAbbr]',
+        params: { stateAbbr: selectedStateAbbr },
       });
     },
     [router]
@@ -41,8 +41,8 @@ export default function StateBillsRoute() {
       }
 
       router.push({
-        pathname: '/state/[state]/[billId]',
-        params: { state: stateAbbr, billId, billTab },
+        pathname: '/state/[stateAbbr]/[billId]',
+        params: { stateAbbr, billId, billTab },
       });
     },
     [router, stateAbbr]

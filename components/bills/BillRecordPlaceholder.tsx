@@ -278,27 +278,14 @@ export function BillGraphRecordPlaceholder({
                 <PartyChip value={formatMeta(g.bill_dominant_party)} />
               </MetadataCell>
             </View>
-            <View className="flex-row gap-0.5">
-              <MetadataCell label="passed" className="min-w-0 flex-1">
-                <Text className="text-xs font-medium text-zinc-800">{formatMeta(g.passed)}</Text>
-              </MetadataCell>
-              <MetadataCell label="failed" className="min-w-0 flex-1">
-                <Text className="text-xs font-medium text-zinc-800">{formatMeta(g.failed)}</Text>
-              </MetadataCell>
-            </View>
-            <View className="flex-row gap-0.5">
-              <MetadataCell label="vetoed" className="min-w-0 flex-1">
-                <Text className="text-xs font-medium text-zinc-800">{formatMeta(g.vetoed)}</Text>
-              </MetadataCell>
-              <MetadataCell label="r_sponsorship_ratio" className="min-w-0 flex-1">
-                <Text className="text-xs font-medium text-zinc-800">
-                  {typeof g.r_sponsorship_ratio === 'number' &&
-                  Number.isFinite(g.r_sponsorship_ratio)
-                    ? g.r_sponsorship_ratio.toFixed(1)
-                    : formatMeta(g.r_sponsorship_ratio)}
-                </Text>
-              </MetadataCell>
-            </View>
+            <MetadataCell label="r_sponsorship_ratio" span>
+              <Text className="text-xs font-medium text-zinc-800">
+                {typeof g.r_sponsorship_ratio === 'number' &&
+                Number.isFinite(g.r_sponsorship_ratio)
+                  ? g.r_sponsorship_ratio.toFixed(1)
+                  : formatMeta(g.r_sponsorship_ratio)}
+              </Text>
+            </MetadataCell>
             <View className="flex-row gap-0.5">
               <MetadataCell label="pass_rate_gap" className="min-w-0 flex-1">
                 <Text className="text-xs font-medium text-zinc-800">

@@ -257,16 +257,8 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&gt;/g, '>');
 }
 
-/** Prefer graph outcome flags over list `billTab` so the header matches terminal states. */
-function resolveLifecyclePillLabel(
-  graph: Partial<GraphBillRecord> | undefined,
-  billTab: BillTab
-): 'Active' | 'Passed' | 'Failed' | 'Vetoed' {
-  if (graph?.vetoed === true) return 'Vetoed';
-  if (graph?.passed === true) return 'Passed';
-  if (graph?.failed === true) return 'Failed';
-  if (billTab === 'passed') return 'Passed';
-  return 'Active';
+function resolveLifecyclePillLabel(billTab: BillTab): 'Active' | 'Passed' {
+  return billTab === 'passed' ? 'Passed' : 'Active';
 }
 
 const STANCE_WORD: Record<LegislativeStatus, string> = {
@@ -478,10 +470,6 @@ export function BillDetailPage({
       session_year: num(r.session_year ?? year),
       state_lean: str(r.state_lean, undefined),
       bill_dominant_party: str(r.bill_dominant_party, undefined),
-      passed:
-        r.passed !== undefined ? r.passed : bill.billTab === 'passed' ? true : undefined,
-      failed: r.failed,
-      vetoed: r.vetoed,
       r_sponsorship_ratio: num(r.r_sponsorship_ratio),
       pass_rate_gap: snp(r.pass_rate_gap),
       overall_pass_rate: snp(r.overall_pass_rate),
@@ -550,7 +538,7 @@ export function BillDetailPage({
   const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
   const detailHistory = bill.history;
   const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
-  const lifecycleLabel = resolveLifecyclePillLabel(rawGraph ?? undefined, bill.billTab);
+  const lifecycleLabel = resolveLifecyclePillLabel(bill.billTab);
   const displayLegislativeStatus =
     rawGraph?.status_desc?.trim() ||
     (bill.status && !isLegislativeStanceStatus(bill.status) ? bill.status : '');

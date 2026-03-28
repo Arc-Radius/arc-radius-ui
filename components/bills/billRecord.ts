@@ -25,9 +25,6 @@ export interface GraphBillRecord {
   year?: number;
   state_lean?: string;
   bill_dominant_party?: string;
-  passed?: boolean;
-  failed?: boolean;
-  vetoed?: boolean;
   r_sponsorship_ratio?: number;
   /** Numeric gap or display string e.g. `+12%` */
   pass_rate_gap?: number | string;

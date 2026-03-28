@@ -128,7 +128,14 @@ function RelatedBillsSection({
   relatedBills: RelatedBill[];
   onPressBill?: (billId: string) => void;
 }) {
-  if (relatedBills.length === 0) return null;
+  if (relatedBills.length === 0) {
+    return (
+      <View className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <Text className="mb-2 font-sans-semibold text-sm text-zinc-800">Related bills</Text>
+        <Text className="font-sans text-sm leading-relaxed text-zinc-500">Coming soon.</Text>
+      </View>
+    );
+  }
   const grouped = {
     high: relatedBills.filter((b) => b.confidence === 'high'),
     medium: relatedBills.filter((b) => b.confidence === 'medium'),
@@ -316,7 +323,7 @@ const ACTION_ACCENT: Record<
 export function BillDetailPage({
   bill: rawBill,
   onClose,
-  stateName,
+  stateName: _stateName,
   relatedBills: _relatedBills,
   billTab: billTabProp,
 }: {
@@ -703,10 +710,8 @@ export function BillDetailPage({
                         What it means
                       </Text>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
-                        <Text className="font-sans text-sm leading-relaxed text-zinc-600">
-                          {bill.summary.trim()
-                            ? bill.summary
-                            : 'No summary is available for this bill yet.'}
+                        <Text className="font-sans text-sm leading-relaxed text-zinc-500">
+                          Coming soon.
                         </Text>
                       </View>
                     </View>
@@ -715,10 +720,8 @@ export function BillDetailPage({
                         Why it matters
                       </Text>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
-                        <Text className="font-sans text-sm leading-relaxed text-zinc-600">
-                          {graphRecordValues.issues?.trim()
-                            ? graphRecordValues.issues
-                            : `Policy outcomes in ${bill.state || stateName || 'this state'} can affect LGBTQ+ residents, schools, and healthcare access.`}
+                        <Text className="font-sans text-sm leading-relaxed text-zinc-500">
+                          Coming soon.
                         </Text>
                       </View>
                     </View>

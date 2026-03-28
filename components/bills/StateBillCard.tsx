@@ -151,7 +151,9 @@ export function StateBillCard({ bill, onPress }: StateBillCardProps) {
         accessibilityLabel={`Open bill: ${bill.title}`}>
         <View className="px-3.5 py-2.5">
           <View className="flex-row flex-wrap items-center gap-2">
-            <Text className="font-sans text-[11px] text-zinc-500">{bill.status}</Text>
+            <Text className="font-sans text-[11px] text-zinc-500">
+              {bill.status_desc?.trim() ? bill.status_desc : bill.status}
+            </Text>
             <Dot />
             <Text className="font-sans text-[11px] text-zinc-500">
               {formatDate(bill.last_action_date)}

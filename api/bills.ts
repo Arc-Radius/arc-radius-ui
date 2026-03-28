@@ -4,35 +4,49 @@ import {
   billDetailResponseSchema,
   stateBillsEnvelopeSchema,
   type BillDetailResponse,
-  type StateBillsResponse,
+  type StateBillListItem,
+  type StateBillsMeta,
 } from '@/api/schemas';
+import type { Bill, BillTab } from '@/static/billConstants';
 import type { BillDetail } from '@/static/bills';
 
-function mapListItemToBillDetail(item: {
-  id: string;
-  title: string;
-  description: string;
-  issue_categories: string[];
-  stance: 'supportive' | 'mixed' | 'harmful';
-  billTab: 'active' | 'passed';
-}): BillDetail {
+export function mapListItemToBill(item: StateBillListItem): Bill {
   return {
     id: item.id,
+    bill_number: item.bill_number,
     title: item.title,
-    summary: item.description,
-    tags: (item.issue_categories ?? []) as BillDetail['tags'],
-    status: item.stance,
+    description: item.description,
+    stance: item.stance,
     billTab: item.billTab,
-    whatItMeans: item.description,
-    whyItMatters: item.description,
-    takeActionTitle: 'Take Action',
-    takeActionBody:
-      "Make your voice heard. Here's how you can create meaningful change. Get started by drafting an email or phone script about this bill to share with your representative.",
-    actionItem: {
-      title: 'Contact your representatives',
-      subtitle: 'Send a message to your elected officials',
-    },
-    relatedBillIds: [],
+    status: item.status,
+    status_desc: item.status_desc,
+    last_action: item.last_action,
+    last_action_date: item.last_action_date,
+    year: item.year,
+    primary_sponsor: item.primary_sponsor,
+    issue_categories: item.issue_categories,
+    url: item.url,
+  };
+}
+
+export interface FetchStateBillsOptions {
+  cursor?: string | null;
+  tab?: BillTab;
+}
+
+export interface StateBillsListResult {
+  bills: Bill[];
+  meta: StateBillsMeta;
+  facets: unknown;
+}
+
+function mapEnvelopeToResult(
+  parsed: ReturnType<typeof stateBillsEnvelopeSchema.parse>
+): StateBillsListResult {
+  return {
+    bills: parsed.bills.map(mapListItemToBill),
+    meta: parsed.meta ?? {},
+    facets: parsed.facets,
   };
 }
 
@@ -46,13 +60,21 @@ function mapSpectrumToStance(
 
 export async function fetchStateBills(
   stateAbbr: string,
+  options: FetchStateBillsOptions = {},
   signal?: AbortSignal
-): Promise<StateBillsResponse> {
-  const data = await apiClient.get<unknown>(`/bills?state=${encodeURIComponent(stateAbbr)}`, {
-    signal,
-  });
+): Promise<StateBillsListResult> {
+  const params = new URLSearchParams();
+  params.set('state', stateAbbr);
+  if (options.tab) {
+    params.set('tab', options.tab);
+  }
+  if (options.cursor) {
+    params.set('cursor', options.cursor);
+  }
+  const qs = params.toString();
+  const data = await apiClient.get<unknown>(`/bills?${qs}`, { signal });
   const parsed = stateBillsEnvelopeSchema.parse(data);
-  return parsed.bills.map(mapListItemToBillDetail);
+  return mapEnvelopeToResult(parsed);
 }
 
 export async function fetchBillDetail(

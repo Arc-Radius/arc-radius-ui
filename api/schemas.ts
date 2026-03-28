@@ -47,12 +47,24 @@ export const stateBillListItemSchema = z.object({
   primary_sponsor: z.string(),
   issue_categories: z.array(z.string()),
   url: z.string().optional(),
+  relevance: z.number().nullable().optional(),
+});
+
+/** Matches backend `ListMeta` for `/bills` list responses. */
+export const stateBillsMetaSchema = z.object({
+  sortBy: z.string().optional(),
+  sortDir: z.string().optional(),
+  pageSize: z.number().optional(),
+  cursor: z.string().nullable().optional(),
+  nextCursor: z.string().nullable().optional(),
+  hasMore: z.boolean().optional(),
+  totalCount: z.number().optional(),
 });
 
 export const stateBillsEnvelopeSchema = z.object({
   bills: z.array(stateBillListItemSchema),
   facets: z.unknown().optional(),
-  meta: z.unknown().optional(),
+  meta: stateBillsMetaSchema.optional(),
 });
 
 export const apiBillDetailItemSchema = z.object({
@@ -104,3 +116,5 @@ export const billDetailEnvelopeSchema = z.object({
 export type StateBillsResponse = z.infer<typeof stateBillsResponseSchema>;
 export type BillDetailResponse = z.infer<typeof billDetailResponseSchema>;
 export type StateBillsEnvelopeResponse = z.infer<typeof stateBillsEnvelopeSchema>;
+export type StateBillsMeta = z.infer<typeof stateBillsMetaSchema>;
+export type StateBillListItem = z.infer<typeof stateBillListItemSchema>;

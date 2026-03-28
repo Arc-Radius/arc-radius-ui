@@ -5,9 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { StateBillsPage } from '@/components/bills/StateBillsPage';
 import { fetchBillDetail } from '@/api/bills';
 import { queryKeys } from '@/queries/keys';
-import { useStateBillsQuery } from '@/queries/useStateBillsQuery';
+import { useStateBillsTabData } from '@/queries/useStateBillsTabData';
 import type { BillTab } from '@/static/billConstants';
-import type { BillDetail } from '@/static/bills';
 import { STATES } from '@/static/states';
 
 export default function StateBillsRoute() {
@@ -21,8 +20,9 @@ export default function StateBillsRoute() {
   }, [stateParam]);
 
   const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
-  const billsQuery = useStateBillsQuery(stateAbbr);
-  const billsData: BillDetail[] = (billsQuery.data ?? []) as BillDetail[];
+
+  const { activeBills, passedBills, totalBillCount, apiPagination, apiLoading, apiErrors } =
+    useStateBillsTabData(stateAbbr);
 
   const handleSelectState = useCallback(
     (selectedStateAbbr: string) => {
@@ -67,9 +67,12 @@ export default function StateBillsRoute() {
         stateAbbr={stateAbbr || 'N/A'}
         stateName={stateAbbr || 'Unknown State'}
         status="mixed"
-        billsData={billsData}
-        isLoading={billsQuery.isLoading}
-        errorMessage={billsQuery.isError ? 'Failed to load bills. Pull to refresh or try again.' : null}
+        apiBills={undefined}
+        totalBillCount={undefined}
+        apiPagination={undefined}
+        apiLoading={undefined}
+        apiErrors={undefined}
+        errorMessage={null}
         onSelectState={handleSelectState}
         onBrowseMap={handleBrowseMap}
         onBillPress={handleBillPress}
@@ -82,9 +85,12 @@ export default function StateBillsRoute() {
       stateAbbr={stateAbbr}
       stateName={stateInfo.name}
       status={stateInfo.status}
-      billsData={billsData}
-      isLoading={billsQuery.isLoading}
-      errorMessage={billsQuery.isError ? 'Failed to load bills. Pull to refresh or try again.' : null}
+      apiBills={{ active: activeBills, passed: passedBills }}
+      totalBillCount={totalBillCount}
+      apiPagination={apiPagination}
+      apiLoading={apiLoading}
+      apiErrors={apiErrors}
+      errorMessage={null}
       onSelectState={handleSelectState}
       onBrowseMap={handleBrowseMap}
       onBillPress={handleBillPress}

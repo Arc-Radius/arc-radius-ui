@@ -4,7 +4,6 @@ import { useLocalSearchParams } from 'expo-router';
 
 import { BillDetailPage } from '@/components/bills/BillDetailPage';
 import { useBillDetailQuery } from '@/queries/useBillDetailQuery';
-import { useStateBillsQuery } from '@/queries/useStateBillsQuery';
 import type { BillTab } from '@/static/billConstants';
 import { STATES } from '@/static/states';
 
@@ -39,13 +38,7 @@ export default function BillDetailRoute() {
   const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
   const resolvedStateName = stateInfo?.name ?? (stateAbbr || 'Unknown State');
   const detailQuery = useBillDetailQuery(stateAbbr, normalizedBillId);
-  const stateBillsQuery = useStateBillsQuery(stateAbbr);
-  const stateBills = stateBillsQuery.data ?? [];
   const bill = detailQuery.data;
-  const relatedBills = useMemo(() => {
-    if (!bill) return [];
-    return stateBills.filter((item) => bill.relatedBillIds.includes(item.id));
-  }, [bill, stateBills]);
 
   const billTabFromRoute = parseBillTab(billTabParam);
 
@@ -71,7 +64,6 @@ export default function BillDetailRoute() {
     <BillDetailPage
       stateName={resolvedStateName}
       bill={bill}
-      relatedBills={relatedBills}
       billTab={billTabFromRoute ?? bill.billTab ?? 'active'}
     />
   );

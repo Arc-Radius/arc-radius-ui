@@ -9,8 +9,8 @@ export default function Home() {
     <HomeScreen
       onNavigateToState={(abbr) =>
         router.push({
-          pathname: '/state/[state]',
-          params: { state: abbr },
+          pathname: '/state/[stateAbbr]',
+          params: { stateAbbr: abbr },
         })
       }
     />

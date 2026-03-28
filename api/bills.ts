@@ -1,14 +1,27 @@
 import { apiClient } from '@/api/client';
 import {
   billDetailEnvelopeSchema,
-  billDetailResponseSchema,
+  relatedBillSchema,
   stateBillsEnvelopeSchema,
-  type BillDetailResponse,
+  type ApiBillDetailItem,
+  type GraphRecordParsed,
   type StateBillListItem,
   type StateBillsMeta,
 } from '@/api/schemas';
 import type { Bill, BillTab } from '@/static/billConstants';
-import type { BillDetail } from '@/static/bills';
+import type { RelatedBill } from '@/static/bills';
+
+/** `GET /bills/:billPk`: API `bill` plus optional `graphRecord` fields merged for the detail UI. */
+export type BillDetailMerged = Omit<ApiBillDetailItem, 'relatedBills'> &
+  Partial<GraphRecordParsed> & { relatedBills?: RelatedBill[] };
+
+function normalizeRelatedBills(raw: unknown[] | undefined): RelatedBill[] {
+  if (!raw?.length) return [];
+  return raw.flatMap((item) => {
+    const r = relatedBillSchema.safeParse(item);
+    return r.success ? [r.data] : [];
+  });
+}
 
 export function mapListItemToBill(item: StateBillListItem): Bill {
   return {
@@ -50,14 +63,6 @@ function mapEnvelopeToResult(
   };
 }
 
-function mapSpectrumToStance(
-  spectrum: 'Supportive' | 'Neutral' | 'Harmful' | undefined
-): 'supportive' | 'mixed' | 'harmful' {
-  if (spectrum === 'Supportive') return 'supportive';
-  if (spectrum === 'Harmful') return 'harmful';
-  return 'mixed';
-}
-
 export async function fetchStateBills(
   stateAbbr: string,
   options: FetchStateBillsOptions = {},
@@ -81,29 +86,14 @@ export async function fetchBillDetail(
   _stateAbbr: string,
   billId: string,
   signal?: AbortSignal
-): Promise<BillDetailResponse> {
+): Promise<BillDetailMerged> {
   const data = await apiClient.get<unknown>(`/bills/${encodeURIComponent(billId)}`, { signal });
   const parsed = billDetailEnvelopeSchema.parse(data);
-  const bill = parsed.bill;
-  return billDetailResponseSchema.parse({
-    id: bill.id,
-    title: bill.title,
-    summary: bill.summary,
-    tags: ((bill.subjects ?? []).filter((subject) =>
-      ['Healthcare', 'Education', 'Identity Documents', 'Safety', 'Sports'].includes(subject)
-    ) as BillDetail['tags']) ?? [],
-    status: mapSpectrumToStance(bill.spectrum),
-    billTab: bill.billTab ?? 'active',
-    whatItMeans: bill.summary,
-    whyItMatters: bill.summary,
-    takeActionTitle: 'Take Action',
-    takeActionBody:
-      "Make your voice heard. Here's how you can create meaningful change. Get started by drafting an email or phone script about this bill to share with your representative.",
-    actionItem: {
-      title: 'Contact your representatives',
-      subtitle: 'Send a message to your elected officials',
-    },
-    relatedBillIds: [],
-    relatedBills: [],
-  });
+  const { bill, graphRecord } = parsed;
+  const relatedBills = normalizeRelatedBills(bill.relatedBills ?? undefined);
+  return {
+    ...bill,
+    ...(graphRecord ?? {}),
+    relatedBills,
+  };
 }

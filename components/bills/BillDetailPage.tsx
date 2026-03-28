@@ -28,6 +28,7 @@ import {
   LogIn,
 } from 'lucide-react-native';
 
+import type { BillDetailMerged } from '@/api/bills';
 import { ScreenContent } from '@/components/ui/screen-layout';
 import { BillGraphRecordPlaceholder, type GraphBillRecord } from './BillRecordPlaceholder';
 import type { BillTab } from '@/static/billConstants';
@@ -109,6 +110,9 @@ export interface Bill {
   researchEvidence?: { studies?: Study[]; healthImpacts?: HealthImpact[]; dsTechnique?: string };
   sponsorContact?: SponsorContact;
   billTab?: BillTab;
+  /** From merged `graphRecord` (LegiScan / state portal). */
+  url?: string;
+  state_link?: string;
 }
 
 const CONFIDENCE_DOT: Record<string, string> = {
@@ -243,6 +247,28 @@ function isLegislativeStanceStatus(s: string): boolean {
   return t === 'supportive' || t === 'harmful' || t === 'mixed';
 }
 
+/** Decode common HTML entities in API summaries (e.g. &quot;). */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+/** Prefer graph outcome flags over list `billTab` so the header matches terminal states. */
+function resolveLifecyclePillLabel(
+  graph: Partial<GraphBillRecord> | undefined,
+  billTab: BillTab
+): 'Active' | 'Passed' | 'Failed' | 'Vetoed' {
+  if (graph?.vetoed === true) return 'Vetoed';
+  if (graph?.passed === true) return 'Passed';
+  if (graph?.failed === true) return 'Failed';
+  if (billTab === 'passed') return 'Passed';
+  return 'Active';
+}
+
 const STANCE_WORD: Record<LegislativeStatus, string> = {
   supportive: 'supportive',
   harmful: 'harmful',
@@ -259,61 +285,6 @@ const PILL_LABEL_TEXT_STYLE = Platform.select({
   default: { lineHeight: 14 },
 });
 const HEADER_PILL_MIN_HEIGHT = 24;
-
-const MOCK_BILL_TEXT = `SECTION 1. Title.\nThis act may be cited as the "Illustrative Civil Rights Update Act."\n\nSECTION 2. Definitions.\nFor purposes of this chapter:\n(a) "Gender identity" means a person's internal sense of gender, which may or may not align with sex assigned at birth.\n(b) "Sexual orientation" means emotional, romantic, or sexual attraction to other persons.\n\nSECTION 3. Public accommodations.\nA place of public accommodation may not discriminate on the basis of sexual orientation, gender identity, or gender expression in the provision of services, programs, or facilities.`;
-
-const MOCK_LEGISLATIVE_HISTORY: HistoryEntry[] = [
-  {
-    date: 'Mar 4, 2025',
-    chamber: 'House',
-    action: 'Introduced and read first time. Referred to Committee on Judiciary.',
-  },
-  {
-    date: 'Mar 11, 2025',
-    chamber: 'House',
-    action: 'Committee hearing held; public testimony received.',
-  },
-  {
-    date: 'Mar 18, 2025',
-    chamber: 'House',
-    action: 'Placed on calendar for second reading (mock).',
-  },
-];
-
-const MOCK_GRAPH_BILL_RECORD: Partial<GraphBillRecord> = {
-  bill_pk: 'TX:1796:1398089',
-  bill_id: '1398089',
-  state: 'TX',
-  session_id: '1796',
-  bill_number: 'HB1234',
-  year: 2024,
-  session_year: 2024,
-  title: 'An act relating to gender transition procedures for minors',
-  description:
-    'Prohibits gender transition surgeries and hormone therapy for individuals under 18 years of age.',
-  status: '1',
-  status_desc: 'Introduced',
-  status_date: '2024-03-15',
-  last_action_date: '2024-03-20',
-  last_action: 'Referred to Health & Human Services Committee',
-  label: 'harmful',
-  label_source: 'legalbert',
-  confidence: 99.5,
-  relevance_score: 98.8,
-  issues: 'Gender-affirming care',
-  issue_categories: 'healthcare',
-  sponsor_names: 'Smith, J / Garcia, R / Lee, M',
-  primary_sponsor: 'Rep. John Smith',
-  state_lean: 'R',
-  bill_dominant_party: 'R',
-  passed: false,
-  failed: false,
-  vetoed: false,
-  r_sponsorship_ratio: 1,
-  pass_rate_gap: '+12%',
-  overall_pass_rate: '34%',
-  bipartisan_ratio: 0,
-};
 
 // ── Action accent derived from stance key ────────
 
@@ -353,17 +324,17 @@ const ACTION_ACCENT: Record<
 export function BillDetailPage({
   bill: rawBill,
   onClose,
-  stateName: _stateName,
+  stateName,
   relatedBills: _relatedBills,
   billTab: billTabProp,
 }: {
-  bill: Bill | null | undefined;
+  bill: Bill | BillDetailMerged | null | undefined;
   onClose?: () => void;
   stateName?: string;
   relatedBills?: unknown[];
   billTab?: BillTab;
 }) {
-  const raw = rawBill ?? ({} as Bill);
+  const raw = (rawBill ?? {}) as Bill;
   const stanceKey = resolveStanceKey(raw);
   const router = useRouter();
   const { state: stateParam } = useLocalSearchParams<{ state?: string | string[] }>();
@@ -382,15 +353,15 @@ export function BillDetailPage({
       router.replace(`/state/${stateAbbrFromRoute}` as Href);
     }
   }, [onClose, router, stateAbbrFromRoute]);
-  const ai = raw.aiAnalysis ?? {};
-  const re = raw.researchEvidence;
-  const sc = raw.sponsorContact;
+  const ai = (raw.aiAnalysis ?? {}) as NonNullable<Bill['aiAnalysis']>;
+  const re = raw.researchEvidence as Bill['researchEvidence'] | undefined;
+  const sc = raw.sponsorContact as Bill['sponsorContact'] | undefined;
 
   const bill = {
     id: raw.id ?? '',
     number: raw.number ?? '',
     title: raw.title ?? '',
-    summary: raw.summary ?? '',
+    summary: decodeHtmlEntities(raw.summary ?? ''),
     fullText: raw.fullText ?? '',
     state: raw.state ?? '',
     status: raw.status ?? '',
@@ -450,63 +421,71 @@ export function BillDetailPage({
       const n = parseInt(bill.introducedDate.slice(0, 4), 10);
       if (Number.isFinite(n)) year = n;
     }
-    const m = MOCK_GRAPH_BILL_RECORD;
-    const str = (v: string | undefined, fb?: string) =>
-      v !== undefined && String(v).trim() !== '' ? v : fb;
-    const num = (v: number | undefined, fb?: number) =>
-      v !== undefined && Number.isFinite(v) ? v : fb;
-    const snp = (
-      v: number | string | undefined,
-      fb?: number | string
-    ): number | string | undefined => {
+    const str = (v: string | undefined | null, fb?: string) => {
       if (v === undefined || v === null) return fb;
-      if (typeof v === 'string' && v.trim() === '') return fb;
+      const t = String(v).trim();
+      return t !== '' ? t : fb;
+    };
+    const num = (v: number | undefined): number | undefined =>
+      v !== undefined && Number.isFinite(v) ? v : undefined;
+    const snp = (v: number | string | undefined | null): number | string | undefined => {
+      if (v === undefined || v === null) return undefined;
+      if (typeof v === 'string' && v.trim() === '') return undefined;
       return v;
     };
-    const pk =
-      str(r.bill_pk, bill.state && bill.id ? `${bill.state}:${bill.id}` : undefined) ?? m.bill_pk;
+    const pk = str(r.bill_pk, bill.state && bill.id ? `${bill.state}:${bill.id}` : undefined);
     const bsg = (): string | undefined => {
       const bs = bill.status?.trim() ?? '';
       return !bs || isLegislativeStanceStatus(bs) ? undefined : bill.status;
     };
+    const conf =
+      r.confidence != null && typeof r.confidence === 'number' && Number.isFinite(r.confidence)
+        ? r.confidence
+        : undefined;
+    const rel =
+      r.relevance_score != null &&
+      typeof r.relevance_score === 'number' &&
+      Number.isFinite(r.relevance_score)
+        ? r.relevance_score
+        : undefined;
     return {
       bill_pk: pk,
-      bill_id: str(r.bill_id, bill.id || undefined) ?? m.bill_id,
-      state: str(bill.state || r.state, undefined) ?? m.state,
-      session_id: str(r.session_id, undefined) ?? m.session_id,
-      bill_number: str(bill.number || r.bill_number, undefined) ?? m.bill_number,
-      title: str(bill.title, undefined) ?? m.title,
-      description: str(r.description ?? bill.summary, undefined) ?? m.description,
-      status: str(r.status, undefined) ?? str(bsg(), undefined) ?? m.status,
-      status_desc: str(r.status_desc, undefined) ?? m.status_desc,
-      status_date: str(r.status_date ?? bill.introducedDate, undefined) ?? m.status_date,
+      bill_id: str(r.bill_id, bill.id || undefined),
+      state: str(bill.state || r.state, undefined),
+      session_id: str(r.session_id, undefined),
+      bill_number: str(bill.number || r.bill_number, undefined),
+      title: str(bill.title, undefined),
+      description: str(r.description ?? bill.summary, undefined),
+      status: str(r.status, undefined) ?? str(bsg(), undefined),
+      status_desc: str(r.status_desc, undefined),
+      status_date: str(r.status_date ?? bill.introducedDate, undefined),
       url: r.url,
       state_link: r.state_link,
-      label: str(r.label, spectrumLabel) ?? m.label,
-      label_source: str(r.label_source, undefined) ?? m.label_source,
-      confidence: num(r.confidence, m.confidence),
-      relevance_score: num(r.relevance_score, m.relevance_score),
-      issues:
-        str(r.issues, bill.subjects.length ? bill.subjects.join(', ') : undefined) ?? m.issues,
-      issue_categories:
-        str(r.issue_categories, r.tags?.length ? JSON.stringify(r.tags) : undefined) ??
-        m.issue_categories,
-      sponsor_names: str(r.sponsor_names, sponsorLine || undefined) ?? m.sponsor_names,
-      primary_sponsor: str(r.primary_sponsor, bill.sponsors[0]?.name) ?? m.primary_sponsor,
-      last_action: str(r.last_action, bill.lastAction || undefined) ?? m.last_action,
-      last_action_date:
-        str(r.last_action_date, bill.lastActionDate || undefined) ?? m.last_action_date,
-      year: num(year, m.year),
-      session_year: num(r.session_year ?? year, m.session_year),
-      state_lean: str(r.state_lean, undefined) ?? m.state_lean,
-      bill_dominant_party: str(r.bill_dominant_party, undefined) ?? m.bill_dominant_party,
-      passed: r.passed ?? (bill.billTab === 'passed' ? true : m.passed),
-      failed: r.failed ?? m.failed,
-      vetoed: r.vetoed ?? m.vetoed,
-      r_sponsorship_ratio: num(r.r_sponsorship_ratio, m.r_sponsorship_ratio),
-      pass_rate_gap: snp(r.pass_rate_gap, m.pass_rate_gap),
-      overall_pass_rate: snp(r.overall_pass_rate, m.overall_pass_rate),
-      bipartisan_ratio: num(r.bipartisan_ratio, m.bipartisan_ratio),
+      label: str(r.label, spectrumLabel),
+      label_source: str(r.label_source, undefined),
+      confidence: conf,
+      relevance_score: rel,
+      issues: str(r.issues, bill.subjects.length ? bill.subjects.join(', ') : undefined),
+      issue_categories: str(
+        r.issue_categories,
+        r.tags?.length ? JSON.stringify(r.tags) : undefined
+      ),
+      sponsor_names: str(r.sponsor_names, sponsorLine || undefined),
+      primary_sponsor: str(r.primary_sponsor, bill.sponsors[0]?.name),
+      last_action: str(r.last_action, bill.lastAction || undefined),
+      last_action_date: str(r.last_action_date, bill.lastActionDate || undefined),
+      year: num(year),
+      session_year: num(r.session_year ?? year),
+      state_lean: str(r.state_lean, undefined),
+      bill_dominant_party: str(r.bill_dominant_party, undefined),
+      passed:
+        r.passed !== undefined ? r.passed : bill.billTab === 'passed' ? true : undefined,
+      failed: r.failed,
+      vetoed: r.vetoed,
+      r_sponsorship_ratio: num(r.r_sponsorship_ratio),
+      pass_rate_gap: snp(r.pass_rate_gap),
+      overall_pass_rate: snp(r.overall_pass_rate),
+      bipartisan_ratio: num(r.bipartisan_ratio),
     };
   }, [rawBill, bill]);
 
@@ -568,11 +547,13 @@ export function BillDetailPage({
     { key: 'action' as const, label: 'Take Action', Icon: Megaphone },
   ];
 
-  const detailBillText = useMemo(() => bill.fullText?.trim() || MOCK_BILL_TEXT, [bill.fullText]);
-  const detailHistory = useMemo(
-    () => (bill.history.length > 0 ? bill.history : MOCK_LEGISLATIVE_HISTORY),
-    [bill.history]
-  );
+  const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
+  const detailHistory = bill.history;
+  const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
+  const lifecycleLabel = resolveLifecyclePillLabel(rawGraph ?? undefined, bill.billTab);
+  const displayLegislativeStatus =
+    rawGraph?.status_desc?.trim() ||
+    (bill.status && !isLegislativeStanceStatus(bill.status) ? bill.status : '');
   const { width: windowWidth } = useWindowDimensions();
   const tabStripCompactWeb = Platform.OS === 'web' && windowWidth < 640;
   const headerGlass = STANCE_HEADER_GLASS[stanceKey];
@@ -634,7 +615,7 @@ export function BillDetailPage({
                             <Text
                               className="font-sans-semibold text-xs leading-none tracking-tight text-zinc-600"
                               style={PILL_LABEL_TEXT_STYLE}>
-                              {bill.billTab === 'passed' ? 'Passed' : 'Active'}
+                              {lifecycleLabel}
                             </Text>
                           </View>
                         </View>
@@ -644,9 +625,11 @@ export function BillDetailPage({
                       {bill.number ? (
                         <Text className="font-mono text-xs text-zinc-500">{bill.number}</Text>
                       ) : null}
-                      {bill.status && !isLegislativeStanceStatus(bill.status) ? (
+                      {displayLegislativeStatus ? (
                         <View className="rounded-md bg-zinc-200/90 px-2 py-0.5">
-                          <Text className="font-sans text-xs text-zinc-700">{bill.status}</Text>
+                          <Text className="font-sans text-xs text-zinc-700">
+                            {displayLegislativeStatus}
+                          </Text>
                         </View>
                       ) : null}
                     </View>
@@ -736,17 +719,10 @@ export function BillDetailPage({
                         What it means
                       </Text>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
-                        <Text className="mb-2 font-sans-medium text-[11px] uppercase tracking-wide text-zinc-400">
-                          RAG answer (mock)
-                        </Text>
                         <Text className="font-sans text-sm leading-relaxed text-zinc-600">
-                          Retrieved chunks from the bill text and committee analyses are condensed
-                          here.
-                          {bill.summary
-                            ? ` In short: ${bill.summary}`
-                            : ' This measure updates definitions, eligibility, and enforcement pathways.'}{' '}
-                          Confidence is labeled high for definitional sections and medium where
-                          fiscal or interagency effects depend on rulemaking.
+                          {bill.summary.trim()
+                            ? bill.summary
+                            : 'No summary is available for this bill yet.'}
                         </Text>
                       </View>
                     </View>
@@ -756,12 +732,9 @@ export function BillDetailPage({
                       </Text>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
                         <Text className="font-sans text-sm leading-relaxed text-zinc-600">
-                          Stakeholders in {bill.state || 'this state'} could see changes to how
-                          complaints are filed, which agencies enforce the rules, and what timelines
-                          apply. Advocacy groups often highlight implementation and compliance
-                          windows as the highest-risk phase for LGBTQ+ residents when policy
-                          shifts—this summary is illustrative until live data is wired to Arc
-                          Radius.
+                          {graphRecordValues.issues?.trim()
+                            ? graphRecordValues.issues
+                            : `Policy outcomes in ${bill.state || stateName || 'this state'} can affect LGBTQ+ residents, schools, and healthcare access.`}
                         </Text>
                       </View>
                     </View>
@@ -776,13 +749,51 @@ export function BillDetailPage({
                         Bill text
                       </Text>
                       <View className="rounded-xl border border-zinc-200 bg-white p-4">
-                        <ScrollView
-                          className="max-h-52 rounded-lg bg-zinc-50 p-3"
-                          nestedScrollEnabled>
-                          <Text className="font-sans text-xs leading-5 text-zinc-600">
-                            {detailBillText}
-                          </Text>
-                        </ScrollView>
+                        {detailBillText.length > 0 ? (
+                          <ScrollView
+                            className="max-h-52 rounded-lg bg-zinc-50 p-3"
+                            nestedScrollEnabled>
+                            <Text className="font-sans text-xs leading-5 text-zinc-600">
+                              {detailBillText}
+                            </Text>
+                          </ScrollView>
+                        ) : (
+                          <View className="gap-3">
+                            <Text className="font-sans text-sm leading-relaxed text-zinc-600">
+                              Full bill text is not available in the app yet. Open the official
+                              source.
+                            </Text>
+                            <View className="flex-row flex-wrap gap-2">
+                              {rawGraph?.url?.trim() ? (
+                                <Pressable
+                                  onPress={() =>
+                                    void Linking.openURL(rawGraph.url!.trim())
+                                  }
+                                  className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
+                                  <Text className="font-sans-medium text-xs text-zinc-800">
+                                    LegiScan
+                                  </Text>
+                                </Pressable>
+                              ) : null}
+                              {rawGraph?.state_link?.trim() ? (
+                                <Pressable
+                                  onPress={() =>
+                                    void Linking.openURL(rawGraph.state_link!.trim())
+                                  }
+                                  className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
+                                  <Text className="font-sans-medium text-xs text-zinc-800">
+                                    State legislature
+                                  </Text>
+                                </Pressable>
+                              ) : null}
+                            </View>
+                            {!rawGraph?.url?.trim() && !rawGraph?.state_link?.trim() ? (
+                              <Text className="font-sans text-xs text-zinc-400">
+                                No external link was provided for this bill.
+                              </Text>
+                            ) : null}
+                          </View>
+                        )}
                       </View>
                     </View>
                     <BillGraphRecordPlaceholder values={graphRecordValues} stanceKey={stanceKey} />
@@ -791,27 +802,33 @@ export function BillDetailPage({
                         Legislative history
                       </Text>
                       <View className="rounded-xl border border-zinc-200 bg-white p-4">
-                        {detailHistory.map((entry, i) => (
-                          <View
-                            key={i}
-                            className="mb-3.5 pb-3.5"
-                            style={
-                              i < detailHistory.length - 1
-                                ? {
-                                    borderBottomWidth: 0.5,
-                                    borderBottomColor: 'rgba(228,228,231,0.9)',
-                                  }
-                                : { paddingBottom: 0, marginBottom: 0 }
-                            }>
-                            <Text className="mb-1 font-sans text-[11px] text-zinc-400">
-                              {entry.date}
-                              {entry.chamber ? ` · ${entry.chamber}` : ''}
-                            </Text>
-                            <Text className="font-sans text-[13px] leading-relaxed text-zinc-800">
-                              {entry.action}
-                            </Text>
-                          </View>
-                        ))}
+                        {detailHistory.length === 0 ? (
+                          <Text className="font-sans text-sm text-zinc-500">
+                            No actions recorded yet.
+                          </Text>
+                        ) : (
+                          detailHistory.map((entry, i) => (
+                            <View
+                              key={i}
+                              className="mb-3.5 pb-3.5"
+                              style={
+                                i < detailHistory.length - 1
+                                  ? {
+                                      borderBottomWidth: 0.5,
+                                      borderBottomColor: 'rgba(228,228,231,0.9)',
+                                    }
+                                  : { paddingBottom: 0, marginBottom: 0 }
+                              }>
+                              <Text className="mb-1 font-sans text-[11px] text-zinc-400">
+                                {entry.date}
+                                {entry.chamber ? ` · ${entry.chamber}` : ''}
+                              </Text>
+                              <Text className="font-sans text-[13px] leading-relaxed text-zinc-800">
+                                {entry.action}
+                              </Text>
+                            </View>
+                          ))
+                        )}
                       </View>
                     </View>
                   </View>

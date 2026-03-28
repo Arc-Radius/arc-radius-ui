@@ -108,13 +108,55 @@ export const apiBillDetailItemSchema = z.object({
   billTab: billTabSchema.optional(),
 });
 
+/** Graph / Neo4j metadata returned alongside `bill` from `GET /bills/:billPk`. */
+export const graphRecordSchema = z
+  .object({
+    bill_pk: z.string().optional(),
+    bill_id: z.string().optional(),
+    state: z.string().optional(),
+    session_id: z.string().optional(),
+    bill_number: z.string().optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    status: z.string().optional(),
+    status_desc: z.string().optional(),
+    status_date: z.string().optional(),
+    url: z.string().optional(),
+    state_link: z.string().optional(),
+    label: z.string().optional(),
+    label_source: z.string().optional(),
+    confidence: z.number().nullable().optional(),
+    relevance_score: z.number().nullable().optional(),
+    issues: z.string().nullable().optional(),
+    issue_categories: z.string().nullable().optional(),
+    sponsor_names: z.string().nullable().optional(),
+    primary_sponsor: z.string().nullable().optional(),
+    last_action: z.string().optional(),
+    last_action_date: z.string().optional(),
+    year: z.number().optional(),
+    session_year: z.number().optional(),
+    state_lean: z.string().optional(),
+    bill_dominant_party: z.string().optional(),
+    passed: z.boolean().optional(),
+    failed: z.boolean().optional(),
+    vetoed: z.boolean().optional(),
+    r_sponsorship_ratio: z.number().optional(),
+    pass_rate_gap: z.union([z.number(), z.string()]).optional(),
+    overall_pass_rate: z.union([z.number(), z.string()]).optional(),
+    bipartisan_ratio: z.number().optional(),
+    committee_id: z.string().optional(),
+  })
+  .passthrough();
+
 export const billDetailEnvelopeSchema = z.object({
   bill: apiBillDetailItemSchema,
-  graphRecord: z.unknown().optional(),
+  graphRecord: graphRecordSchema.optional(),
 });
 
 export type StateBillsResponse = z.infer<typeof stateBillsResponseSchema>;
 export type BillDetailResponse = z.infer<typeof billDetailResponseSchema>;
+export type ApiBillDetailItem = z.infer<typeof apiBillDetailItemSchema>;
+export type GraphRecordParsed = z.infer<typeof graphRecordSchema>;
 export type StateBillsEnvelopeResponse = z.infer<typeof stateBillsEnvelopeSchema>;
 export type StateBillsMeta = z.infer<typeof stateBillsMetaSchema>;
 export type StateBillListItem = z.infer<typeof stateBillListItemSchema>;

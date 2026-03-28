@@ -82,8 +82,8 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
         break;
       case 'bills':
         router.push({
-          pathname: '/state/[state]',
-          params: { state: stateAbbr ?? DEFAULT_STATE },
+          pathname: '/state/[stateAbbr]',
+          params: { stateAbbr: stateAbbr ?? DEFAULT_STATE },
         });
         break;
       case 'resources':

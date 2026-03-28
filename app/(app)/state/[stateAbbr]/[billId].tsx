@@ -17,19 +17,19 @@ function parseBillTab(raw: string | string[] | undefined): BillTab | undefined {
 
 export default function BillDetailRoute() {
   const {
-    state,
+    stateAbbr: stateParam,
     billId,
     billTab: billTabParam,
   } = useLocalSearchParams<{
-    state?: string | string[];
+    stateAbbr?: string | string[];
     billId?: string | string[];
     billTab?: string | string[];
   }>();
 
   const stateAbbr = useMemo(() => {
-    const rawState = Array.isArray(state) ? state[0] : state;
+    const rawState = Array.isArray(stateParam) ? stateParam[0] : stateParam;
     return typeof rawState === 'string' ? rawState.trim().toUpperCase() : '';
-  }, [state]);
+  }, [stateParam]);
 
   const normalizedBillId = useMemo(() => {
     const rawBillId = Array.isArray(billId) ? billId[0] : billId;

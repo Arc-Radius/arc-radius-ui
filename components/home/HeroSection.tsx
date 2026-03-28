@@ -36,11 +36,20 @@ function AnimatedArrowDown() {
   );
 }
 
-interface HeroSectionProps {
-  onFindState?: () => void;
+export interface HeroStatusCounts {
+  supportive: number;
+  mixed: number;
+  harmful: number;
 }
 
-export function HeroSection({ onFindState }: HeroSectionProps) {
+interface HeroSectionProps {
+  onFindState?: () => void;
+  /** Aggregated from GET /states; omit or null while loading / error. */
+  statusCounts?: HeroStatusCounts | null;
+  heroStatsLoading?: boolean;
+}
+
+export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: HeroSectionProps) {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
 
@@ -83,17 +92,37 @@ export function HeroSection({ onFindState }: HeroSectionProps) {
           <AnimatedArrowDown />
         </Pressable>
 
-        {/* Climate stats — Hero preview palette: #93c5fd, #a1a1aa, #fdba74 */}
+        {/* Climate stats — Hero preview palette: #93c5fd, #a1a1aa, #fdba74 (harmful shown as "high risk") */}
         <View className="flex-row items-center self-start overflow-hidden rounded-xl border border-zinc-200/80 bg-white/90">
-          <StatPill fill="#93c5fd" count={19} label="supportive" textColor="#1e40af" />
+          <StatPill
+            fill="#93c5fd"
+            count={pillCount(statusCounts?.supportive, heroStatsLoading)}
+            label="supportive"
+            textColor="#1e40af"
+          />
           <View className="h-5 w-px bg-zinc-300" />
-          <StatPill fill="#a1a1aa" count={14} label="mixed" textColor="#52525b" />
+          <StatPill
+            fill="#a1a1aa"
+            count={pillCount(statusCounts?.mixed, heroStatsLoading)}
+            label="mixed"
+            textColor="#52525b"
+          />
           <View className="h-5 w-px bg-zinc-300" />
-          <StatPill fill="#fdba74" count={17} label="high risk" textColor="#9a3412" />
+          <StatPill
+            fill="#fdba74"
+            count={pillCount(statusCounts?.harmful, heroStatsLoading)}
+            label="high risk"
+            textColor="#9a3412"
+          />
         </View>
       </View>
     </View>
   );
+}
+
+function pillCount(value: number | undefined, loading: boolean | undefined): string {
+  if (loading || value === undefined) return '—';
+  return String(value);
 }
 
 /** Single stat pill — Hero dots: #93c5fd, #a1a1aa, #fdba74 */
@@ -104,7 +133,7 @@ function StatPill({
   textColor,
 }: {
   fill: string;
-  count: number;
+  count: string;
   label: string;
   textColor: string;
 }) {

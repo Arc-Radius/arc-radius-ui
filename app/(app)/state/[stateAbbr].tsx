@@ -7,6 +7,7 @@ import { fetchBillDetail } from '@/api/bills';
 import { useLastBillsState } from '@/contexts/LastBillsStateContext';
 import { queryKeys } from '@/queries/keys';
 import { useStateBillsTabData } from '@/queries/useStateBillsTabData';
+import { useStatesDerived } from '@/queries/useStatesQuery';
 import type { BillTab } from '@/static/billConstants';
 import { STATES } from '@/static/states';
 
@@ -21,7 +22,17 @@ export default function StateBillsRoute() {
     return typeof rawState === 'string' ? rawState.trim().toUpperCase() : '';
   }, [stateParam]);
 
-  const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
+  const { statesByAbbr, dropdownOptions } = useStatesDerived();
+
+  const stateInfo = useMemo(() => {
+    if (!stateAbbr) return null;
+    const row = statesByAbbr?.[stateAbbr];
+    const st = STATES[stateAbbr];
+    if (row) return { name: row.name, status: row.status };
+    if (st) return { name: st.name, status: st.status };
+    if (statesByAbbr === null) return null;
+    return null;
+  }, [stateAbbr, statesByAbbr]);
 
   useEffect(() => {
     if (stateInfo) {
@@ -52,7 +63,7 @@ export default function StateBillsRoute() {
 
   const handleBillPress = useCallback(
     (billId: string, billTab: BillTab) => {
-      if (!stateAbbr || !STATES[stateAbbr]) {
+      if (!stateAbbr || (!STATES[stateAbbr] && !statesByAbbr?.[stateAbbr])) {
         return;
       }
 
@@ -66,7 +77,7 @@ export default function StateBillsRoute() {
         params: { stateAbbr, billId, billTab },
       });
     },
-    [queryClient, router, stateAbbr]
+    [queryClient, router, stateAbbr, statesByAbbr]
   );
 
   if (!stateInfo) {
@@ -84,6 +95,7 @@ export default function StateBillsRoute() {
         onSelectState={handleSelectState}
         onBrowseMap={handleBrowseMap}
         onBillPress={handleBillPress}
+        stateDropdownOptions={dropdownOptions ?? undefined}
       />
     );
   }
@@ -102,6 +114,7 @@ export default function StateBillsRoute() {
       onSelectState={handleSelectState}
       onBrowseMap={handleBrowseMap}
       onBillPress={handleBillPress}
+      stateDropdownOptions={dropdownOptions ?? undefined}
     />
   );
 }

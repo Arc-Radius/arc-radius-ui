@@ -407,6 +407,8 @@ interface StateBillsPageProps {
   onSelectState?: (stateAbbr: string) => void;
   onBrowseMap?: () => void;
   onBillPress?: (billId: string, billTab: BillTab) => void;
+  /** When set, dropdown list uses API order/names (GET /states). */
+  stateDropdownOptions?: { abbr: string; name: string }[];
 }
 
 export function StateBillsPage({
@@ -423,6 +425,7 @@ export function StateBillsPage({
   onSelectState,
   onBrowseMap,
   onBillPress,
+  stateDropdownOptions,
 }: StateBillsPageProps) {
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
@@ -574,6 +577,7 @@ export function StateBillsPage({
                     onChange={onSelectState ?? (() => {})}
                     placeholder="Switch state"
                     compactDisplay
+                    stateOptions={stateDropdownOptions}
                   />
                 </View>
               }

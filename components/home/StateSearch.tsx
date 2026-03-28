@@ -4,12 +4,19 @@ import Svg, { Rect as SvgRect, Path, Line } from 'react-native-svg';
 
 import { StateDropdown } from '@/components/shared/StateDropdown';
 import { STATES, STATUS_STYLES, MAP_ROWS } from '@/static/states';
-import type { LegislativeStatus, StateInfo } from '@/static/states';
+import type { LegislativeStatus, StateInfoWithCounts } from '@/static/states';
 
 // ── Props ────────────────────────────────────────
 interface StateSearchProps {
   selected: string | null;
-  selectedInfo: StateInfo | null;
+  selectedInfo: StateInfoWithCounts | null;
+  /** Map of state rows from GET /states (null before load or on error). */
+  statesByAbbr: Record<string, { status: LegislativeStatus }> | null;
+  statesLoading: boolean;
+  statesError: boolean;
+  onRetryStates: () => void;
+  /** Sorted options for the dropdown; falls back to static STATES when omitted. */
+  stateDropdownOptions?: { abbr: string; name: string }[];
   onStateSelect: (abbr: string) => void;
   onNavigateToState?: () => void;
   scrollViewRef?: React.RefObject<ScrollView | null>;
@@ -57,6 +64,13 @@ const STATUS_CELL: Record<
   },
 };
 
+const CELL_LOADING = {
+  bg: 'rgba(82,82,91,0.12)',
+  border: 'rgba(82,82,91,0.2)',
+  text: '#71717a',
+  selectedBorder: '#a1a1aa',
+};
+
 // Raised card shadow for map cells
 const raisedShadow = Platform.select({
   ios: {
@@ -82,21 +96,28 @@ function StateCell({
   selected,
   onSelect,
   compact,
+  status,
+  loading,
+  disabled,
 }: {
   abbr: string;
   selected: string | null;
   onSelect: (abbr: string) => void;
   compact?: boolean;
+  status: LegislativeStatus;
+  loading: boolean;
+  disabled: boolean;
 }) {
   const info = STATES[abbr];
   if (!info) return <View className="w-full" style={{ aspectRatio: 1 }} />;
 
   const isSelected = selected === abbr;
-  const cell = STATUS_CELL[info.status];
+  const cell = loading ? CELL_LOADING : STATUS_CELL[status];
   const fontSize = compact ? 9 : 11;
 
   return (
     <Pressable
+      disabled={disabled}
       onPress={() => onSelect(abbr)}
       className="w-full items-center justify-center"
       style={[
@@ -111,7 +132,7 @@ function StateCell({
       ]}
       accessible
       accessibilityRole="button"
-      accessibilityLabel={`${info.name}, ${STATUS_STYLES[info.status].label}`}
+      accessibilityLabel={`${info.name}, ${STATUS_STYLES[status].label}`}
       accessibilityState={{ selected: isSelected }}
       accessibilityHint="Double tap to view policy details">
       <Text className="text-center font-sans-semibold" style={{ fontSize, color: cell.text }}>
@@ -178,7 +199,7 @@ function StateDetailPanel({
   onNavigate,
   onClose,
 }: {
-  info: StateInfo;
+  info: StateInfoWithCounts;
   onNavigate?: () => void;
   onClose: () => void;
 }) {
@@ -226,7 +247,7 @@ function StateDetailPanel({
               <PolicyIcon />
             </View>
             <Text className="font-sans-semibold text-base" style={{ color: '#93c5fd' }}>
-              14
+              {info.counts.passedBills}
             </Text>
             <Text className="mt-0.5 font-sans text-[11px]" style={{ color: '#e4e4e7' }}>
               passed bills
@@ -246,7 +267,7 @@ function StateDetailPanel({
               <BillIcon />
             </View>
             <Text className="font-sans-semibold text-base" style={{ color: '#fdba74' }}>
-              29
+              {info.counts.activeBills}
             </Text>
             <Text className="mt-0.5 font-sans text-[11px]" style={{ color: '#e4e4e7' }}>
               active bills
@@ -273,14 +294,29 @@ function StateDetailPanel({
 // ── Hex map (column-based — stable grid, aligned cells) ──
 const GRID_COLS = Math.max(...MAP_ROWS.map((r: (string | null)[]) => r.length));
 
+function resolveCellStatus(
+  abbr: string,
+  statesByAbbr: Record<string, { status: LegislativeStatus }> | null
+): LegislativeStatus {
+  const row = statesByAbbr?.[abbr];
+  if (row) return row.status;
+  return STATES[abbr]?.status ?? 'mixed';
+}
+
 function HexMap({
   selected,
   onStateSelect,
   isWebDesktop,
+  statesByAbbr,
+  statesLoading,
+  mapDisabled,
 }: {
   selected: string | null;
   onStateSelect: (abbr: string) => void;
   isWebDesktop?: boolean;
+  statesByAbbr: Record<string, { status: LegislativeStatus }> | null;
+  statesLoading: boolean;
+  mapDisabled: boolean;
 }) {
   const titleSize = isWebDesktop ? 16 : 12;
   const hintSize = isWebDesktop ? 14 : 11;
@@ -304,6 +340,9 @@ function HexMap({
                   selected={selected}
                   onSelect={onStateSelect}
                   compact={!isWebDesktop}
+                  status={resolveCellStatus(abbr, statesByAbbr)}
+                  loading={statesLoading}
+                  disabled={mapDisabled}
                 />
               ) : (
                 <View key={rowIndex} className="w-full" style={{ aspectRatio: 1 }} />
@@ -323,6 +362,11 @@ function HexMap({
 export function StateSearch({
   selected,
   selectedInfo,
+  statesByAbbr,
+  statesLoading,
+  statesError,
+  onRetryStates,
+  stateDropdownOptions,
   onStateSelect,
   onNavigateToState,
   scrollViewRef,
@@ -368,12 +412,33 @@ export function StateSearch({
   const handleClose = () => onStateSelect('');
 
   const webBlur = Platform.OS === 'web' ? ({ backdropFilter: 'blur(16px)' } as object) : null;
+  const mapDisabled = statesLoading;
 
   return (
     <View ref={containerRef}>
+      {statesError && (
+        <View className="mb-3 rounded-xl border border-red-200/80 bg-red-50/95 px-3 py-2.5">
+          <Text className="font-sans text-[13px] text-red-900">
+            Couldn&apos;t load state data. Map shows last-known or default colors.
+          </Text>
+          <Pressable
+            onPress={onRetryStates}
+            className="mt-2 self-start rounded-lg bg-red-100 px-3 py-1.5 active:opacity-80"
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading states">
+            <Text className="font-sans-semibold text-xs text-red-900">Retry</Text>
+          </Pressable>
+        </View>
+      )}
+
       {/* Search trigger */}
       <View className={isCompact ? 'mb-4' : 'mb-5 max-w-sm'}>
-        <StateDropdown value={selected} onChange={onStateSelect} placeholder="Search state..." />
+        <StateDropdown
+          value={selected}
+          onChange={onStateSelect}
+          placeholder="Search state..."
+          stateOptions={stateDropdownOptions}
+        />
       </View>
 
       {isCompact ? (
@@ -383,6 +448,9 @@ export function StateSearch({
             selected={selected}
             onStateSelect={onStateSelect}
             isWebDesktop={Platform.OS === 'web' && !isCompact}
+            statesByAbbr={statesByAbbr}
+            statesLoading={statesLoading}
+            mapDisabled={mapDisabled}
           />
 
           {selected && selectedInfo && (
@@ -411,6 +479,9 @@ export function StateSearch({
               selected={selected}
               onStateSelect={onStateSelect}
               isWebDesktop={Platform.OS === 'web' && !isCompact}
+              statesByAbbr={statesByAbbr}
+              statesLoading={statesLoading}
+              mapDisabled={mapDisabled}
             />
           </View>
 

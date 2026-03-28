@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
+import { Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import { BillDetailPage } from '@/components/bills/BillDetailPage';
+import { useBillDetailQuery } from '@/queries/useBillDetailQuery';
+import { useStateBillsQuery } from '@/queries/useStateBillsQuery';
 import type { BillTab } from '@/static/billConstants';
-import { getBillsForState } from '@/static/bills';
 import { STATES } from '@/static/states';
 
 function parseBillTab(raw: string | string[] | undefined): BillTab | undefined {
@@ -35,32 +37,42 @@ export default function BillDetailRoute() {
   }, [billId]);
 
   const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
-  const fallbackStateName = stateAbbr || 'Unknown State';
-
-  const resolvedStateAbbr = stateAbbr || 'N/A';
-  const resolvedStateName = stateInfo?.name ?? fallbackStateName;
-  const resolvedStatus = stateInfo?.status ?? 'mixed';
-
-  const bills = useMemo(
-    () =>
-      getBillsForState({
-        stateAbbr: resolvedStateAbbr,
-        stateName: resolvedStateName,
-        status: resolvedStatus,
-      }),
-    [resolvedStateAbbr, resolvedStateName, resolvedStatus]
-  );
-  const bill = bills.find((item) => item.id === normalizedBillId) ?? bills[0];
-  const relatedBills = bills.filter((item) => bill.relatedBillIds.includes(item.id));
+  const resolvedStateName = stateInfo?.name ?? (stateAbbr || 'Unknown State');
+  const detailQuery = useBillDetailQuery(stateAbbr, normalizedBillId);
+  const stateBillsQuery = useStateBillsQuery(stateAbbr);
+  const stateBills = stateBillsQuery.data ?? [];
+  const bill = detailQuery.data;
+  const relatedBills = useMemo(() => {
+    if (!bill) return [];
+    return stateBills.filter((item) => bill.relatedBillIds.includes(item.id));
+  }, [bill, stateBills]);
 
   const billTabFromRoute = parseBillTab(billTabParam);
+
+  if (detailQuery.isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-app-bg px-6">
+        <Text className="font-sans text-sm text-zinc-500">Loading bill details...</Text>
+      </View>
+    );
+  }
+
+  if (detailQuery.isError || !bill) {
+    return (
+      <View className="flex-1 items-center justify-center bg-app-bg px-6">
+        <Text className="text-center font-sans text-sm text-zinc-500">
+          Failed to load this bill right now.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <BillDetailPage
       stateName={resolvedStateName}
       bill={bill}
       relatedBills={relatedBills}
-      billTab={billTabFromRoute ?? bill.billTab}
+      billTab={billTabFromRoute ?? bill.billTab ?? 'active'}
     />
   );
 }

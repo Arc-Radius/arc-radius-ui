@@ -377,6 +377,9 @@ interface StateBillsPageProps {
   stateAbbr: string;
   stateName: string;
   status?: LegislativeStatus;
+  billsData?: BillDetail[];
+  isLoading?: boolean;
+  errorMessage?: string | null;
   stateInfo?: {
     legislature: string;
     session: string;
@@ -393,6 +396,9 @@ export function StateBillsPage({
   stateAbbr,
   stateName,
   status = 'mixed',
+  billsData,
+  isLoading = false,
+  errorMessage,
   stateInfo,
   onSelectState,
   onBrowseMap,
@@ -408,9 +414,8 @@ export function StateBillsPage({
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const allBills = useMemo(
-    () =>
-      getBillsForState({ stateAbbr, stateName, status }).map((d, i) => mapBillDetailToBill(d, i)),
-    [stateAbbr, stateName, status]
+    () => (billsData ?? getBillsForState({ stateAbbr, stateName, status })).map(mapBillDetailToBill),
+    [billsData, stateAbbr, stateName, status]
   );
 
   const activeBills = useMemo(
@@ -607,7 +612,15 @@ export function StateBillsPage({
                     ) : null}
                   </Text>
                   <View className="gap-2.5">
-                    {filteredBills.length > 0 ? (
+                    {isLoading && allBills.length === 0 ? (
+                      <Text className="py-8 text-center font-sans text-sm text-zinc-400">
+                        Loading bills...
+                      </Text>
+                    ) : errorMessage ? (
+                      <Text className="py-8 text-center font-sans text-sm text-zinc-400">
+                        {errorMessage}
+                      </Text>
+                    ) : filteredBills.length > 0 ? (
                       filteredBills.map((bill) => (
                         <StateBillCard
                           key={bill.id}

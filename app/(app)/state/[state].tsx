@@ -1,13 +1,19 @@
 import { useCallback, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { StateBillsPage } from '@/components/bills/StateBillsPage';
+import { fetchBillDetail } from '@/api/bills';
+import { queryKeys } from '@/queries/keys';
+import { useStateBillsQuery } from '@/queries/useStateBillsQuery';
 import type { BillTab } from '@/static/billConstants';
+import type { BillDetail } from '@/static/bills';
 import { STATES } from '@/static/states';
 
 export default function StateBillsRoute() {
   const { state } = useLocalSearchParams<{ state?: string | string[] }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const stateAbbr = useMemo(() => {
     const rawState = Array.isArray(state) ? state[0] : state;
@@ -15,6 +21,8 @@ export default function StateBillsRoute() {
   }, [state]);
 
   const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
+  const billsQuery = useStateBillsQuery(stateAbbr);
+  const billsData: BillDetail[] = (billsQuery.data ?? []) as BillDetail[];
 
   const handleSelectState = useCallback(
     (selectedStateAbbr: string) => {
@@ -40,12 +48,17 @@ export default function StateBillsRoute() {
         return;
       }
 
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.billDetail(stateAbbr, billId),
+        queryFn: ({ signal }) => fetchBillDetail(stateAbbr, billId, signal),
+      });
+
       router.push({
         pathname: '/state/[state]/[billId]',
         params: { state: stateAbbr, billId, billTab },
       });
     },
-    [router, stateAbbr]
+    [queryClient, router, stateAbbr]
   );
 
   if (!stateInfo) {
@@ -54,6 +67,9 @@ export default function StateBillsRoute() {
         stateAbbr={stateAbbr || 'N/A'}
         stateName={stateAbbr || 'Unknown State'}
         status="mixed"
+        billsData={billsData}
+        isLoading={billsQuery.isLoading}
+        errorMessage={billsQuery.isError ? 'Failed to load bills. Pull to refresh or try again.' : null}
         onSelectState={handleSelectState}
         onBrowseMap={handleBrowseMap}
         onBillPress={handleBillPress}
@@ -66,6 +82,9 @@ export default function StateBillsRoute() {
       stateAbbr={stateAbbr}
       stateName={stateInfo.name}
       status={stateInfo.status}
+      billsData={billsData}
+      isLoading={billsQuery.isLoading}
+      errorMessage={billsQuery.isError ? 'Failed to load bills. Pull to refresh or try again.' : null}
       onSelectState={handleSelectState}
       onBrowseMap={handleBrowseMap}
       onBillPress={handleBillPress}

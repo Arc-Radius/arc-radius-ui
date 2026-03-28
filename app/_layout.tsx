@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { queryClient } from '@/app/providers/query-client';
+import { queryClient } from '@/lib/query-client';
 import '@/global.css';
 
 void SplashScreen.preventAutoHideAsync();

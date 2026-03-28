@@ -564,55 +564,51 @@ export function BillDetailPage({
                 }}>
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="min-w-0 flex-1 pr-1">
-                    <View className="flex-row items-center gap-2.5">
+                    <View className="flex-row items-start gap-2.5">
                       <FileText
                         size={20}
                         color="#71717a"
                         strokeWidth={2}
                         accessibilityElementsHidden
                       />
-                      <View className="min-w-0 flex-1 flex-row flex-wrap items-center gap-x-4 gap-y-1.5">
-                        <Text className="min-w-0 flex-shrink font-sans-bold text-lg leading-tight tracking-tight text-zinc-900">
-                          {bill.title}
-                        </Text>
-                        <View className="shrink-0 flex-row items-center gap-2">
-                          <View
-                            className="flex-row items-center gap-1 rounded-full px-2 py-0.5"
-                            style={{
-                              minHeight: HEADER_PILL_MIN_HEIGHT,
-                              backgroundColor: STANCE_BADGE[stanceKey].bg,
-                              borderWidth: 1,
-                              borderColor: STANCE_PILL_BORDER[stanceKey],
-                            }}>
-                            <View
-                              className="h-1.5 w-1.5 shrink-0 rounded-full"
-                              style={{ backgroundColor: STANCE_DOT[stanceKey] }}
-                            />
-                            <Text
-                              className="font-sans-semibold text-xs leading-none tracking-tight"
-                              style={[
-                                { color: STANCE_BADGE[stanceKey].text },
-                                PILL_LABEL_TEXT_STYLE,
-                              ]}>
-                              {STANCE_WORD[stanceKey]}
-                            </Text>
-                          </View>
-                          <View
-                            className="flex-row items-center justify-center rounded-full border border-zinc-200/90 bg-zinc-100/90 px-2 py-0.5"
-                            style={{ minHeight: HEADER_PILL_MIN_HEIGHT }}>
-                            <Text
-                              className="font-sans-semibold text-xs leading-none tracking-tight text-zinc-600"
-                              style={PILL_LABEL_TEXT_STYLE}>
-                              {lifecycleLabel}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
+                      <Text className="min-w-0 flex-1 font-sans-bold text-lg leading-tight tracking-tight text-zinc-900">
+                        {bill.title}
+                      </Text>
                     </View>
                     <View className="mt-1.5 flex-row flex-wrap items-center gap-2">
                       {bill.number ? (
                         <Text className="font-mono text-xs text-zinc-500">{bill.number}</Text>
                       ) : null}
+                      <View
+                        className="flex-row items-center gap-1 rounded-full px-2 py-0.5"
+                        style={{
+                          minHeight: HEADER_PILL_MIN_HEIGHT,
+                          backgroundColor: STANCE_BADGE[stanceKey].bg,
+                          borderWidth: 1,
+                          borderColor: STANCE_PILL_BORDER[stanceKey],
+                        }}>
+                        <View
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: STANCE_DOT[stanceKey] }}
+                        />
+                        <Text
+                          className="font-sans-semibold text-xs leading-none tracking-tight"
+                          style={[
+                            { color: STANCE_BADGE[stanceKey].text },
+                            PILL_LABEL_TEXT_STYLE,
+                          ]}>
+                          {STANCE_WORD[stanceKey]}
+                        </Text>
+                      </View>
+                      <View
+                        className="flex-row items-center justify-center rounded-full border border-zinc-200/90 bg-zinc-100/90 px-2 py-0.5"
+                        style={{ minHeight: HEADER_PILL_MIN_HEIGHT }}>
+                        <Text
+                          className="font-sans-semibold text-xs leading-none tracking-tight text-zinc-600"
+                          style={PILL_LABEL_TEXT_STYLE}>
+                          {lifecycleLabel}
+                        </Text>
+                      </View>
                       {displayLegislativeStatus ? (
                         <View className="rounded-md bg-zinc-200/90 px-2 py-0.5">
                           <Text className="font-sans text-xs text-zinc-700">

@@ -43,18 +43,18 @@ const PILL_INSET_WEB_WIDE = 4;
 function mapBillDetailToBill(d: BillDetail, index: number): Bill {
   return {
     id: d.id,
-    bill_number: `${d.title.split(' ')[1] ?? index + 1}`,
+    bill_number: `HB${String(index + 1).padStart(3, '0')}`,
     title: d.title,
     description: d.summary,
     stance: d.status,
     billTab: d.billTab,
     status: 'In Committee',
-    status_desc: '',
-    last_action: '',
-    last_action_date: new Date().toISOString().slice(0, 10),
-    year: new Date().getFullYear(),
-    primary_sponsor: '',
-    issue_categories: d.tags,
+    status_desc: 'In Committee',
+    last_action: '—',
+    last_action_date: '2000-01-01',
+    year: 2000,
+    primary_sponsor: '—',
+    issue_categories: d.tags as Bill['issue_categories'],
   };
 }
 
@@ -377,6 +377,26 @@ interface StateBillsPageProps {
   stateAbbr: string;
   stateName: string;
   status?: LegislativeStatus;
+  /** When set, lists use API rows per tab (no client-side tab split). */
+  apiBills?: { active: Bill[]; passed: Bill[] };
+  /** Sum of `meta.totalCount` from both tab queries when available. */
+  totalBillCount?: number;
+  apiPagination?: {
+    active: {
+      hasNextPage: boolean;
+      fetchNextPage: () => void;
+      isFetchingNextPage: boolean;
+    };
+    passed: {
+      hasNextPage: boolean;
+      fetchNextPage: () => void;
+      isFetchingNextPage: boolean;
+    };
+  };
+  apiLoading?: { active: boolean; passed: boolean };
+  apiErrors?: { active: string | null; passed: string | null };
+  /** Legacy single error line when not using `apiErrors`. */
+  errorMessage?: string | null;
   stateInfo?: {
     legislature: string;
     session: string;
@@ -393,6 +413,12 @@ export function StateBillsPage({
   stateAbbr,
   stateName,
   status = 'mixed',
+  apiBills,
+  totalBillCount,
+  apiPagination,
+  apiLoading,
+  apiErrors,
+  errorMessage,
   stateInfo,
   onSelectState,
   onBrowseMap,
@@ -407,20 +433,24 @@ export function StateBillsPage({
   const [pillSize, setPillSize] = useState({ w: 0, h: 0 });
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const allBills = useMemo(
-    () =>
-      getBillsForState({ stateAbbr, stateName, status }).map((d, i) => mapBillDetailToBill(d, i)),
+  const mockBills = useMemo(
+    () => getBillsForState({ stateAbbr, stateName, status }).map(mapBillDetailToBill),
     [stateAbbr, stateName, status]
   );
 
   const activeBills = useMemo(
-    () => allBills.filter((b: Bill) => b.billTab === 'active'),
-    [allBills]
+    () => (apiBills ? apiBills.active : mockBills.filter((b) => b.billTab === 'active')),
+    [apiBills, mockBills]
   );
   const passedBills = useMemo(
-    () => allBills.filter((b: Bill) => b.billTab === 'passed'),
-    [allBills]
+    () => (apiBills ? apiBills.passed : mockBills.filter((b) => b.billTab === 'passed')),
+    [apiBills, mockBills]
   );
+
+  const allBillsCount = useMemo(() => {
+    if (totalBillCount != null) return totalBillCount;
+    return activeBills.length + passedBills.length;
+  }, [totalBillCount, activeBills.length, passedBills.length]);
 
   const {
     tab,
@@ -487,12 +517,30 @@ export function StateBillsPage({
       legislature: stateInfo?.legislature ?? 'State Legislature',
       session: stateInfo?.session ?? '2025–2026 Regular',
       sessionWindow: stateInfo?.sessionWindow ?? 'Jan – Sep',
-      billCount: allBills.length,
+      billCount: allBillsCount,
       lastUpdated: stateInfo?.lastUpdated ?? '',
       stateLink: stateInfo?.stateLink ?? `https://legislature.${stateAbbr.toLowerCase()}.gov/bills`,
     }),
-    [stateName, stateAbbr, stateInfo, allBills.length]
+    [stateName, stateAbbr, stateInfo, allBillsCount]
   );
+
+  const tabLoading = apiLoading
+    ? tab === 'active'
+      ? apiLoading.active
+      : apiLoading.passed
+    : false;
+
+  const tabError = apiErrors
+    ? tab === 'active'
+      ? apiErrors.active
+      : apiErrors.passed
+    : errorMessage;
+
+  const currentPagination = apiPagination
+    ? tab === 'active'
+      ? apiPagination.active
+      : apiPagination.passed
+    : null;
 
   const sidebarProps = {
     filters,
@@ -607,18 +655,42 @@ export function StateBillsPage({
                     ) : null}
                   </Text>
                   <View className="gap-2.5">
-                    {filteredBills.length > 0 ? (
-                      filteredBills.map((bill) => (
-                        <StateBillCard
-                          key={bill.id}
-                          bill={bill}
-                          onPress={(billId) => onBillPress?.(billId, tab)}
-                        />
-                      ))
-                    ) : (
+                    {tabError ? (
                       <Text className="py-8 text-center font-sans text-sm text-zinc-400">
-                        No bills match the current filters.
+                        {tabError}
                       </Text>
+                    ) : tabLoading && sourceBills.length === 0 ? (
+                      <Text className="py-8 text-center font-sans text-sm text-zinc-400">
+                        Loading bills...
+                      </Text>
+                    ) : (
+                      <>
+                        {filteredBills.length > 0 ? (
+                          filteredBills.map((bill) => (
+                            <StateBillCard
+                              key={bill.id}
+                              bill={bill}
+                              onPress={(billId) => onBillPress?.(billId, tab)}
+                            />
+                          ))
+                        ) : (
+                          <Text className="py-8 text-center font-sans text-sm text-zinc-400">
+                            No bills match the current filters.
+                          </Text>
+                        )}
+                        {currentPagination?.hasNextPage && !tabError ? (
+                          <Pressable
+                            onPress={() => currentPagination.fetchNextPage()}
+                            disabled={currentPagination.isFetchingNextPage}
+                            className="items-center rounded-lg border border-zinc-200 bg-zinc-50 py-3 active:opacity-85"
+                            accessibilityRole="button"
+                            accessibilityLabel="Load more bills">
+                            <Text className="font-sans-semibold text-sm text-zinc-700">
+                              {currentPagination.isFetchingNextPage ? 'Loading…' : 'Load more'}
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </>
                     )}
                   </View>
                 </View>

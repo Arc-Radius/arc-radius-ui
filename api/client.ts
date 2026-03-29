@@ -19,7 +19,10 @@ export interface ApiClientOptions {
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 function resolveBaseUrl() {
-  return process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
+  const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (configuredBaseUrl) return configuredBaseUrl;
+  if (typeof window !== 'undefined') return '/api';
+  return '';
 }
 
 async function withTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
@@ -63,6 +66,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
     if (!headers.has('accept')) headers.set('accept', 'application/json');
     if (!headers.has('content-type') && init.body != null) headers.set('content-type', 'application/json');
     if (token) headers.set('authorization', `Bearer ${token}`);
+    const proxySharedSecret = process.env.EXPO_PUBLIC_PROXY_SHARED_SECRET;
+    if (proxySharedSecret && !headers.has('x-proxy-secret')) {
+      headers.set('x-proxy-secret', proxySharedSecret);
+    }
 
     const response = await withTimeout(`${baseUrl}${path}`, { ...init, headers }, timeoutMs);
     const body = await parseBody(response);

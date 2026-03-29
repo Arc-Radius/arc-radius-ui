@@ -1,6 +1,12 @@
 [build]
   command = "npx expo export -p web"
   publish = "dist"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/proxy/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"

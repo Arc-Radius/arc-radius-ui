@@ -5,7 +5,7 @@ const API_GATEWAY_KEY = process.env.API_GATEWAY_KEY ?? '';
 const PROXY_SHARED_SECRET = process.env.PROXY_SHARED_SECRET ?? '';
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://arcradius.netlify.app',
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 };

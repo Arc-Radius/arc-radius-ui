@@ -8,7 +8,11 @@ import {
   Phone as PhoneIcon,
 } from 'lucide-react-native';
 
-import { DEFAULT_STATE, getCurrentStateAbbr } from '@/components/shell/navigation/tab-config';
+import {
+  getBillsTabHref,
+  getCurrentStateAbbr,
+} from '@/components/shell/navigation/tab-config';
+import { useLastBillsState } from '@/contexts/LastBillsStateContext';
 
 type Tab = 'home' | 'bills' | 'resources' | 'crisis';
 
@@ -57,7 +61,7 @@ const TABS: { key: Tab; label: string }[] = [
 function activeTabFromPathname(pathname: string): Tab {
   const p = pathname.split('?')[0] ?? '';
   if (p === '/' || p === '') return 'home';
-  if (p.startsWith('/state/')) return 'bills';
+  if (p === '/state' || p.startsWith('/state/')) return 'bills';
   if (p.startsWith('/ask')) return 'resources';
   if (p.startsWith('/crisis')) return 'crisis';
   return 'home';
@@ -68,6 +72,7 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
   const router = useRouter();
   const pathname = usePathname();
   const segments = useSegments();
+  const { lastBillsState } = useLastBillsState();
 
   const activeTab = activeTabProp ?? activeTabFromPathname(pathname);
 
@@ -75,16 +80,13 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
     onTabPress?.(tab);
     if (onTabPress) return;
 
-    const stateAbbr = getCurrentStateAbbr(segments as string[]);
+    const stateAbbrFromPath = getCurrentStateAbbr(segments as string[]);
     switch (tab) {
       case 'home':
         router.push('/');
         break;
       case 'bills':
-        router.push({
-          pathname: '/state/[stateAbbr]',
-          params: { stateAbbr: stateAbbr ?? DEFAULT_STATE },
-        });
+        router.push(getBillsTabHref({ stateAbbrFromPath, lastBillsState }));
         break;
       case 'resources':
         router.push('/ask');

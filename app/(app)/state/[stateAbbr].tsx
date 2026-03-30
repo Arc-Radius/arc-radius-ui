@@ -1,9 +1,10 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { StateBillsPage } from '@/components/bills/StateBillsPage';
 import { fetchBillDetail } from '@/api/bills';
+import { useLastBillsState } from '@/contexts/LastBillsStateContext';
 import { queryKeys } from '@/queries/keys';
 import { useStateBillsTabData } from '@/queries/useStateBillsTabData';
 import type { BillTab } from '@/static/billConstants';
@@ -13,6 +14,7 @@ export default function StateBillsRoute() {
   const { stateAbbr: stateParam } = useLocalSearchParams<{ stateAbbr?: string | string[] }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { setLastBillsState } = useLastBillsState();
 
   const stateAbbr = useMemo(() => {
     const rawState = Array.isArray(stateParam) ? stateParam[0] : stateParam;
@@ -20,6 +22,12 @@ export default function StateBillsRoute() {
   }, [stateParam]);
 
   const stateInfo = stateAbbr ? STATES[stateAbbr] : null;
+
+  useEffect(() => {
+    if (stateInfo) {
+      setLastBillsState(stateAbbr);
+    }
+  }, [stateInfo, stateAbbr, setLastBillsState]);
 
   const { activeBills, passedBills, totalBillCount, apiPagination, apiLoading, apiErrors } =
     useStateBillsTabData(stateAbbr);

@@ -2,8 +2,27 @@ import type { Href } from 'expo-router';
 
 export type AppTabId = 'home' | 'bills' | 'crisis';
 
-interface TabContext {
-  stateAbbr?: string;
+/** Default state code for non-Bills URLs (e.g. external affiliate links). */
+export const DEFAULT_STATE = 'CA';
+
+export interface TabContext {
+  /** Two-letter code when the current URL is `/state/XX`. */
+  stateAbbrFromPath?: string;
+  lastBillsState: string | null;
+}
+
+export function getBillsTabHref(ctx: Pick<TabContext, 'stateAbbrFromPath' | 'lastBillsState'>): Href {
+  if (ctx.stateAbbrFromPath) {
+    return { pathname: '/state/[stateAbbr]', params: { stateAbbr: ctx.stateAbbrFromPath } };
+  }
+  if (ctx.lastBillsState) {
+    return { pathname: '/state/[stateAbbr]', params: { stateAbbr: ctx.lastBillsState } };
+  }
+  return '/state';
+}
+
+function normalizePathname(pathname: string): string {
+  return pathname.split('?')[0] ?? '';
 }
 
 interface AppTabConfig {
@@ -15,8 +34,6 @@ interface AppTabConfig {
   matchesPath: (pathname: string) => boolean;
 }
 
-export const DEFAULT_STATE = 'CA';
-
 export const APP_TABS: AppTabConfig[] = [
   {
     id: 'home',
@@ -24,18 +41,21 @@ export const APP_TABS: AppTabConfig[] = [
     label: 'Home',
     icon: 'home-outline',
     getHref: () => '/',
-    matchesPath: (pathname) => pathname === '/',
+    matchesPath: (pathname) => {
+      const p = normalizePathname(pathname);
+      return p === '/' || p === '';
+    },
   },
   {
     id: 'bills',
     routeName: 'state/[stateAbbr]',
     label: 'Bills',
     icon: 'document-text-outline',
-    getHref: ({ stateAbbr }) => ({
-      pathname: '/state/[stateAbbr]',
-      params: { stateAbbr: stateAbbr ?? DEFAULT_STATE },
-    }),
-    matchesPath: (pathname) => pathname.startsWith('/state/'),
+    getHref: (ctx) => getBillsTabHref(ctx),
+    matchesPath: (pathname) => {
+      const p = normalizePathname(pathname);
+      return p === '/state' || p.startsWith('/state/');
+    },
   },
   {
     id: 'crisis',

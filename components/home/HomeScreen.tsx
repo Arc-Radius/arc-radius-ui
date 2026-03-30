@@ -1,9 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ScreenScrollBody } from '@/components/ui/screen-layout';
+import { useStatesDerived } from '@/queries/useStatesQuery';
 import { STATES, STATUS_STYLES } from '@/static/states';
+import type { StateInfoWithCounts } from '@/static/states';
 
 import { HeroSection } from './HeroSection';
 import { PrivacyBanner } from './PrivacyBanner';
@@ -21,7 +23,25 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
 
   const [selected, setSelected] = useState<string | null>(null);
 
-  const selectedInfo = selected ? STATES[selected] : null;
+  const { statesByAbbr, statusCounts, dropdownOptions, isPending, isError, refetch } =
+    useStatesDerived();
+
+  const selectedInfo = useMemo((): StateInfoWithCounts | null => {
+    if (!selected) return null;
+    const row = statesByAbbr?.[selected];
+    if (row) {
+      return {
+        name: row.name,
+        status: row.status,
+        counts: row.counts,
+      };
+    }
+    const fallback = STATES[selected];
+    if (fallback) {
+      return { ...fallback, counts: { activeBills: 0, passedBills: 0 } };
+    }
+    return null;
+  }, [selected, statesByAbbr]);
 
   const handleFindState = useCallback(() => {
     scrollViewRef.current?.scrollTo({
@@ -30,15 +50,26 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
     });
   }, []);
 
-  const handleStateSelect = useCallback((abbr: string) => {
-    setSelected(abbr);
-    const info = STATES[abbr];
-    if (info) {
-      AccessibilityInfo.announceForAccessibility(
-        `Selected ${info.name}, legislative climate: ${STATUS_STYLES[info.status].label}`
-      );
-    }
-  }, []);
+  const handleStateSelect = useCallback(
+    (abbr: string) => {
+      setSelected(abbr || null);
+      if (!abbr) return;
+      const row = statesByAbbr?.[abbr];
+      const fallback = STATES[abbr];
+      const name = row?.name ?? fallback?.name;
+      const status = row?.status ?? fallback?.status;
+      if (name && status) {
+        AccessibilityInfo.announceForAccessibility(
+          `Selected ${name}, legislative climate: ${STATUS_STYLES[status].label}`
+        );
+      }
+    },
+    [statesByAbbr]
+  );
+
+  const handleRetryStates = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   const handleNavigateToState = useCallback(() => {
     if (!selected || !onNavigateToState) return;
@@ -50,7 +81,11 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
       <ScreenScrollBody>
         {/* Hero — unchanged */}
         <View className="mt-0">
-          <HeroSection onFindState={handleFindState} />
+          <HeroSection
+            onFindState={handleFindState}
+            statusCounts={statusCounts}
+            heroStatsLoading={isPending}
+          />
         </View>
 
         {/* State search — blue glass */}
@@ -68,6 +103,11 @@ export function HomeScreen({ onNavigateToState }: HomeScreenProps) {
             <StateSearch
               selected={selected}
               selectedInfo={selectedInfo}
+              statesByAbbr={statesByAbbr}
+              statesLoading={isPending}
+              statesError={isError}
+              onRetryStates={handleRetryStates}
+              stateDropdownOptions={dropdownOptions ?? undefined}
               onStateSelect={handleStateSelect}
               onNavigateToState={handleNavigateToState}
               scrollViewRef={scrollViewRef}

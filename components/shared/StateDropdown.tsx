@@ -9,6 +9,8 @@ interface StateDropdownProps {
   onChange: (abbr: string) => void;
   placeholder?: string;
   compactDisplay?: boolean;
+  /** When set (non-empty), replaces static `STATES` for the option list (e.g. GET /states). */
+  stateOptions?: { abbr: string; name: string }[];
 }
 
 function SearchIcon() {
@@ -20,17 +22,19 @@ export function StateDropdown({
   onChange,
   placeholder = 'Search state...',
   compactDisplay,
+  stateOptions,
 }: StateDropdownProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
-  const options = useMemo(
-    () =>
-      Object.entries(STATES)
-        .map(([abbr, info]) => ({ abbr, name: info.name }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    []
-  );
+  const options = useMemo(() => {
+    if (stateOptions && stateOptions.length > 0) {
+      return [...stateOptions].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return Object.entries(STATES)
+      .map(([abbr, info]) => ({ abbr, name: info.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [stateOptions]);
 
   const filteredOptions = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -42,7 +46,13 @@ export function StateDropdown({
     );
   }, [options, query]);
 
-  const selectedLabel = value && STATES[value] ? `${STATES[value].name} (${value})` : null;
+  const selectedLabel = useMemo(() => {
+    if (!value) return null;
+    const fromApi = stateOptions?.find((o) => o.abbr === value);
+    if (fromApi) return `${fromApi.name} (${value})`;
+    if (STATES[value]) return `${STATES[value].name} (${value})`;
+    return null;
+  }, [value, stateOptions]);
 
   return (
     <View>

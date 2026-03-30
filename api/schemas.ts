@@ -150,6 +150,23 @@ export const billDetailEnvelopeSchema = z.object({
   graphRecord: graphRecordSchema.optional(),
 });
 
+/** GET /states — minimal fields used by the homepage; extra keys are ignored. */
+export const stateCountsSchema = z.object({
+  activeBills: z.number(),
+  passedBills: z.number(),
+});
+
+export const stateListItemSchema = z.object({
+  abbr: z.string(),
+  name: z.string(),
+  status: z.enum(['supportive', 'mixed', 'harmful']),
+  counts: stateCountsSchema,
+});
+
+export const statesResponseSchema = z.object({
+  states: z.array(stateListItemSchema),
+});
+
 export type StateBillsResponse = z.infer<typeof stateBillsResponseSchema>;
 export type BillDetailResponse = z.infer<typeof billDetailResponseSchema>;
 export type ApiBillDetailItem = z.infer<typeof apiBillDetailItemSchema>;
@@ -157,3 +174,5 @@ export type GraphRecordParsed = z.infer<typeof graphRecordSchema>;
 export type StateBillsEnvelopeResponse = z.infer<typeof stateBillsEnvelopeSchema>;
 export type StateBillsMeta = z.infer<typeof stateBillsMetaSchema>;
 export type StateBillListItem = z.infer<typeof stateBillListItemSchema>;
+export type StateListItem = z.infer<typeof stateListItemSchema>;
+export type StatesResponse = z.infer<typeof statesResponseSchema>;

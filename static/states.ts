@@ -13,6 +13,11 @@ export interface StateInfo {
   status: LegislativeStatus;
 }
 
+/** State row from GET /states (homepage detail panel + map when live). */
+export interface StateInfoWithCounts extends StateInfo {
+  counts: { activeBills: number; passedBills: number };
+}
+
 // ── All 50 states ────────────────────────────────
 export const STATES: Record<string, StateInfo> = {
   AL: { name: 'Alabama', status: 'harmful' },

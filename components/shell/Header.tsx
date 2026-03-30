@@ -18,6 +18,10 @@ function useStatusText(): { label: string; dot?: string } {
   const pathname = usePathname();
   const p = pathname.split('?')[0] ?? '';
 
+  if (p === '/state') {
+    return { label: 'Select a state' };
+  }
+
   // State / bills page
   if (p.startsWith('/state/')) {
     const abbr = getStateFromPath(p);

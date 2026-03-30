@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, usePathname, useSegments } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
+import { useLastBillsState } from '@/contexts/LastBillsStateContext';
+
 import { APP_TABS, getCurrentStateAbbr } from './tab-config';
 
 interface AppTabsProps {
@@ -11,7 +13,8 @@ interface AppTabsProps {
 export default function AppTabs({ position }: AppTabsProps) {
   const pathname = usePathname();
   const segments = useSegments();
-  const stateAbbr = getCurrentStateAbbr(segments);
+  const stateAbbrFromPath = getCurrentStateAbbr(segments as string[]);
+  const { lastBillsState } = useLastBillsState();
   const isBottom = position === 'bottom';
   const isHeader = position === 'header';
 
@@ -28,7 +31,7 @@ export default function AppTabs({ position }: AppTabsProps) {
       {APP_TABS.map((tab) => {
         const active = tab.matchesPath(pathname);
         const iconColor = active ? '#1C1917' : tab.id === 'crisis' ? '#B45309' : '#57534E';
-        const href = tab.getHref({ stateAbbr });
+        const href = tab.getHref({ stateAbbrFromPath, lastBillsState });
         const showIcons = !isHeader;
         const label = isHeader && tab.id === 'crisis' ? 'Crisis Help' : tab.label;
         const isCrisisButton = isHeader && tab.id === 'crisis';

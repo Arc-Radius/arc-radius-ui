@@ -137,10 +137,9 @@ export const graphRecordSchema = z
     session_year: z.number().optional(),
     state_lean: z.string().optional(),
     bill_dominant_party: z.string().optional(),
-    r_sponsorship_ratio: z.number().optional(),
+    state_r_sponsorship_ratio: z.number().optional(),
     pass_rate_gap: z.union([z.number(), z.string()]).optional(),
     overall_pass_rate: z.union([z.number(), z.string()]).optional(),
-    bipartisan_ratio: z.number().optional(),
     committee_id: z.string().optional(),
   })
   .passthrough();

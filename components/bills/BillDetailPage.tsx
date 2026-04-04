@@ -477,10 +477,9 @@ export function BillDetailPage({
       session_year: num(r.session_year ?? year),
       state_lean: str(r.state_lean, undefined),
       bill_dominant_party: str(r.bill_dominant_party, undefined),
-      r_sponsorship_ratio: num(r.r_sponsorship_ratio),
+      state_r_sponsorship_ratio: num(r.state_r_sponsorship_ratio),
       pass_rate_gap: snp(r.pass_rate_gap),
       overall_pass_rate: snp(r.overall_pass_rate),
-      bipartisan_ratio: num(r.bipartisan_ratio),
     };
   }, [rawBill, bill]);
 

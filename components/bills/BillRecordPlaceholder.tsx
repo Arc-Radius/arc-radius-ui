@@ -278,12 +278,12 @@ export function BillGraphRecordPlaceholder({
                 <PartyChip value={formatMeta(g.bill_dominant_party)} />
               </MetadataCell>
             </View>
-            <MetadataCell label="r_sponsorship_ratio" span>
+            <MetadataCell label="state_r_sponsorship_ratio" span>
               <Text className="text-xs font-medium text-zinc-800">
-                {typeof g.r_sponsorship_ratio === 'number' &&
-                Number.isFinite(g.r_sponsorship_ratio)
-                  ? g.r_sponsorship_ratio.toFixed(1)
-                  : formatMeta(g.r_sponsorship_ratio)}
+                {typeof g.state_r_sponsorship_ratio === 'number' &&
+                Number.isFinite(g.state_r_sponsorship_ratio)
+                  ? g.state_r_sponsorship_ratio.toFixed(1)
+                  : formatMeta(g.state_r_sponsorship_ratio)}
               </Text>
             </MetadataCell>
             <View className="flex-row gap-0.5">
@@ -298,13 +298,6 @@ export function BillGraphRecordPlaceholder({
                 </Text>
               </MetadataCell>
             </View>
-            <MetadataCell label="bipartisan_ratio" span>
-              <Text className="text-xs font-medium text-zinc-800">
-                {typeof g.bipartisan_ratio === 'number' && Number.isFinite(g.bipartisan_ratio)
-                  ? g.bipartisan_ratio.toFixed(1)
-                  : formatMeta(g.bipartisan_ratio)}
-              </Text>
-            </MetadataCell>
           </View>
         </View>
       )}

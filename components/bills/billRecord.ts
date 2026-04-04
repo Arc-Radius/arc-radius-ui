@@ -25,11 +25,10 @@ export interface GraphBillRecord {
   year?: number;
   state_lean?: string;
   bill_dominant_party?: string;
-  r_sponsorship_ratio?: number;
+  state_r_sponsorship_ratio?: number;
   /** Numeric gap or display string e.g. `+12%` */
   pass_rate_gap?: number | string;
   /** Rate 0–1, percent 0–100, or display string e.g. `34%` */
   overall_pass_rate?: number | string;
-  bipartisan_ratio?: number;
   session_year?: number;
 }

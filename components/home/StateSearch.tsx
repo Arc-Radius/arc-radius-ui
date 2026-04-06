@@ -270,7 +270,7 @@ function StateDetailPanel({
               {info.counts.activeBills}
             </Text>
             <Text className="mt-0.5 font-sans text-[11px]" style={{ color: '#e4e4e7' }}>
-              active bills
+              proposed bills
             </Text>
           </View>
         </View>

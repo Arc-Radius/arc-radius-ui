@@ -13,12 +13,16 @@ interface BillFilterSidebarProps {
   filters: BillFilters;
   activeCategories: Set<string>;
   activeYears: Set<number>;
+  activeStatuses: Set<string>;
   availableCategories: string[];
   availableYears: number[];
+  availableStatuses: string[];
   billCountByStance: Record<string, number>;
   billCountByCategory: Record<string, number>;
   billCountByYear: Record<number, number>;
+  billCountByStatus: Record<string, number>;
   onToggleStance: (s: LegislativeStatus) => void;
+  onToggleStatus: (s: string) => void;
   onToggleCategory: (c: string) => void;
   onToggleYear: (y: number) => void;
   onSetSort: (s: SortOrder) => void;
@@ -31,12 +35,16 @@ export function BillFilterSidebar({
   filters,
   activeCategories,
   activeYears,
+  activeStatuses,
   availableCategories,
   availableYears,
+  availableStatuses,
   billCountByStance,
   billCountByCategory,
   billCountByYear,
+  billCountByStatus,
   onToggleStance,
+  onToggleStatus,
   onToggleCategory,
   onToggleYear,
   onSetSort,
@@ -46,6 +54,7 @@ export function BillFilterSidebar({
   const [sections, setSections] = useState({
     year: true,
     stance: true,
+    status: true,
     category: true,
     sort: true,
   });
@@ -110,6 +119,23 @@ export function BillFilterSidebar({
             ))}
           </FilterSection>
 
+          {/* ── Status ── */}
+          <FilterSection
+            label="Status"
+            open={sections.status}
+            onToggle={() => toggleSection('status')}>
+            {availableStatuses.map((s) => (
+              <CheckboxRow
+                key={s}
+                label={s}
+                checked={activeStatuses.has(s)}
+                count={billCountByStatus[s] ?? 0}
+                checkColor={ACCENT_BLUE}
+                onPress={() => onToggleStatus(s)}
+              />
+            ))}
+          </FilterSection>
+
           {/* ── Category ── */}
           <FilterSection
             label="Category"
@@ -118,7 +144,7 @@ export function BillFilterSidebar({
             {availableCategories.map((c) => (
               <CheckboxRow
                 key={c}
-                label={c}
+                label={c.replace(/_/g, ' ')}
                 checked={activeCategories.has(c)}
                 count={billCountByCategory[c] ?? 0}
                 checkColor={ACCENT_BLUE}

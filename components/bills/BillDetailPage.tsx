@@ -3,7 +3,10 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import DOMPurify from 'dompurify';
+import { useQueries } from '@tanstack/react-query';
 import { useBillTextQuery } from '@/queries/useBillTextQuery';
+import { fetchBillDetail, type BillDetailMerged } from '@/api/bills';
+import { queryKeys } from '@/queries/keys';
 import type { Href } from 'expo-router';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -31,7 +34,6 @@ import {
   ChevronDown,
 } from 'lucide-react-native';
 
-import type { BillDetailMerged } from '@/api/bills';
 import { ScreenContent } from '@/components/ui/screen-layout';
 import { BillGraphRecordPlaceholder, type GraphBillRecord } from './BillRecordPlaceholder';
 import type { BillTab } from '@/static/billConstants';
@@ -87,6 +89,8 @@ export interface Bill {
   number?: string;
   title?: string;
   summary?: string;
+  description?: string;
+  whyMatters?: string;
   fullText?: string;
   state?: string;
   status?: string;
@@ -126,15 +130,20 @@ const CONFIDENCE_DOT: Record<string, string> = {
 
 function RelatedBillsSection({
   relatedBills,
+  relatedBillDetailsByPk,
   onPressBill,
 }: {
   relatedBills: RelatedBill[];
+  relatedBillDetailsByPk?: Map<string, BillDetailMerged>;
   onPressBill?: (billId: string) => void;
 }) {
   if (relatedBills.length === 0) {
     return (
       <View className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
-        <Text className="mb-2 font-sans-semibold text-sm text-zinc-800">Related bills</Text>
+        <View className="mb-2 flex-row items-center gap-1.5">
+          <Sparkles size={13} color="#a16207" />
+          <Text className="font-sans-semibold text-sm text-zinc-800">Related bills</Text>
+        </View>
         <Text className="font-sans text-sm leading-relaxed text-zinc-500">Coming soon.</Text>
       </View>
     );
@@ -151,7 +160,10 @@ function RelatedBillsSection({
   ].filter((t) => t.bills.length > 0);
   return (
     <View className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
-      <Text className="mb-2 font-sans-semibold text-sm text-zinc-800">Related bills</Text>
+      <View className="mb-2 flex-row items-center gap-1.5">
+        <Sparkles size={13} color="#a16207" />
+        <Text className="font-sans-semibold text-sm text-zinc-800">Related bills</Text>
+      </View>
       <View className="gap-3">
         {tiers.map((tier) => (
           <View key={tier.key}>
@@ -164,22 +176,45 @@ function RelatedBillsSection({
             </View>
             <View className="overflow-hidden rounded-lg border border-zinc-200">
               {tier.bills.map((rb, idx) => (
+                (() => {
+                  const detail = relatedBillDetailsByPk?.get(rb.bill_id);
+                  const displayId =
+                    detail?.number?.trim() || detail?.bill_number?.trim() || rb.bill_id;
+                  const title = detail?.title?.trim() || '';
+                  const status = (detail as BillDetailMerged | undefined)?.status_desc?.trim() || '';
+                  const lastActionDate = detail?.lastActionDate?.trim() || '';
+                  return (
                 <Pressable
                   key={rb.bill_id}
                   onPress={() => onPressBill?.(rb.bill_id)}
-                  className="flex-row items-baseline justify-between gap-3 bg-white px-3.5 py-2.5 active:bg-zinc-50"
+                  className="bg-white px-3.5 py-3 active:bg-zinc-50"
                   style={
                     idx < tier.bills.length - 1
                       ? { borderBottomWidth: 0.5, borderBottomColor: 'rgba(228,228,231,0.9)' }
                       : undefined
                   }>
-                  <Text className="font-sans-semibold text-[13px] text-zinc-800">{rb.bill_id}</Text>
-                  <Text
-                    className="flex-1 text-right font-sans text-xs text-zinc-400"
-                    numberOfLines={1}>
+                  <View className="mb-0.5 flex-row items-center gap-1.5">
+                    <Text className="font-sans-semibold text-[13px] text-zinc-800">{displayId}</Text>
+                    {displayId !== rb.bill_id ? (
+                      <Text className="font-mono text-[11px] text-zinc-400">{rb.bill_id}</Text>
+                    ) : null}
+                  </View>
+                  {title ? (
+                    <Text className="mb-1 font-sans text-[12px] text-zinc-500">{title}</Text>
+                  ) : null}
+                  <Text className="font-sans text-[13px] leading-relaxed text-zinc-600">
                     {rb.summary}
                   </Text>
+                  {status || lastActionDate ? (
+                    <Text className="mt-1.5 font-sans text-[11px] text-zinc-400">
+                      {[status, lastActionDate ? `Last action: ${lastActionDate}` : '']
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
+                  ) : null}
                 </Pressable>
+                  );
+                })()
               ))}
             </View>
           </View>
@@ -355,6 +390,17 @@ export function BillDetailPage({
       router.replace(`/state/${stateAbbrFromRoute}` as Href);
     }
   }, [onClose, router, stateAbbrFromRoute]);
+  const handlePressRelatedBill = useCallback(
+    (billPk: string) => {
+      const stateAbbr = billPk.split(':')[0]?.trim().toUpperCase();
+      if (!stateAbbr) return;
+      router.push({
+        pathname: '/state/[stateAbbr]/[billId]',
+        params: { stateAbbr, billId: billPk, billTab: 'active' },
+      });
+    },
+    [router]
+  );
   const ai = (raw.aiAnalysis ?? {}) as NonNullable<Bill['aiAnalysis']>;
   const re = raw.researchEvidence as Bill['researchEvidence'] | undefined;
   const sc = raw.sponsorContact as Bill['sponsorContact'] | undefined;
@@ -363,7 +409,16 @@ export function BillDetailPage({
     id: raw.id ?? '',
     number: raw.number ?? '',
     title: raw.title ?? '',
-    summary: decodeHtmlEntities(raw.summary ?? ''),
+    summary: decodeHtmlEntities(
+      raw.summary ??
+        (raw as { llm_bill_summary?: string }).llm_bill_summary ??
+        raw.description ??
+        ''
+    ),
+    description: decodeHtmlEntities(raw.description ?? ''),
+    whyMatters: decodeHtmlEntities(
+      raw.whyMatters ?? (raw as { llm_bill_why_matters?: string }).llm_bill_why_matters ?? ''
+    ),
     fullText: raw.fullText ?? '',
     state: raw.state ?? '',
     status: raw.status ?? '',
@@ -561,6 +616,28 @@ export function BillDetailPage({
     return DOMPurify.sanitize(raw, { ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'div', 'span', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'pre', 'blockquote', 'hr', 'sup', 'sub'], ALLOWED_ATTR: ['href', 'target', 'style', 'align', 'colspan', 'rowspan'] });
   }, [billTextQuery.data?.html, isPdf]);
   const lifecycleLabel = resolveLifecyclePillLabel(bill.billTab);
+  const relatedBillPks = useMemo(
+    () => Array.from(new Set((bill.relatedBills ?? []).map((rb) => rb.bill_id).filter(Boolean))),
+    [bill.relatedBills]
+  );
+  const relatedBillQueries = useQueries({
+    queries: relatedBillPks.map((billPk) => ({
+      queryKey: queryKeys.billDetailByPk(billPk),
+      queryFn: ({ signal }: { signal: AbortSignal }) => {
+        const stateAbbr = billPk.split(':')[0] ?? '';
+        return fetchBillDetail(stateAbbr, billPk, signal);
+      },
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+  const relatedBillDetailsByPk = useMemo(() => {
+    const map = new Map<string, BillDetailMerged>();
+    relatedBillQueries.forEach((q, idx) => {
+      const billPk = relatedBillPks[idx];
+      if (billPk && q.data) map.set(billPk, q.data);
+    });
+    return map;
+  }, [relatedBillPks, relatedBillQueries]);
   const rawLegislativeStatus =
     rawGraph?.status_desc?.trim() ||
     (bill.status && !isLegislativeStanceStatus(bill.status) ? bill.status : '');
@@ -642,7 +719,7 @@ export function BillDetailPage({
                       ) : null}
                     </View>
                     <Text className="mt-2 font-sans text-sm leading-relaxed text-zinc-600">
-                      {bill.summary}
+                      {bill.description}
                     </Text>
                   </View>
                   <Pressable
@@ -719,24 +796,59 @@ export function BillDetailPage({
                 {/* ── SUMMARY ── */}
                 {activeTab === 'summary' && (
                   <View className="gap-6">
-                    <View>
-                      <Text className="mb-2 font-sans-semibold text-sm text-zinc-800">
-                        What it means
-                      </Text>
-                      <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
-                        <Text className="font-sans text-sm leading-relaxed text-zinc-500">
-                          Coming soon.
-                        </Text>
+                    <View
+                      className="rounded-xl border px-4 py-3.5"
+                      style={{
+                        backgroundColor: 'rgba(59,130,246,0.05)',
+                        borderColor: 'rgba(59,130,246,0.12)',
+                      }}>
+                      <View className="flex-row items-start gap-2.5">
+                        <Sparkles size={14} color="#2563eb" style={{ marginTop: 2 }} />
+                        <View className="flex-1">
+                          <Text className="font-sans-semibold text-sm text-zinc-800">
+                            AI-generated from the knowledge graph
+                          </Text>
+                          <Text className="mt-0.5 font-sans text-xs leading-5 text-zinc-600">
+                            This summary is generated using our legislative knowledge graph, bill
+                            metadata, and related policy links, and the system was calibrated with
+                            human evaluation to improve reliability. Review official bill text for
+                            legal language.
+                          </Text>
+                        </View>
                       </View>
                     </View>
                     <View>
-                      <Text className="mb-2 font-sans-semibold text-sm text-zinc-800">
-                        Why it matters
-                      </Text>
+                      <View className="mb-2 flex-row items-center gap-1.5">
+                        <Sparkles size={13} color="#a16207" />
+                        <Text className="font-sans-semibold text-sm text-zinc-800">What it means</Text>
+                      </View>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
-                        <Text className="font-sans text-sm leading-relaxed text-zinc-500">
-                          Coming soon.
-                        </Text>
+                        {bill.summary?.trim() ? (
+                          <Text className="font-sans text-sm leading-relaxed text-zinc-700">
+                            {bill.summary}
+                          </Text>
+                        ) : (
+                          <Text className="font-sans text-sm leading-relaxed text-zinc-500">
+                            Coming soon.
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                    <View>
+                      <View className="mb-2 flex-row items-center gap-1.5">
+                        <Sparkles size={13} color="#a16207" />
+                        <Text className="font-sans-semibold text-sm text-zinc-800">Why it matters</Text>
+                      </View>
+                      <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
+                        {bill.whyMatters?.trim() ? (
+                          <Text className="font-sans text-sm leading-relaxed text-zinc-700">
+                            {bill.whyMatters}
+                          </Text>
+                        ) : (
+                          <Text className="font-sans text-sm leading-relaxed text-zinc-500">
+                            Coming soon.
+                          </Text>
+                        )}
                       </View>
                     </View>
                   </View>
@@ -1130,7 +1242,11 @@ export function BillDetailPage({
                 )}
               </View>
             </View>
-            <RelatedBillsSection relatedBills={bill.relatedBills} />
+            <RelatedBillsSection
+              relatedBills={bill.relatedBills}
+              relatedBillDetailsByPk={relatedBillDetailsByPk}
+              onPressBill={handlePressRelatedBill}
+            />
           </View>
         </ScreenContent>
       </ScrollView>

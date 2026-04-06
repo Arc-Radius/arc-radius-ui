@@ -425,8 +425,11 @@ export function BillDetailPage({
       const t = String(v).trim();
       return t !== '' ? t : fb;
     };
-    const num = (v: number | undefined): number | undefined =>
-      v !== undefined && Number.isFinite(v) ? v : undefined;
+    const num = (v: number | string | undefined | null): number | undefined => {
+      if (v === undefined || v === null) return undefined;
+      const n = typeof v === 'string' ? parseFloat(v) : v;
+      return Number.isFinite(n) ? n : undefined;
+    };
     const snp = (v: number | string | undefined | null): number | string | undefined => {
       if (v === undefined || v === null) return undefined;
       if (typeof v === 'string' && v.trim() === '') return undefined;
@@ -542,7 +545,7 @@ export function BillDetailPage({
   ];
 
   const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
-  const detailHistory = bill.history;
+  const detailHistory = useMemo(() => [...(bill.history ?? [])].reverse(), [bill.history]);
   const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
   const lifecycleLabel = resolveLifecyclePillLabel(bill.billTab);
   const displayLegislativeStatus =

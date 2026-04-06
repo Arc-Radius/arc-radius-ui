@@ -82,6 +82,32 @@ export async function fetchStateBills(
   return mapEnvelopeToResult(parsed);
 }
 
+export interface BillTextResult {
+  html: string;
+  mime: string;
+}
+
+export async function fetchBillText(
+  billId: string,
+  signal?: AbortSignal
+): Promise<BillTextResult> {
+  const data = await apiClient.get<Record<string, unknown>>(
+    `/bills/get-with-text?bill_id=${encodeURIComponent(billId)}`,
+    { signal }
+  );
+  const latestText = data?.latest_text as Record<string, unknown> | undefined;
+  const doc = latestText?.doc as string | undefined;
+  const mime = (latestText?.mime as string) ?? '';
+  if (!doc) return { html: '', mime };
+  try {
+    const bytes = Uint8Array.from(atob(doc), (c) => c.charCodeAt(0));
+    const html = new TextDecoder('utf-8').decode(bytes);
+    return { html, mime };
+  } catch {
+    return { html: '', mime };
+  }
+}
+
 export async function fetchBillDetail(
   _stateAbbr: string,
   billId: string,

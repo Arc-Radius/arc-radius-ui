@@ -2,6 +2,8 @@
  * BillDetailPage — 1:1 React Native port of the web prototype BillDetailView.
  */
 import { useCallback, useMemo, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { useBillTextQuery } from '@/queries/useBillTextQuery';
 import type { Href } from 'expo-router';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -26,6 +28,7 @@ import {
   Loader2,
   AlertCircle,
   LogIn,
+  ChevronDown,
 } from 'lucide-react-native';
 
 import type { BillDetailMerged } from '@/api/bills';
@@ -264,8 +267,8 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&gt;/g, '>');
 }
 
-function resolveLifecyclePillLabel(billTab: BillTab): 'Active' | 'Passed' {
-  return billTab === 'passed' ? 'Passed' : 'Active';
+function resolveLifecyclePillLabel(billTab: BillTab): 'Proposed' | 'Passed' {
+  return billTab === 'passed' ? 'Passed' : 'Proposed';
 }
 
 const STANCE_WORD: Record<LegislativeStatus, string> = {
@@ -425,8 +428,11 @@ export function BillDetailPage({
       const t = String(v).trim();
       return t !== '' ? t : fb;
     };
-    const num = (v: number | undefined): number | undefined =>
-      v !== undefined && Number.isFinite(v) ? v : undefined;
+    const num = (v: number | string | undefined | null): number | undefined => {
+      if (v === undefined || v === null) return undefined;
+      const n = typeof v === 'string' ? parseFloat(v) : v;
+      return Number.isFinite(n) ? n : undefined;
+    };
     const snp = (v: number | string | undefined | null): number | string | undefined => {
       if (v === undefined || v === null) return undefined;
       if (typeof v === 'string' && v.trim() === '') return undefined;
@@ -542,12 +548,24 @@ export function BillDetailPage({
   ];
 
   const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
-  const detailHistory = bill.history;
+  const [billTextOpen, setBillTextOpen] = useState(false);
+  const detailHistory = useMemo(() => [...(bill.history ?? [])].reverse(), [bill.history]);
   const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
+  const legiscanBillId = rawGraph?.bill_id ?? '';
+  const billTextQuery = useBillTextQuery(legiscanBillId, activeTab === 'details' && !detailBillText);
+  const billTextMime = billTextQuery.data?.mime ?? '';
+  const isPdf = billTextMime.includes('pdf');
+  const sanitizedHtml = useMemo(() => {
+    const raw = billTextQuery.data?.html ?? '';
+    if (!raw || isPdf) return '';
+    return DOMPurify.sanitize(raw, { ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'div', 'span', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'pre', 'blockquote', 'hr', 'sup', 'sub'], ALLOWED_ATTR: ['href', 'target', 'style', 'align', 'colspan', 'rowspan'] });
+  }, [billTextQuery.data?.html, isPdf]);
   const lifecycleLabel = resolveLifecyclePillLabel(bill.billTab);
-  const displayLegislativeStatus =
+  const rawLegislativeStatus =
     rawGraph?.status_desc?.trim() ||
     (bill.status && !isLegislativeStanceStatus(bill.status) ? bill.status : '');
+  const displayLegislativeStatus =
+    rawLegislativeStatus.toLowerCase() === lifecycleLabel.toLowerCase() ? '' : rawLegislativeStatus;
   const { width: windowWidth } = useWindowDimensions();
   const tabStripCompactWeb = Platform.OS === 'web' && windowWidth < 640;
   const headerGlass = STANCE_HEADER_GLASS[stanceKey];
@@ -630,6 +648,7 @@ export function BillDetailPage({
                   <Pressable
                     onPress={handleClose}
                     className="h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white/70 active:opacity-70"
+                    style={{ zIndex: 10 }}
                     accessibilityRole="button"
                     accessibilityLabel="Back to state bills">
                     <X size={13} color="#71717a" strokeWidth={2} />
@@ -637,19 +656,15 @@ export function BillDetailPage({
                 </View>
                 <View className="mt-3 flex-row flex-wrap items-center gap-2">
                   <Text className="font-sans text-xs text-zinc-500">Sponsors:</Text>
-                  {bill.sponsors.map((sponsor, idx) => {
-                    const pc = partyColor(sponsor.party);
-                    return (
-                      <View
-                        key={idx}
-                        className="rounded px-2 py-0.5"
-                        style={{ backgroundColor: pc.bg }}>
-                        <Text className="font-sans-medium text-xs" style={{ color: pc.text }}>
-                          {sponsor.name}
-                        </Text>
-                      </View>
-                    );
-                  })}
+                  {bill.sponsors.map((sponsor, idx) => (
+                    <View
+                      key={idx}
+                      className="rounded bg-zinc-100 px-2 py-0.5">
+                      <Text className="font-sans-medium text-xs text-zinc-700">
+                        {sponsor.name} ({sponsor.party})
+                      </Text>
+                    </View>
+                  ))}
                 </View>
                 <Text className="mt-2 font-sans text-xs text-zinc-500">
                   <Text className="font-sans-semibold text-zinc-600">Last Action Date: </Text>
@@ -731,10 +746,23 @@ export function BillDetailPage({
                 {activeTab === 'details' && (
                   <View className="gap-5">
                     <View>
-                      <Text className="mb-2 font-sans-semibold text-sm text-zinc-800">
-                        Bill text
-                      </Text>
-                      <View className="rounded-xl border border-zinc-200 bg-white p-4">
+                      <Pressable
+                        onPress={() => setBillTextOpen((o) => !o)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        className="mb-2 flex-row items-center gap-1 self-start rounded-md py-0.5 active:opacity-70"
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: billTextOpen }}
+                        accessibilityLabel={billTextOpen ? 'Collapse bill text' : 'Expand bill text'}>
+                        <Text className="font-sans-semibold text-sm text-zinc-800">
+                          Bill text
+                        </Text>
+                        <View
+                          className="h-5 w-[18px] items-center justify-center"
+                          style={{ transform: [{ rotate: billTextOpen ? '180deg' : '0deg' }] }}>
+                          <ChevronDown size={18} color="#71717a" strokeWidth={2} />
+                        </View>
+                      </Pressable>
+                      {billTextOpen && <View className="rounded-xl border border-zinc-200 bg-white p-4">
                         {detailBillText.length > 0 ? (
                           <ScrollView
                             className="max-h-52 rounded-lg bg-zinc-50 p-3"
@@ -743,11 +771,42 @@ export function BillDetailPage({
                               {detailBillText}
                             </Text>
                           </ScrollView>
+                        ) : sanitizedHtml ? (
+                          <ScrollView
+                            className="max-h-96 rounded-lg bg-zinc-50 p-3"
+                            nestedScrollEnabled>
+                            {Platform.OS === 'web' ? (
+                              <div
+                                className="prose prose-sm max-w-none text-xs leading-5 text-zinc-600"
+                                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                              />
+                            ) : (
+                              <Text className="font-sans text-xs leading-5 text-zinc-600">
+                                {sanitizedHtml.replace(/<[^>]*>/g, '')}
+                              </Text>
+                            )}
+                          </ScrollView>
+                        ) : billTextQuery.isLoading ? (
+                          <Text className="font-sans text-sm text-zinc-400">
+                            Loading bill text...
+                          </Text>
+                        ) : isPdf && rawGraph?.url?.trim() ? (
+                          <View className="gap-3">
+                            <Text className="font-sans text-sm leading-relaxed text-zinc-600">
+                              This bill text is available as a PDF.
+                            </Text>
+                            <Pressable
+                              onPress={() => void Linking.openURL(rawGraph.url!.trim())}
+                              className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
+                              <Text className="font-sans-medium text-xs text-zinc-800">
+                                View PDF on LegiScan
+                              </Text>
+                            </Pressable>
+                          </View>
                         ) : (
                           <View className="gap-3">
                             <Text className="font-sans text-sm leading-relaxed text-zinc-600">
-                              Full bill text is not available in the app yet. Open the official
-                              source.
+                              Full bill text is not available. Open the official source.
                             </Text>
                             <View className="flex-row flex-wrap gap-2">
                               {rawGraph?.url?.trim() ? (
@@ -780,7 +839,7 @@ export function BillDetailPage({
                             ) : null}
                           </View>
                         )}
-                      </View>
+                      </View>}
                     </View>
                     <BillGraphRecordPlaceholder values={graphRecordValues} stanceKey={stanceKey} />
                     <View>

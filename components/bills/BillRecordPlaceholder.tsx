@@ -37,7 +37,15 @@ function formatPercentScore(v: unknown): string {
 
 function formatPassOrOverall(v: unknown): string {
   if (v === undefined || v === null) return '—';
-  if (typeof v === 'string') return v;
+  if (typeof v === 'string') {
+    const parsed = parseFloat(v);
+    if (Number.isFinite(parsed)) {
+      if (parsed >= -1 && parsed <= 1) return `${(parsed * 100).toFixed(1)}%`;
+      if (parsed > 1 && parsed <= 100) return `${parsed}%`;
+      return v;
+    }
+    return v;
+  }
   if (typeof v === 'number' && Number.isFinite(v)) {
     if (v >= 0 && v <= 1) return `${Math.round(v * 100)}%`;
     if (v > 1 && v <= 100) return `${v}%`;
@@ -82,7 +90,7 @@ function MetadataCell({
   return (
     <View
       className={`gap-1 rounded-md bg-zinc-50 px-2.5 py-2 ${span ? 'w-full self-stretch' : ''} ${className}`}>
-      <Text className="text-[10px] text-zinc-400">{label}</Text>
+      <Text className="text-[10px] text-zinc-400">{label.replace(/_/g, ' ')}</Text>
       {children}
     </View>
   );
@@ -278,23 +286,58 @@ export function BillGraphRecordPlaceholder({
                 <PartyChip value={formatMeta(g.bill_dominant_party)} />
               </MetadataCell>
             </View>
-            <MetadataCell label="state_r_sponsorship_ratio" span>
-              <Text className="text-xs font-medium text-zinc-800">
-                {typeof g.state_r_sponsorship_ratio === 'number' &&
-                Number.isFinite(g.state_r_sponsorship_ratio)
-                  ? g.state_r_sponsorship_ratio.toFixed(1)
-                  : formatMeta(g.state_r_sponsorship_ratio)}
+            <MetadataCell label="Sponsorship breakdown" span>
+              {(() => {
+                const raw = g.state_r_sponsorship_ratio;
+                const n = typeof raw === 'string' ? parseFloat(raw) : typeof raw === 'number' ? raw : NaN;
+                if (!Number.isFinite(n)) return <Text className="text-xs font-medium text-zinc-800">—</Text>;
+                const rPct = n >= 0 && n <= 1 ? n * 100 : n;
+                const dPct = 100 - rPct;
+                return (
+                  <View className="flex-row flex-wrap items-center gap-1">
+                    <PartyChip value="D" />
+                    <Text className="text-xs text-zinc-600">
+                      {dPct.toFixed(0)}% sponsored
+                    </Text>
+                    <Text className="text-xs text-zinc-400">vs</Text>
+                    <PartyChip value="R" />
+                    <Text className="text-xs text-zinc-600">
+                      {rPct.toFixed(0)}% sponsored
+                    </Text>
+                  </View>
+                );
+              })()}
+              <Text className="mt-0.5 text-[10px] leading-tight text-zinc-400">
+                Share of all bills in this state session by party
               </Text>
             </MetadataCell>
+            <MetadataCell label="Party pass-rate gap" span>
+              {(() => {
+                const raw = g.pass_rate_gap;
+                const n = typeof raw === 'string' ? parseFloat(raw) : typeof raw === 'number' ? raw : NaN;
+                if (!Number.isFinite(n)) return <Text className="text-xs font-medium text-zinc-800">—</Text>;
+                const abs = Math.abs(n >= -1 && n <= 1 ? n * 100 : n);
+                const pct = `${abs.toFixed(1)}%`;
+                const favorsR = n > 0;
+                return (
+                  <View className="flex-row flex-wrap items-center gap-1">
+                    <PartyChip value={favorsR ? 'R' : 'D'} />
+                    <Text className="text-xs text-zinc-600">
+                      bills pass {pct} more than
+                    </Text>
+                    <PartyChip value={favorsR ? 'D' : 'R'} />
+                    <Text className="text-xs text-zinc-600">bills</Text>
+                  </View>
+                );
+              })()}
+            </MetadataCell>
             <View className="flex-row gap-0.5">
-              <MetadataCell label="pass_rate_gap" className="min-w-0 flex-1">
-                <Text className="text-xs font-medium text-zinc-800">
-                  {formatPassOrOverall(g.pass_rate_gap)}
-                </Text>
-              </MetadataCell>
-              <MetadataCell label="overall_pass_rate" className="min-w-0 flex-1">
+              <MetadataCell label="Overall pass rate" className="min-w-0 flex-1">
                 <Text className="text-xs font-medium text-zinc-800">
                   {formatPassOrOverall(g.overall_pass_rate)}
+                </Text>
+                <Text className="mt-0.5 text-[10px] leading-tight text-zinc-400">
+                  Percentage of all bills that passed in this state session
                 </Text>
               </MetadataCell>
             </View>

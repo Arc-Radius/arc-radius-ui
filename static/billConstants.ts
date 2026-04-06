@@ -26,6 +26,7 @@ export type SortOrder = 'newest' | 'oldest';
 
 export interface BillFilters {
   stances: Set<LegislativeStatus>;
+  statuses: Set<string>;
   categories: Set<string>;
   years: Set<number>;
   sort: SortOrder;

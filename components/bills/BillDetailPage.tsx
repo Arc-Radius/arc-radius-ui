@@ -690,7 +690,7 @@ export function BillDetailPage({
                 }}>
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="min-w-0 flex-1 pr-1">
-                    <View className="flex-row items-start gap-2.5">
+                    <View className="flex-row items-center gap-2.5">
                       <FileText
                         size={20}
                         color="#71717a"
@@ -750,7 +750,7 @@ export function BillDetailPage({
                   <Pressable
                     onPress={handleClose}
                     className="h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white/70 active:opacity-70"
-                    style={{ zIndex: 10 }}
+                    style={{ zIndex: 10, position: 'relative' }}
                     accessibilityRole="button"
                     accessibilityLabel="Back to state bills">
                     <X size={13} color="#71717a" strokeWidth={2} />
@@ -1128,8 +1128,8 @@ export function BillDetailPage({
                           ) : (
                             <Text className="font-sans-medium text-[15px] text-white">
                               {letterStance === 'oppose'
-                                ? 'Generate opposing letter'
-                                : 'Generate supportive letter'}
+                                ? 'Generate opposing message'
+                                : 'Generate supportive message'}
                             </Text>
                           )}
                         </Pressable>
@@ -1165,7 +1165,7 @@ export function BillDetailPage({
                       <View className="gap-3">
                         <View className="flex-row items-center justify-between">
                           <Text className="font-sans-medium text-sm text-zinc-800">
-                            Generated {format === 'email' ? 'email' : 'phone script'}
+                            Generated {format === 'email' ? 'email message' : 'phone script'}
                           </Text>
                           <View className="flex-row items-center gap-1.5">
                             <Pressable

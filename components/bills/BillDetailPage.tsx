@@ -467,7 +467,7 @@ export function BillDetailPage({
       issues: str(r.issues, bill.subjects.length ? bill.subjects.join(', ') : undefined),
       issue_categories: str(
         r.issue_categories,
-        r.tags?.length ? JSON.stringify(r.tags) : undefined
+        bill.subjects?.length ? bill.subjects.join(', ') : (r.tags?.length ? JSON.stringify(r.tags) : undefined)
       ),
       sponsor_names: str(r.sponsor_names, sponsorLine || undefined),
       primary_sponsor: str(r.primary_sponsor, bill.sponsors[0]?.name),

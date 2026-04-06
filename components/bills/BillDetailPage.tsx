@@ -1,23 +1,23 @@
 /**
  * BillDetailPage — 1:1 React Native port of the web prototype BillDetailView.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { useQueries } from '@tanstack/react-query';
 import { useBillTextQuery } from '@/queries/useBillTextQuery';
-import { fetchBillDetail, type BillDetailMerged } from '@/api/bills';
+import { fetchBillDetail, generateBillLetter, type BillDetailMerged } from '@/api/bills';
 import { queryKeys } from '@/queries/keys';
 import type { Href } from 'expo-router';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Alert,
+  Animated,
   Linking,
   Modal,
   Platform,
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -358,6 +358,22 @@ const ACTION_ACCENT: Record<
   },
 };
 
+function AnimatedDots({ anim }: { anim: Animated.Value }) {
+  const [dots, setDots] = useState('');
+  useEffect(() => {
+    const id = anim.addListener(({ value }) => {
+      const count = Math.floor(value) % 4; // 0, 1, 2, 3
+      setDots('.'.repeat(count));
+    });
+    return () => anim.removeListener(id);
+  }, [anim]);
+  return (
+    <Text className="font-sans-medium text-[15px] text-white" style={{ width: 110 }}>
+      Generating{dots}
+    </Text>
+  );
+}
+
 export function BillDetailPage({
   bill: rawBill,
   onClose,
@@ -498,16 +514,11 @@ export function BillDetailPage({
       const bs = bill.status?.trim() ?? '';
       return !bs || isLegislativeStanceStatus(bs) ? undefined : bill.status;
     };
-    const conf =
-      r.confidence != null && typeof r.confidence === 'number' && Number.isFinite(r.confidence)
-        ? r.confidence
-        : undefined;
-    const rel =
-      r.relevance_score != null &&
-      typeof r.relevance_score === 'number' &&
-      Number.isFinite(r.relevance_score)
-        ? r.relevance_score
-        : undefined;
+    const isHumanLabeled = r.label_source === 'aclu' || r.label_source === 'plural';
+    const rawConf = num(r.confidence);
+    const conf = rawConf ?? (isHumanLabeled ? 1.0 : undefined);
+    const rawRel = num(r.relevance_score);
+    const rel = rawRel ?? (isHumanLabeled ? 1.0 : undefined);
     return {
       bill_pk: pk,
       bill_id: str(r.bill_id, bill.id || undefined),
@@ -547,37 +558,58 @@ export function BillDetailPage({
   const [activeTab, setActiveTab] = useState<'summary' | 'details' | 'action'>('summary');
   const [draftLetter, setDraftLetter] = useState<string | null>(null);
   const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const dotsAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!isGeneratingLetter) return;
+    spinAnim.setValue(0);
+    dotsAnim.setValue(0);
+    const spin = Animated.loop(
+      Animated.timing(spinAnim, { toValue: 1, duration: 800, useNativeDriver: false })
+    );
+    const dots = Animated.loop(
+      Animated.timing(dotsAnim, { toValue: 4, duration: 2000, useNativeDriver: false })
+    );
+    spin.start();
+    dots.start();
+    return () => { spin.stop(); dots.stop(); };
+  }, [isGeneratingLetter, spinAnim, dotsAnim]);
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<'email' | 'phone'>('email');
   const [tone, setTone] = useState<'formal' | 'conversational'>('formal');
   const [reportModal, setReportModal] = useState<'closed' | 'form' | 'submitted'>('closed');
-  const [personalContext, setPersonalContext] = useState('');
-  const [selectedRefine, setSelectedRefine] = useState<string | null>(null);
 
   const letterStance: 'support' | 'oppose' = stanceKey === 'harmful' ? 'oppose' : 'support';
   const accent = ACTION_ACCENT[stanceKey];
 
   const generateLetter = async () => {
+    const billPk = graphRecordValues.bill_pk ?? bill.id;
+    if (!billPk) return;
     setIsGeneratingLetter(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    const rep = bill.sponsors?.[0]?.name || 'Honorable Legislator';
-    const ctx = personalContext.trim().length > 0 ? `\n\n${personalContext.trim()}\n` : '';
-    const toneNote = tone === 'formal' ? '' : '\n\n(Tone: conversational.)';
-    const fmtNote =
-      format === 'phone' ? '\n\n(Format: phone script — keep sentences speakable.)' : '';
-    const template =
-      letterStance === 'support'
-        ? `Dear ${rep},\n\nI am writing to express my strong SUPPORT for ${bill.number} - ${bill.title}.${ctx}${toneNote}${fmtNote}\n\nAs a constituent who cares deeply about LGBTQ+ rights and wellbeing, I believe this legislation is an important step forward for our community.\n\nThank you for your leadership on this issue.\n\nRespectfully,\n[Your Name]\n[Your Address]`
-        : `Dear ${rep},\n\nI am writing to express my strong OPPOSITION to ${bill.number} - ${bill.title}.${ctx}${toneNote}${fmtNote}\n\nAs a constituent concerned about the wellbeing of LGBTQ+ individuals in our state, I urge you to reconsider this legislation.\n\nI ask that you vote NO on this bill.\n\nRespectfully,\n[Your Name]\n[Your Address]`;
-    setSelectedRefine(null);
-    setDraftLetter(template);
-    setIsGeneratingLetter(false);
+    try {
+      const answer = await generateBillLetter(billPk, {
+        medium: format,
+        stance: letterStance,
+        tone,
+      });
+      setDraftLetter(answer);
+    } catch {
+      setDraftLetter('Failed to generate letter. Please try again.');
+    } finally {
+      setIsGeneratingLetter(false);
+    }
   };
 
-  const copyToClipboard = (_text: string) => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    Alert.alert('Copied', 'Text copied to clipboard.');
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (Platform.OS === 'web' && navigator?.clipboard) {
+        await navigator.clipboard.writeText(text);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      Alert.alert('Copied', 'Text copied to clipboard.');
+    }
   };
 
   const tabStanceHighlight = useMemo(
@@ -589,13 +621,6 @@ export function BillDetailPage({
     [stanceKey]
   );
 
-  const partyColor = (party: string) => {
-    if (party === 'D')
-      return { bg: STANCE_BADGE.supportive.bg, text: STANCE_BADGE.supportive.text };
-    if (party === 'R') return { bg: STANCE_BADGE.harmful.bg, text: STANCE_BADGE.harmful.text };
-    return { bg: STANCE_BADGE.mixed.bg, text: STANCE_BADGE.mixed.text };
-  };
-
   const tabDef = [
     { key: 'summary' as const, label: 'Summary', Icon: Sparkles },
     { key: 'details' as const, label: 'Details', Icon: ScrollText },
@@ -603,7 +628,7 @@ export function BillDetailPage({
   ];
 
   const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
-  const [billTextOpen, setBillTextOpen] = useState(false);
+  const [billTextOpen, setBillTextOpen] = useState(true);
   const detailHistory = useMemo(() => [...(bill.history ?? [])].reverse(), [bill.history]);
   const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
   const legiscanBillId = rawGraph?.bill_id ?? '';
@@ -999,8 +1024,19 @@ export function BillDetailPage({
                       <View className="gap-3">
                         {/* Options card */}
                         <View className="gap-4 rounded-xl border border-zinc-200 bg-white p-4">
-                          {/* Classification + recipient */}
+                          {/* Classification */}
                           <View className="gap-2">
+                            <View className="flex-row items-baseline justify-between">
+                              <Text className="font-sans text-sm text-zinc-500">Source:</Text>
+                              <Text className="font-sans-medium text-sm text-zinc-700">
+                                {(() => {
+                                  const src = graphRecordValues.label_source;
+                                  if (src === 'aclu') return 'ACLU';
+                                  if (src === 'plural') return 'Plural';
+                                  return src || '—';
+                                })()}
+                              </Text>
+                            </View>
                             <View className="flex-row items-baseline justify-between">
                               <Text className="font-sans text-sm text-zinc-500">Stance:</Text>
                               <Text
@@ -1014,22 +1050,21 @@ export function BillDetailPage({
                               <Text
                                 className="font-sans-medium text-sm"
                                 style={{ color: STANCE_BADGE[stanceKey].text }}>
-                                {graphRecordValues.confidence != null
-                                  ? `${
-                                      typeof graphRecordValues.confidence === 'number' &&
-                                      graphRecordValues.confidence <= 1
-                                        ? (graphRecordValues.confidence * 100).toFixed(1)
-                                        : graphRecordValues.confidence
-                                    }%`
-                                  : '—'}
-                              </Text>
-                            </View>
-                            <View className="flex-row items-baseline justify-between">
-                              <Text className="font-sans text-sm text-zinc-500">To:</Text>
-                              <Text className="font-sans-medium text-sm text-zinc-900">
-                                {bill.sponsorContact?.name ||
-                                  bill.sponsors?.[0]?.name ||
-                                  'Your representative'}
+                                {(() => {
+                                  const src = graphRecordValues.label_source;
+                                  const isHumanLabeled = src === 'aclu' || src === 'plural';
+                                  const conf = isHumanLabeled
+                                    ? 1.0
+                                    : typeof graphRecordValues.confidence === 'number'
+                                      ? graphRecordValues.confidence
+                                      : typeof graphRecordValues.confidence === 'string'
+                                        ? parseFloat(graphRecordValues.confidence)
+                                        : null;
+                                  if (conf != null && Number.isFinite(conf)) {
+                                    return `${(conf <= 1 ? conf * 100 : conf).toFixed(0)}%`;
+                                  }
+                                  return '—';
+                                })()}
                               </Text>
                             </View>
                           </View>
@@ -1065,36 +1100,6 @@ export function BillDetailPage({
                               accentText={accent.activeText}
                             />
                           </View>
-                          <View>
-                            <Text className="mb-2 font-sans-medium text-xs text-zinc-500">
-                              Personal context{' '}
-                              <Text className="font-sans text-xs text-zinc-400">(optional)</Text>
-                            </Text>
-                            <TextInput
-                              value={personalContext}
-                              onChangeText={setPersonalContext}
-                              placeholder="e.g., I'm a parent concerned about youth healthcare access in my state..."
-                              placeholderTextColor="#a1a1aa"
-                              multiline
-                              className="min-h-[72px] rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 font-sans text-sm text-zinc-800"
-                              textAlignVertical="top"
-                            />
-                          </View>
-                          <View className="flex-row items-start gap-1.5">
-                            <AlertCircle
-                              size={12}
-                              color={STANCE_BADGE.harmful.text}
-                              style={{ marginTop: 2 }}
-                            />
-                            <Text
-                              className="font-sans text-[10px]"
-                              style={{ color: STANCE_BADGE.harmful.text }}>
-                              Do not enter personally identifiable information:{' '}
-                              <Text className="font-sans text-[10px] text-zinc-500">
-                                full name · address · phone · email · date of birth
-                              </Text>
-                            </Text>
-                          </View>
                         </View>
 
                         {/* Generate button */}
@@ -1107,10 +1112,18 @@ export function BillDetailPage({
                           }}>
                           {isGeneratingLetter ? (
                             <View className="flex-row items-center gap-2">
-                              <Loader2 size={16} color="#fff" />
-                              <Text className="font-sans-medium text-[15px] text-white">
-                                Generating...
-                              </Text>
+                              <Animated.View
+                                style={{
+                                  transform: [{
+                                    rotate: spinAnim.interpolate({
+                                      inputRange: [0, 1],
+                                      outputRange: ['0deg', '360deg'],
+                                    }),
+                                  }],
+                                }}>
+                                <Loader2 size={16} color="#fff" />
+                              </Animated.View>
+                              <AnimatedDots anim={dotsAnim} />
                             </View>
                           ) : (
                             <Text className="font-sans-medium text-[15px] text-white">
@@ -1169,23 +1182,6 @@ export function BillDetailPage({
                                 <Text className="font-sans-medium text-xs text-zinc-500">Copy</Text>
                               )}
                             </Pressable>
-                            <Pressable
-                              onPress={() => {
-                                const email = bill.sponsorContact?.email ?? '';
-                                const subject = encodeURIComponent(
-                                  `RE: ${bill.number} - ${bill.title}`
-                                );
-                                if (email)
-                                  Linking.openURL(
-                                    `mailto:${email}?subject=${subject}&body=${encodeURIComponent(draftLetter)}`
-                                  );
-                              }}
-                              className="items-center justify-center rounded-lg px-3 py-1.5 active:opacity-90"
-                              style={{ backgroundColor: accent.button }}>
-                              <Text className="font-sans-medium text-xs text-white">
-                                Open in mail
-                              </Text>
-                            </Pressable>
                           </View>
                         </View>
 
@@ -1195,41 +1191,9 @@ export function BillDetailPage({
                           </Text>
                         </View>
 
-                        <View>
-                          <Text className="mb-2 font-sans-medium text-xs text-zinc-500">
-                            Refine
-                          </Text>
-                          <View className="flex-row flex-wrap gap-1.5">
-                            {['More formal', 'More casual', 'Shorter', 'Longer'].map((label) => {
-                              const active = selectedRefine === label;
-                              return (
-                                <Pressable
-                                  key={label}
-                                  onPress={() => setSelectedRefine(label)}
-                                  className="rounded-full border px-3.5 py-1.5 active:opacity-90"
-                                  style={{
-                                    borderColor: active
-                                      ? accent.activeBorder
-                                      : 'rgba(228,228,231,0.9)',
-                                    backgroundColor: active ? accent.activeBg : '#ffffff',
-                                  }}>
-                                  <Text
-                                    className="text-xs"
-                                    style={{ color: active ? accent.activeText : '#71717a' }}>
-                                    {label}
-                                  </Text>
-                                </Pressable>
-                              );
-                            })}
-                          </View>
-                        </View>
-
-                        {/* Regenerate — only clears, does NOT auto-fire */}
+                        {/* Regenerate */}
                         <Pressable
-                          onPress={() => {
-                            setSelectedRefine(null);
-                            setDraftLetter(null);
-                          }}
+                          onPress={() => setDraftLetter(null)}
                           className="items-center rounded-xl py-3.5 active:opacity-90"
                           style={{ backgroundColor: accent.button }}>
                           <Text className="font-sans-medium text-[15px] text-white">

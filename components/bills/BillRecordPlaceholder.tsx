@@ -29,10 +29,18 @@ function normalizeCommaSpaces(s: string): string {
 
 function formatPercentScore(v: unknown): string {
   if (v === undefined || v === null) return '—';
-  if (typeof v !== 'number' || !Number.isFinite(v)) return formatMeta(v);
-  if (v > 0 && v <= 1) return `${(v * 100).toFixed(1)}%`;
-  if (v > 1 && v <= 100) return `${Number.isInteger(v) ? String(v) : v.toFixed(1)}%`;
-  return String(v);
+  let n: number;
+  if (typeof v === 'string') {
+    n = parseFloat(v);
+    if (!Number.isFinite(n)) return v;
+  } else if (typeof v === 'number' && Number.isFinite(v)) {
+    n = v;
+  } else {
+    return formatMeta(v);
+  }
+  if (n >= 0 && n <= 1) return `${(n * 100).toFixed(1)}%`;
+  if (n > 1 && n <= 100) return `${Number.isInteger(n) ? String(n) : n.toFixed(1)}%`;
+  return String(n);
 }
 
 function formatPassOrOverall(v: unknown): string {
@@ -228,9 +236,9 @@ export function BillGraphRecordPlaceholder({
                   </Text>
                 </View>
               </MetadataCell>
-              <MetadataCell label="label_source" className="min-w-0 flex-1">
+              <MetadataCell label="label source" className="min-w-0 flex-1">
                 <Text className="text-xs font-medium text-zinc-800">
-                  {formatMeta(g.label_source)}
+                  {g.label_source === 'aclu' ? 'ACLU' : g.label_source === 'plural' ? 'Plural' : formatMeta(g.label_source)}
                 </Text>
               </MetadataCell>
             </View>

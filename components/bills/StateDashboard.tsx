@@ -5,6 +5,11 @@ import { Landmark } from 'lucide-react-native';
 
 import { STANCE_HEADER_GLASS } from '@/static/billConstants';
 import type { LegislativeStatus } from '@/static/states';
+import {
+  SESSION_CALENDAR,
+  getSessionStatus,
+  formatSessionDate,
+} from '@/static/sessionCalendar';
 
 interface StateInfo {
   name: string;
@@ -23,6 +28,13 @@ interface StateDashboardProps {
   headerRight?: ReactNode;
   headerStacked?: boolean;
 }
+
+const SESSION_STATUS_STYLES = {
+  in_session: { label: 'In Session', color: '#16a34a', bg: 'rgba(22,163,74,0.1)' },
+  not_started: { label: 'Not Started', color: '#2563eb', bg: 'rgba(37,99,235,0.1)' },
+  adjourned: { label: 'Adjourned', color: '#71717a', bg: 'rgba(113,113,122,0.1)' },
+  no_session: { label: 'No Session', color: '#a1a1aa', bg: 'rgba(161,161,170,0.1)' },
+};
 
 export function StateDashboard({
   info,
@@ -47,6 +59,10 @@ export function StateDashboard({
     : '';
 
   const headerStyle = STANCE_HEADER_GLASS[status];
+
+  const cal = SESSION_CALENDAR[info.abbr];
+  const sessionStatus = cal ? getSessionStatus(cal) : null;
+  const sessionStyle = sessionStatus ? SESSION_STATUS_STYLES[sessionStatus] : null;
 
   return (
     <View
@@ -80,24 +96,65 @@ export function StateDashboard({
         </View>
       </View>
 
-      {/* ── Stacked stat rows ── */}
+      {/* ── Session info rows ── */}
       <View>
-        <StatRow label="Legislature" value={info.legislature} />
-        <StatRow label="Session" value={info.session} />
-        <StatRow label="Window" value={info.sessionWindow} />
-        <StatRow label="Last updated" value={info.lastUpdated || '—'} last />
+        <StatRow
+          label="Session"
+          value={cal?.session || info.session || '—'}
+          badge={sessionStyle ? { label: sessionStyle.label, color: sessionStyle.color, bg: sessionStyle.bg } : undefined}
+          last={sessionStatus === 'no_session'}
+        />
+        {cal && sessionStatus !== 'no_session' && (
+          <>
+            <StatRow
+              label="Convenes"
+              value={formatSessionDate(cal.convenes)}
+            />
+            <StatRow
+              label="Adjourns"
+              value={formatSessionDate(cal.adjourns)}
+              last={!cal.notes}
+            />
+          </>
+        )}
+        {cal?.notes && (
+          <StatRow label="Notes" value={cal.notes} valueColor="#d97706" last />
+        )}
       </View>
     </View>
   );
 }
 
-function StatRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function StatRow({
+  label,
+  value,
+  last,
+  badge,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+  badge?: { label: string; color: string; bg: string };
+  valueColor?: string;
+}) {
   return (
     <View
       className="flex-row items-center justify-between px-4 py-2.5"
       style={!last ? { borderBottomWidth: 0.5, borderBottomColor: '#e4e4e7' } : undefined}>
       <Text className="font-sans text-xs text-zinc-500">{label}</Text>
-      <Text className="font-sans-medium text-sm text-zinc-900">{value}</Text>
+      <View className="flex-row items-center gap-2">
+        <Text className="font-sans-medium text-sm" style={{ color: valueColor ?? '#18181b' }}>
+          {value}
+        </Text>
+        {badge && (
+          <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: badge.bg }}>
+            <Text className="font-sans-semibold text-[10px]" style={{ color: badge.color }}>
+              {badge.label}
+            </Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }

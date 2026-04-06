@@ -267,8 +267,8 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&gt;/g, '>');
 }
 
-function resolveLifecyclePillLabel(billTab: BillTab): 'Active' | 'Passed' {
-  return billTab === 'passed' ? 'Passed' : 'Active';
+function resolveLifecyclePillLabel(billTab: BillTab): 'Proposed' | 'Passed' {
+  return billTab === 'passed' ? 'Passed' : 'Proposed';
 }
 
 const STANCE_WORD: Record<LegislativeStatus, string> = {
@@ -561,9 +561,11 @@ export function BillDetailPage({
     return DOMPurify.sanitize(raw, { ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'div', 'span', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'pre', 'blockquote', 'hr', 'sup', 'sub'], ALLOWED_ATTR: ['href', 'target', 'style', 'align', 'colspan', 'rowspan'] });
   }, [billTextQuery.data?.html, isPdf]);
   const lifecycleLabel = resolveLifecyclePillLabel(bill.billTab);
-  const displayLegislativeStatus =
+  const rawLegislativeStatus =
     rawGraph?.status_desc?.trim() ||
     (bill.status && !isLegislativeStanceStatus(bill.status) ? bill.status : '');
+  const displayLegislativeStatus =
+    rawLegislativeStatus.toLowerCase() === lifecycleLabel.toLowerCase() ? '' : rawLegislativeStatus;
   const { width: windowWidth } = useWindowDimensions();
   const tabStripCompactWeb = Platform.OS === 'web' && windowWidth < 640;
   const headerGlass = STANCE_HEADER_GLASS[stanceKey];
@@ -654,19 +656,15 @@ export function BillDetailPage({
                 </View>
                 <View className="mt-3 flex-row flex-wrap items-center gap-2">
                   <Text className="font-sans text-xs text-zinc-500">Sponsors:</Text>
-                  {bill.sponsors.map((sponsor, idx) => {
-                    const pc = partyColor(sponsor.party);
-                    return (
-                      <View
-                        key={idx}
-                        className="rounded px-2 py-0.5"
-                        style={{ backgroundColor: pc.bg }}>
-                        <Text className="font-sans-medium text-xs" style={{ color: pc.text }}>
-                          {sponsor.name}
-                        </Text>
-                      </View>
-                    );
-                  })}
+                  {bill.sponsors.map((sponsor, idx) => (
+                    <View
+                      key={idx}
+                      className="rounded bg-zinc-100 px-2 py-0.5">
+                      <Text className="font-sans-medium text-xs text-zinc-700">
+                        {sponsor.name} ({sponsor.party})
+                      </Text>
+                    </View>
+                  ))}
                 </View>
                 <Text className="mt-2 font-sans text-xs text-zinc-500">
                   <Text className="font-sans-semibold text-zinc-600">Last Action Date: </Text>

@@ -90,7 +90,7 @@ function MetadataCell({
   return (
     <View
       className={`gap-1 rounded-md bg-zinc-50 px-2.5 py-2 ${span ? 'w-full self-stretch' : ''} ${className}`}>
-      <Text className="text-[10px] text-zinc-400">{label}</Text>
+      <Text className="text-[10px] text-zinc-400">{label.replace(/_/g, ' ')}</Text>
       {children}
     </View>
   );

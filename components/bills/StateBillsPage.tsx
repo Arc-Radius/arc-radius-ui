@@ -30,7 +30,7 @@ import type { LegislativeStatus } from '@/static/states';
 const STANCES: LegislativeStatus[] = ['supportive', 'harmful', 'mixed'];
 
 const TAB_CONFIG: { key: BillTab; title: string; subtitle: string }[] = [
-  { key: 'active', title: 'Active', subtitle: 'Bills' },
+  { key: 'active', title: 'Proposed', subtitle: 'Bills' },
   { key: 'passed', title: 'Passed', subtitle: 'Bills' },
 ];
 
@@ -64,6 +64,7 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const [tab, setTab] = useState<BillTab>('active');
   const [filters, setFilters] = useState<BillFilters>({
     stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']),
+    statuses: new Set<string>(),
     categories: new Set<string>(),
     years: new Set<number>(),
     sort: 'newest',
@@ -82,6 +83,10 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
       ),
     [sourceBills]
   );
+  const availableStatuses = useMemo(
+    () => [...new Set(sourceBills.map((b) => b.status_desc).filter(Boolean))].sort(),
+    [sourceBills]
+  );
 
   const activeCategories = useMemo(() => {
     if (filters.categories.size === 0) return new Set(availableCategories);
@@ -95,10 +100,17 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     return valid.size === 0 ? new Set(availableYears) : valid;
   }, [filters.years, availableYears]);
 
+  const activeStatuses = useMemo(() => {
+    if (filters.statuses.size === 0) return new Set(availableStatuses);
+    const valid = new Set([...filters.statuses].filter((s) => availableStatuses.includes(s)));
+    return valid.size === 0 ? new Set(availableStatuses) : valid;
+  }, [filters.statuses, availableStatuses]);
+
   const filteredBills = useMemo(() => {
     const f = sourceBills.filter(
       (b) =>
         filters.stances.has(b.stance ?? 'mixed') &&
+        activeStatuses.has(b.status_desc || '') &&
         (b.issue_categories ?? []).some((c) => activeCategories.has(c)) &&
         activeYears.has(b.year ?? new Date().getFullYear())
     );
@@ -122,6 +134,21 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
       return { ...prev, stances: next };
     });
   }, []);
+
+  const toggleStatus = useCallback(
+    (status: string) => {
+      setFilters((prev) => {
+        const base = prev.statuses.size === 0 ? new Set(availableStatuses) : new Set(prev.statuses);
+        if (base.has(status)) {
+          base.delete(status);
+        } else {
+          base.add(status);
+        }
+        return { ...prev, statuses: base.size === 0 ? new Set<string>() : base };
+      });
+    },
+    [availableStatuses]
+  );
 
   const toggleCategory = useCallback(
     (cat: string) => {
@@ -160,12 +187,13 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
 
   const switchTab = useCallback((newTab: BillTab) => {
     setTab(newTab);
-    setFilters((prev) => ({ ...prev, categories: new Set<string>(), years: new Set<number>() }));
+    setFilters((prev) => ({ ...prev, statuses: new Set<string>(), categories: new Set<string>(), years: new Set<number>() }));
   }, []);
 
   const resetAll = useCallback(() => {
     setFilters({
       stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']),
+      statuses: new Set<string>(),
       categories: new Set<string>(),
       years: new Set<number>(),
       sort: 'newest',
@@ -175,6 +203,7 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.stances.size < 3) count++;
+    if (filters.statuses.size > 0) count++;
     if (filters.categories.size > 0) count++;
     if (filters.years.size > 0) count++;
     if (filters.sort !== 'newest') count++;
@@ -188,11 +217,14 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     activeFilterCount,
     activeCategories,
     activeYears,
+    activeStatuses,
     availableCategories,
     availableYears,
+    availableStatuses,
     filteredBills,
     sourceBills,
     toggleStance,
+    toggleStatus,
     toggleCategory,
     toggleYear,
     setSort,
@@ -218,12 +250,16 @@ function FilterBottomSheet({
   filters,
   activeCategories,
   activeYears,
+  activeStatuses,
   availableCategories,
   availableYears,
+  availableStatuses,
   billCountByStance,
   billCountByCategory,
   billCountByYear,
+  billCountByStatus,
   onToggleStance,
+  onToggleStatus,
   onToggleCategory,
   onToggleYear,
   onSetSort,
@@ -234,12 +270,16 @@ function FilterBottomSheet({
   filters: BillFilters;
   activeCategories: Set<string>;
   activeYears: Set<number>;
+  activeStatuses: Set<string>;
   availableCategories: string[];
   availableYears: number[];
+  availableStatuses: string[];
   billCountByStance: Record<string, number>;
   billCountByCategory: Record<string, number>;
   billCountByYear: Record<number, number>;
+  billCountByStatus: Record<string, number>;
   onToggleStance: (s: LegislativeStatus) => void;
+  onToggleStatus: (s: string) => void;
   onToggleCategory: (c: string) => void;
   onToggleYear: (y: number) => void;
   onSetSort: (s: SortOrder) => void;
@@ -320,6 +360,26 @@ function FilterBottomSheet({
               })}
             </View>
 
+            {/* Status */}
+            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+              Status
+            </Text>
+            <View className="mb-5 flex-row flex-wrap gap-2">
+              {availableStatuses.map((st) => {
+                const isOn = activeStatuses.has(st);
+                return (
+                  <Pressable
+                    key={st}
+                    onPress={() => onToggleStatus(st)}
+                    style={[chipStyles.chip, isOn && chipStyles.chipActive]}>
+                    <Text style={[chipStyles.chipText, isOn && chipStyles.chipTextActive]}>
+                      {st} · {billCountByStatus[st] ?? 0}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             {/* Category */}
             <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
               Category
@@ -333,7 +393,7 @@ function FilterBottomSheet({
                     onPress={() => onToggleCategory(c)}
                     style={[chipStyles.chip, isOn && chipStyles.chipActive]}>
                     <Text style={[chipStyles.chipText, isOn && chipStyles.chipTextActive]}>
-                      {c} · {billCountByCategory[c] ?? 0}
+                      {c.replace(/_/g, ' ')} · {billCountByCategory[c] ?? 0}
                     </Text>
                   </Pressable>
                 );
@@ -462,11 +522,14 @@ export function StateBillsPage({
     activeFilterCount,
     activeCategories,
     activeYears,
+    activeStatuses,
     availableCategories,
     availableYears,
+    availableStatuses,
     filteredBills,
     sourceBills,
     toggleStance,
+    toggleStatus,
     toggleCategory,
     toggleYear,
     setSort,
@@ -513,6 +576,15 @@ export function StateBillsPage({
     return c;
   }, [sourceBills]);
 
+  const billCountByStatus = useMemo(() => {
+    const c: Record<string, number> = {};
+    sourceBills.forEach((b) => {
+      const st = b.status_desc || '';
+      if (st) c[st] = (c[st] ?? 0) + 1;
+    });
+    return c;
+  }, [sourceBills]);
+
   const dashboardInfo = useMemo(
     () => ({
       name: stateName,
@@ -549,12 +621,16 @@ export function StateBillsPage({
     filters,
     activeCategories,
     activeYears,
+    activeStatuses,
     availableCategories,
     availableYears,
+    availableStatuses,
     billCountByStance,
     billCountByCategory,
     billCountByYear,
+    billCountByStatus,
     onToggleStance: toggleStance,
+    onToggleStatus: toggleStatus,
     onToggleCategory: toggleCategory,
     onToggleYear: toggleYear,
     onSetSort: setSort,

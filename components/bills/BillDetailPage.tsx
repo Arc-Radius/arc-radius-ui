@@ -17,7 +17,6 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -498,16 +497,11 @@ export function BillDetailPage({
       const bs = bill.status?.trim() ?? '';
       return !bs || isLegislativeStanceStatus(bs) ? undefined : bill.status;
     };
-    const conf =
-      r.confidence != null && typeof r.confidence === 'number' && Number.isFinite(r.confidence)
-        ? r.confidence
-        : undefined;
-    const rel =
-      r.relevance_score != null &&
-      typeof r.relevance_score === 'number' &&
-      Number.isFinite(r.relevance_score)
-        ? r.relevance_score
-        : undefined;
+    const isHumanLabeled = r.label_source === 'aclu' || r.label_source === 'plural';
+    const rawConf = num(r.confidence);
+    const conf = rawConf ?? (isHumanLabeled ? 1.0 : undefined);
+    const rawRel = num(r.relevance_score);
+    const rel = rawRel ?? (isHumanLabeled ? 1.0 : undefined);
     return {
       bill_pk: pk,
       bill_id: str(r.bill_id, bill.id || undefined),
@@ -551,7 +545,6 @@ export function BillDetailPage({
   const [format, setFormat] = useState<'email' | 'phone'>('email');
   const [tone, setTone] = useState<'formal' | 'conversational'>('formal');
   const [reportModal, setReportModal] = useState<'closed' | 'form' | 'submitted'>('closed');
-  const [personalContext, setPersonalContext] = useState('');
   const [selectedRefine, setSelectedRefine] = useState<string | null>(null);
 
   const letterStance: 'support' | 'oppose' = stanceKey === 'harmful' ? 'oppose' : 'support';
@@ -561,14 +554,13 @@ export function BillDetailPage({
     setIsGeneratingLetter(true);
     await new Promise((r) => setTimeout(r, 1500));
     const rep = bill.sponsors?.[0]?.name || 'Honorable Legislator';
-    const ctx = personalContext.trim().length > 0 ? `\n\n${personalContext.trim()}\n` : '';
     const toneNote = tone === 'formal' ? '' : '\n\n(Tone: conversational.)';
     const fmtNote =
       format === 'phone' ? '\n\n(Format: phone script — keep sentences speakable.)' : '';
     const template =
       letterStance === 'support'
-        ? `Dear ${rep},\n\nI am writing to express my strong SUPPORT for ${bill.number} - ${bill.title}.${ctx}${toneNote}${fmtNote}\n\nAs a constituent who cares deeply about LGBTQ+ rights and wellbeing, I believe this legislation is an important step forward for our community.\n\nThank you for your leadership on this issue.\n\nRespectfully,\n[Your Name]\n[Your Address]`
-        : `Dear ${rep},\n\nI am writing to express my strong OPPOSITION to ${bill.number} - ${bill.title}.${ctx}${toneNote}${fmtNote}\n\nAs a constituent concerned about the wellbeing of LGBTQ+ individuals in our state, I urge you to reconsider this legislation.\n\nI ask that you vote NO on this bill.\n\nRespectfully,\n[Your Name]\n[Your Address]`;
+        ? `Dear ${rep},\n\nI am writing to express my strong SUPPORT for ${bill.number} - ${bill.title}.${toneNote}${fmtNote}\n\nAs a constituent who cares deeply about LGBTQ+ rights and wellbeing, I believe this legislation is an important step forward for our community.\n\nThank you for your leadership on this issue.\n\nRespectfully,\n[Your Name]\n[Your Address]`
+        : `Dear ${rep},\n\nI am writing to express my strong OPPOSITION to ${bill.number} - ${bill.title}.${toneNote}${fmtNote}\n\nAs a constituent concerned about the wellbeing of LGBTQ+ individuals in our state, I urge you to reconsider this legislation.\n\nI ask that you vote NO on this bill.\n\nRespectfully,\n[Your Name]\n[Your Address]`;
     setSelectedRefine(null);
     setDraftLetter(template);
     setIsGeneratingLetter(false);
@@ -589,13 +581,6 @@ export function BillDetailPage({
     [stanceKey]
   );
 
-  const partyColor = (party: string) => {
-    if (party === 'D')
-      return { bg: STANCE_BADGE.supportive.bg, text: STANCE_BADGE.supportive.text };
-    if (party === 'R') return { bg: STANCE_BADGE.harmful.bg, text: STANCE_BADGE.harmful.text };
-    return { bg: STANCE_BADGE.mixed.bg, text: STANCE_BADGE.mixed.text };
-  };
-
   const tabDef = [
     { key: 'summary' as const, label: 'Summary', Icon: Sparkles },
     { key: 'details' as const, label: 'Details', Icon: ScrollText },
@@ -603,7 +588,7 @@ export function BillDetailPage({
   ];
 
   const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
-  const [billTextOpen, setBillTextOpen] = useState(false);
+  const [billTextOpen, setBillTextOpen] = useState(true);
   const detailHistory = useMemo(() => [...(bill.history ?? [])].reverse(), [bill.history]);
   const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
   const legiscanBillId = rawGraph?.bill_id ?? '';
@@ -999,7 +984,7 @@ export function BillDetailPage({
                       <View className="gap-3">
                         {/* Options card */}
                         <View className="gap-4 rounded-xl border border-zinc-200 bg-white p-4">
-                          {/* Classification + recipient */}
+                          {/* Classification */}
                           <View className="gap-2">
                             <View className="flex-row items-baseline justify-between">
                               <Text className="font-sans text-sm text-zinc-500">Stance:</Text>
@@ -1014,22 +999,32 @@ export function BillDetailPage({
                               <Text
                                 className="font-sans-medium text-sm"
                                 style={{ color: STANCE_BADGE[stanceKey].text }}>
-                                {graphRecordValues.confidence != null
-                                  ? `${
-                                      typeof graphRecordValues.confidence === 'number' &&
-                                      graphRecordValues.confidence <= 1
-                                        ? (graphRecordValues.confidence * 100).toFixed(1)
-                                        : graphRecordValues.confidence
-                                    }%`
-                                  : '—'}
+                                {(() => {
+                                  const src = graphRecordValues.label_source;
+                                  const isHumanLabeled = src === 'aclu' || src === 'plural';
+                                  const conf = isHumanLabeled
+                                    ? 1.0
+                                    : typeof graphRecordValues.confidence === 'number'
+                                      ? graphRecordValues.confidence
+                                      : typeof graphRecordValues.confidence === 'string'
+                                        ? parseFloat(graphRecordValues.confidence)
+                                        : null;
+                                  if (conf != null && Number.isFinite(conf)) {
+                                    return `${(conf <= 1 ? conf * 100 : conf).toFixed(0)}%`;
+                                  }
+                                  return '—';
+                                })()}
                               </Text>
                             </View>
                             <View className="flex-row items-baseline justify-between">
-                              <Text className="font-sans text-sm text-zinc-500">To:</Text>
-                              <Text className="font-sans-medium text-sm text-zinc-900">
-                                {bill.sponsorContact?.name ||
-                                  bill.sponsors?.[0]?.name ||
-                                  'Your representative'}
+                              <Text className="font-sans text-sm text-zinc-500">Source:</Text>
+                              <Text className="font-sans-medium text-sm text-zinc-700">
+                                {(() => {
+                                  const src = graphRecordValues.label_source;
+                                  if (src === 'aclu') return 'ACLU';
+                                  if (src === 'plural') return 'Plural';
+                                  return src || '—';
+                                })()}
                               </Text>
                             </View>
                           </View>
@@ -1064,36 +1059,6 @@ export function BillDetailPage({
                               accentBorder={tabStanceHighlight.border}
                               accentText={accent.activeText}
                             />
-                          </View>
-                          <View>
-                            <Text className="mb-2 font-sans-medium text-xs text-zinc-500">
-                              Personal context{' '}
-                              <Text className="font-sans text-xs text-zinc-400">(optional)</Text>
-                            </Text>
-                            <TextInput
-                              value={personalContext}
-                              onChangeText={setPersonalContext}
-                              placeholder="e.g., I'm a parent concerned about youth healthcare access in my state..."
-                              placeholderTextColor="#a1a1aa"
-                              multiline
-                              className="min-h-[72px] rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 font-sans text-sm text-zinc-800"
-                              textAlignVertical="top"
-                            />
-                          </View>
-                          <View className="flex-row items-start gap-1.5">
-                            <AlertCircle
-                              size={12}
-                              color={STANCE_BADGE.harmful.text}
-                              style={{ marginTop: 2 }}
-                            />
-                            <Text
-                              className="font-sans text-[10px]"
-                              style={{ color: STANCE_BADGE.harmful.text }}>
-                              Do not enter personally identifiable information:{' '}
-                              <Text className="font-sans text-[10px] text-zinc-500">
-                                full name · address · phone · email · date of birth
-                              </Text>
-                            </Text>
                           </View>
                         </View>
 

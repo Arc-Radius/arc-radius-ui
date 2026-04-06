@@ -1,16 +1,17 @@
 /**
  * BillDetailPage — 1:1 React Native port of the web prototype BillDetailView.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { useQueries } from '@tanstack/react-query';
 import { useBillTextQuery } from '@/queries/useBillTextQuery';
-import { fetchBillDetail, type BillDetailMerged } from '@/api/bills';
+import { fetchBillDetail, generateBillLetter, type BillDetailMerged } from '@/api/bills';
 import { queryKeys } from '@/queries/keys';
 import type { Href } from 'expo-router';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Alert,
+  Animated,
   Linking,
   Modal,
   Platform,
@@ -357,6 +358,22 @@ const ACTION_ACCENT: Record<
   },
 };
 
+function AnimatedDots({ anim }: { anim: Animated.Value }) {
+  const [dots, setDots] = useState('');
+  useEffect(() => {
+    const id = anim.addListener(({ value }) => {
+      const count = Math.floor(value) % 4; // 0, 1, 2, 3
+      setDots('.'.repeat(count));
+    });
+    return () => anim.removeListener(id);
+  }, [anim]);
+  return (
+    <Text className="font-sans-medium text-[15px] text-white" style={{ width: 110 }}>
+      Generating{dots}
+    </Text>
+  );
+}
+
 export function BillDetailPage({
   bill: rawBill,
   onClose,
@@ -541,35 +558,58 @@ export function BillDetailPage({
   const [activeTab, setActiveTab] = useState<'summary' | 'details' | 'action'>('summary');
   const [draftLetter, setDraftLetter] = useState<string | null>(null);
   const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const dotsAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!isGeneratingLetter) return;
+    spinAnim.setValue(0);
+    dotsAnim.setValue(0);
+    const spin = Animated.loop(
+      Animated.timing(spinAnim, { toValue: 1, duration: 800, useNativeDriver: false })
+    );
+    const dots = Animated.loop(
+      Animated.timing(dotsAnim, { toValue: 4, duration: 2000, useNativeDriver: false })
+    );
+    spin.start();
+    dots.start();
+    return () => { spin.stop(); dots.stop(); };
+  }, [isGeneratingLetter, spinAnim, dotsAnim]);
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<'email' | 'phone'>('email');
   const [tone, setTone] = useState<'formal' | 'conversational'>('formal');
   const [reportModal, setReportModal] = useState<'closed' | 'form' | 'submitted'>('closed');
-  const [selectedRefine, setSelectedRefine] = useState<string | null>(null);
 
   const letterStance: 'support' | 'oppose' = stanceKey === 'harmful' ? 'oppose' : 'support';
   const accent = ACTION_ACCENT[stanceKey];
 
   const generateLetter = async () => {
+    const billPk = graphRecordValues.bill_pk ?? bill.id;
+    if (!billPk) return;
     setIsGeneratingLetter(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    const rep = bill.sponsors?.[0]?.name || 'Honorable Legislator';
-    const toneNote = tone === 'formal' ? '' : '\n\n(Tone: conversational.)';
-    const fmtNote =
-      format === 'phone' ? '\n\n(Format: phone script — keep sentences speakable.)' : '';
-    const template =
-      letterStance === 'support'
-        ? `Dear ${rep},\n\nI am writing to express my strong SUPPORT for ${bill.number} - ${bill.title}.${toneNote}${fmtNote}\n\nAs a constituent who cares deeply about LGBTQ+ rights and wellbeing, I believe this legislation is an important step forward for our community.\n\nThank you for your leadership on this issue.\n\nRespectfully,\n[Your Name]\n[Your Address]`
-        : `Dear ${rep},\n\nI am writing to express my strong OPPOSITION to ${bill.number} - ${bill.title}.${toneNote}${fmtNote}\n\nAs a constituent concerned about the wellbeing of LGBTQ+ individuals in our state, I urge you to reconsider this legislation.\n\nI ask that you vote NO on this bill.\n\nRespectfully,\n[Your Name]\n[Your Address]`;
-    setSelectedRefine(null);
-    setDraftLetter(template);
-    setIsGeneratingLetter(false);
+    try {
+      const answer = await generateBillLetter(billPk, {
+        medium: format,
+        stance: letterStance,
+        tone,
+      });
+      setDraftLetter(answer);
+    } catch {
+      setDraftLetter('Failed to generate letter. Please try again.');
+    } finally {
+      setIsGeneratingLetter(false);
+    }
   };
 
-  const copyToClipboard = (_text: string) => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    Alert.alert('Copied', 'Text copied to clipboard.');
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (Platform.OS === 'web' && navigator?.clipboard) {
+        await navigator.clipboard.writeText(text);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      Alert.alert('Copied', 'Text copied to clipboard.');
+    }
   };
 
   const tabStanceHighlight = useMemo(
@@ -987,6 +1027,17 @@ export function BillDetailPage({
                           {/* Classification */}
                           <View className="gap-2">
                             <View className="flex-row items-baseline justify-between">
+                              <Text className="font-sans text-sm text-zinc-500">Source:</Text>
+                              <Text className="font-sans-medium text-sm text-zinc-700">
+                                {(() => {
+                                  const src = graphRecordValues.label_source;
+                                  if (src === 'aclu') return 'ACLU';
+                                  if (src === 'plural') return 'Plural';
+                                  return src || '—';
+                                })()}
+                              </Text>
+                            </View>
+                            <View className="flex-row items-baseline justify-between">
                               <Text className="font-sans text-sm text-zinc-500">Stance:</Text>
                               <Text
                                 className="font-sans-medium text-sm"
@@ -1013,17 +1064,6 @@ export function BillDetailPage({
                                     return `${(conf <= 1 ? conf * 100 : conf).toFixed(0)}%`;
                                   }
                                   return '—';
-                                })()}
-                              </Text>
-                            </View>
-                            <View className="flex-row items-baseline justify-between">
-                              <Text className="font-sans text-sm text-zinc-500">Source:</Text>
-                              <Text className="font-sans-medium text-sm text-zinc-700">
-                                {(() => {
-                                  const src = graphRecordValues.label_source;
-                                  if (src === 'aclu') return 'ACLU';
-                                  if (src === 'plural') return 'Plural';
-                                  return src || '—';
                                 })()}
                               </Text>
                             </View>
@@ -1072,10 +1112,18 @@ export function BillDetailPage({
                           }}>
                           {isGeneratingLetter ? (
                             <View className="flex-row items-center gap-2">
-                              <Loader2 size={16} color="#fff" />
-                              <Text className="font-sans-medium text-[15px] text-white">
-                                Generating...
-                              </Text>
+                              <Animated.View
+                                style={{
+                                  transform: [{
+                                    rotate: spinAnim.interpolate({
+                                      inputRange: [0, 1],
+                                      outputRange: ['0deg', '360deg'],
+                                    }),
+                                  }],
+                                }}>
+                                <Loader2 size={16} color="#fff" />
+                              </Animated.View>
+                              <AnimatedDots anim={dotsAnim} />
                             </View>
                           ) : (
                             <Text className="font-sans-medium text-[15px] text-white">
@@ -1134,23 +1182,6 @@ export function BillDetailPage({
                                 <Text className="font-sans-medium text-xs text-zinc-500">Copy</Text>
                               )}
                             </Pressable>
-                            <Pressable
-                              onPress={() => {
-                                const email = bill.sponsorContact?.email ?? '';
-                                const subject = encodeURIComponent(
-                                  `RE: ${bill.number} - ${bill.title}`
-                                );
-                                if (email)
-                                  Linking.openURL(
-                                    `mailto:${email}?subject=${subject}&body=${encodeURIComponent(draftLetter)}`
-                                  );
-                              }}
-                              className="items-center justify-center rounded-lg px-3 py-1.5 active:opacity-90"
-                              style={{ backgroundColor: accent.button }}>
-                              <Text className="font-sans-medium text-xs text-white">
-                                Open in mail
-                              </Text>
-                            </Pressable>
                           </View>
                         </View>
 
@@ -1160,41 +1191,9 @@ export function BillDetailPage({
                           </Text>
                         </View>
 
-                        <View>
-                          <Text className="mb-2 font-sans-medium text-xs text-zinc-500">
-                            Refine
-                          </Text>
-                          <View className="flex-row flex-wrap gap-1.5">
-                            {['More formal', 'More casual', 'Shorter', 'Longer'].map((label) => {
-                              const active = selectedRefine === label;
-                              return (
-                                <Pressable
-                                  key={label}
-                                  onPress={() => setSelectedRefine(label)}
-                                  className="rounded-full border px-3.5 py-1.5 active:opacity-90"
-                                  style={{
-                                    borderColor: active
-                                      ? accent.activeBorder
-                                      : 'rgba(228,228,231,0.9)',
-                                    backgroundColor: active ? accent.activeBg : '#ffffff',
-                                  }}>
-                                  <Text
-                                    className="text-xs"
-                                    style={{ color: active ? accent.activeText : '#71717a' }}>
-                                    {label}
-                                  </Text>
-                                </Pressable>
-                              );
-                            })}
-                          </View>
-                        </View>
-
-                        {/* Regenerate — only clears, does NOT auto-fire */}
+                        {/* Regenerate */}
                         <Pressable
-                          onPress={() => {
-                            setSelectedRefine(null);
-                            setDraftLetter(null);
-                          }}
+                          onPress={() => setDraftLetter(null)}
                           className="items-center rounded-xl py-3.5 active:opacity-90"
                           style={{ backgroundColor: accent.button }}>
                           <Text className="font-sans-medium text-[15px] text-white">

@@ -123,3 +123,21 @@ export async function fetchBillDetail(
     relatedBills,
   };
 }
+
+export interface GenerateLetterParams {
+  medium: 'email' | 'phone';
+  stance: 'support' | 'oppose';
+  tone: 'formal' | 'conversational';
+}
+
+export async function generateBillLetter(
+  billPk: string,
+  params: GenerateLetterParams,
+): Promise<string> {
+  const data = await apiClient.post<Record<string, unknown>>('/generate/bill', {
+    task: 'generate_letter',
+    bill_pk: billPk,
+    letter_params: params,
+  });
+  return (data?.answer as string) ?? '';
+}

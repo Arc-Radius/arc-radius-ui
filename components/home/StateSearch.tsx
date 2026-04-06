@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Rect as SvgRect, Path, Line } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Path, Line } from 'react-native-svg';
 
 import { StateDropdown } from '@/components/shared/StateDropdown';
 import { STATES, STATUS_STYLES, MAP_ROWS } from '@/static/states';
@@ -10,12 +11,10 @@ import type { LegislativeStatus, StateInfoWithCounts } from '@/static/states';
 interface StateSearchProps {
   selected: string | null;
   selectedInfo: StateInfoWithCounts | null;
-  /** Map of state rows from GET /states (null before load or on error). */
   statesByAbbr: Record<string, { status: LegislativeStatus }> | null;
   statesLoading: boolean;
   statesError: boolean;
   onRetryStates: () => void;
-  /** Sorted options for the dropdown; falls back to static STATES when omitted. */
   stateDropdownOptions?: { abbr: string; name: string }[];
   onStateSelect: (abbr: string) => void;
   onNavigateToState?: () => void;
@@ -24,51 +23,65 @@ interface StateSearchProps {
 }
 
 // ── Glass styles ─────────────────────────────────
-// Dark glass base for map container and detail panel
 const GLASS_MAP = {
-  backgroundColor: 'rgba(24,24,27,0.98)',
+  backgroundColor: '#18181b',
   borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.08)',
+  borderColor: 'rgba(255,255,255,0.06)',
 } as const;
 
-// Slightly more opaque for the detail panel sitting on top
 const GLASS_DETAIL = {
-  backgroundColor: 'rgba(24,24,27,0.98)',
+  backgroundColor: '#18181b',
   borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.08)',
+  borderColor: 'rgba(255,255,255,0.06)',
 } as const;
 
-// ── Status colors ────────────────────────────────
-// Matches HeroSection palette: #93c5fd, #a1a1aa, #fdba74
+// ── Status colors (gradient glass) ───────────────
 const STATUS_CELL: Record<
   LegislativeStatus,
-  { bg: string; border: string; text: string; selectedBorder: string }
+  {
+    gradientTop: string;
+    gradientBottom: string;
+    border: string;
+    text: string;
+    selectedBorder: string;
+  }
 > = {
   supportive: {
-    bg: 'rgba(59,130,246,0.1)',
-    border: 'rgba(59,130,246,0.25)',
+    gradientTop: 'rgba(29,78,216,0.35)',
+    gradientBottom: 'rgba(29,78,216,0.1)',
+    border: 'rgba(29,78,216,0.3)',
     text: '#93c5fd',
     selectedBorder: '#93c5fd',
   },
   mixed: {
-    bg: 'rgba(161,161,170,0.1)',
-    border: 'rgba(161,161,170,0.25)',
+    gradientTop: 'rgba(63,63,70,0.35)',
+    gradientBottom: 'rgba(63,63,70,0.1)',
+    border: 'rgba(63,63,70,0.3)',
     text: '#a1a1aa',
     selectedBorder: '#a1a1aa',
   },
   harmful: {
-    bg: 'rgba(249,115,22,0.1)',
-    border: 'rgba(249,115,22,0.25)',
+    gradientTop: 'rgba(194,65,12,0.35)',
+    gradientBottom: 'rgba(194,65,12,0.1)',
+    border: 'rgba(194,65,12,0.3)',
     text: '#fdba74',
     selectedBorder: '#fdba74',
   },
 };
 
 const CELL_LOADING = {
-  bg: 'rgba(82,82,91,0.12)',
+  gradientTop: 'rgba(82,82,91,0.2)',
+  gradientBottom: 'rgba(82,82,91,0.05)',
   border: 'rgba(82,82,91,0.2)',
   text: '#71717a',
   selectedBorder: '#a1a1aa',
+};
+
+// Darker solid colors for legend dots
+const LEGEND_COLORS: Record<LegislativeStatus, string> = {
+  supportive: '#2563eb',
+  mixed: '#71717a',
+  harmful: '#c2410c',
 };
 
 // Raised card shadow for map cells
@@ -82,13 +95,6 @@ const raisedShadow = Platform.select({
   android: { elevation: 4 },
   default: {},
 });
-
-// Glass tint badges for dark detail panel
-const STATUS_BADGE: Record<LegislativeStatus, { bg: string; text: string }> = {
-  supportive: { bg: 'rgba(147,197,253,0.15)', text: '#93c5fd' },
-  mixed: { bg: 'rgba(161,161,170,0.15)', text: '#a1a1aa' },
-  harmful: { bg: 'rgba(253,186,116,0.15)', text: '#fdba74' },
-};
 
 // ── State cell ───────────────────────────────────
 function StateCell({
@@ -113,19 +119,18 @@ function StateCell({
 
   const isSelected = selected === abbr;
   const cell = loading ? CELL_LOADING : STATUS_CELL[status];
-  const fontSize = compact ? 9 : 11;
+  const fontSize = compact ? 9 : 16;
 
   return (
     <Pressable
       disabled={disabled}
       onPress={() => onSelect(abbr)}
-      className="w-full items-center justify-center"
+      className="w-full overflow-hidden"
       style={[
         {
           aspectRatio: 1,
-          backgroundColor: cell.bg,
-          borderWidth: isSelected ? 1.5 : 0,
-          borderColor: isSelected ? cell.selectedBorder : 'transparent',
+          borderWidth: isSelected ? 1.5 : 1,
+          borderColor: isSelected ? cell.selectedBorder : cell.border,
           borderRadius: 6,
         },
         raisedShadow,
@@ -135,65 +140,45 @@ function StateCell({
       accessibilityLabel={`${info.name}, ${STATUS_STYLES[status].label}`}
       accessibilityState={{ selected: isSelected }}
       accessibilityHint="Double tap to view policy details">
-      <Text className="text-center font-sans-semibold" style={{ fontSize, color: cell.text }}>
-        {abbr}
-      </Text>
+      <LinearGradient
+        colors={[cell.gradientTop, cell.gradientBottom]}
+        style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text className="text-center font-sans-semibold" style={{ fontSize, color: cell.text }}>
+          {abbr}
+        </Text>
+      </LinearGradient>
     </Pressable>
   );
 }
 
-// ── Icons (glass style) ──────────────────────────
-function PolicyIcon() {
+// ── Icons ────────────────────────────────────────
+function CheckIcon({ size = 14 }: { size?: number }) {
+  const stroke = size >= 18 ? 1.35 : 1.2;
   return (
-    <Svg width={16} height={16} viewBox="0 0 18 18" fill="none">
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Circle cx={9} cy={9} r={6} stroke="#4ade80" strokeWidth={stroke} fill="rgba(34,197,94,0.1)" />
       <Path
-        d="M3 5C3 3.9 3.9 3 5 3H13C14.1 3 15 3.9 15 5V13C15 14.1 14.1 15 13 15H5C3.9 15 3 14.1 3 13V5Z"
-        fill="rgba(59,130,246,0.15)"
-        stroke="#60a5fa"
-        strokeWidth={1}
-      />
-      <Line x1={6} y1={8} x2={12} y2={8} stroke="#60a5fa" strokeWidth={0.8} strokeLinecap="round" />
-      <Line
-        x1={6}
-        y1={11}
-        x2={10}
-        y2={11}
-        stroke="#60a5fa"
-        strokeWidth={0.8}
+        d="M6.5 9.5L8 11L11.5 7"
+        stroke="#4ade80"
+        strokeWidth={stroke}
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </Svg>
   );
 }
 
-function BillIcon() {
+function ClockIcon({ size = 14 }: { size?: number }) {
+  const stroke = size >= 18 ? 1.35 : 1.2;
   return (
-    <Svg width={16} height={16} viewBox="0 0 18 18" fill="none">
-      <SvgRect
-        x={3}
-        y={2}
-        width={12}
-        height={14}
-        rx={2}
-        fill="rgba(249,115,22,0.15)"
-        stroke="#fb923c"
-        strokeWidth={1}
-      />
-      <Line x1={7} y1={7} x2={11} y2={7} stroke="#fb923c" strokeWidth={0.8} strokeLinecap="round" />
-      <Line
-        x1={7}
-        y1={10}
-        x2={9}
-        y2={10}
-        stroke="#fb923c"
-        strokeWidth={0.8}
-        strokeLinecap="round"
-      />
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Circle cx={9} cy={9} r={6} stroke="#facc15" strokeWidth={stroke} fill="rgba(250,204,21,0.1)" />
+      <Path d="M9 6.5V9.5L11 10.5" stroke="#facc15" strokeWidth={stroke} strokeLinecap="round" />
     </Svg>
   );
 }
 
-// ── State detail panel (dark glass) ──────────────
+// ── State detail panel ───────────────────────────
 function StateDetailPanel({
   info,
   onNavigate,
@@ -203,7 +188,15 @@ function StateDetailPanel({
   onNavigate?: () => void;
   onClose: () => void;
 }) {
-  const badge = STATUS_BADGE[info.status];
+  const cell = STATUS_CELL[info.status];
+  const webLarge = Platform.OS === 'web';
+  const nameSize = webLarge ? 22 : undefined;
+  const statusBadgeSize = webLarge ? 13 : 11;
+  const statLabelSize = webLarge ? 15 : 13;
+  const statValueSize = webLarge ? 17 : 15;
+  const ctaSize = webLarge ? 15 : 13;
+  const ctaArrowSize = webLarge ? 17 : 14;
+  const iconSize = webLarge ? 20 : 14;
 
   return (
     <View className="overflow-hidden rounded-xl" style={GLASS_DETAIL}>
@@ -211,14 +204,25 @@ function StateDetailPanel({
         {/* Header */}
         <View className="mb-3.5 flex-row items-center justify-between">
           <View className="flex-row items-center gap-2.5">
-            <Text className="font-serif-bold text-lg" style={{ color: '#fafafa' }}>
+            <Text
+              className="font-serif-bold text-lg"
+              style={[{ color: '#fafafa' }, webLarge && { fontSize: nameSize }]}>
               {info.name}
             </Text>
-            <View className="rounded-full px-2.5 py-0.5" style={{ backgroundColor: badge.bg }}>
-              <Text className="font-sans-semibold text-[11px]" style={{ color: badge.text }}>
+            {/* Gradient status badge */}
+            <LinearGradient
+              colors={[cell.gradientTop, cell.gradientBottom]}
+              style={{
+                borderRadius: 99,
+                paddingHorizontal: webLarge ? 12 : 10,
+                paddingVertical: webLarge ? 4 : 2,
+                borderWidth: 0.5,
+                borderColor: cell.border,
+              }}>
+              <Text className="font-sans-semibold" style={{ fontSize: statusBadgeSize, color: cell.text }}>
                 {STATUS_STYLES[info.status].label}
               </Text>
-            </View>
+            </LinearGradient>
           </View>
           <Pressable
             onPress={onClose}
@@ -232,45 +236,39 @@ function StateDetailPanel({
           </Pressable>
         </View>
 
-        {/* Glass icon cards */}
-        <View className="mb-3 flex-row gap-2">
+        {/* Option C: horizontal stat pills */}
+        <View className="mb-3 gap-1.5">
+          {/* Passed bills */}
           <View
-            className="flex-1 items-center rounded-[10px] py-3"
+            className="flex-row items-center gap-2.5 rounded-[10px] px-3 py-2.5"
             style={{
-              backgroundColor: 'rgba(59,130,246,0.1)',
-              borderWidth: 0.5,
-              borderColor: 'rgba(59,130,246,0.25)',
+              backgroundColor: 'rgba(161,161,170,0.1)',
+              borderWidth: 1,
+              borderColor: 'rgba(161,161,170,0.2)',
             }}>
-            <View
-              className="mb-1.5 h-7 w-7 items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'rgba(59,130,246,0.15)' }}>
-              <PolicyIcon />
-            </View>
-            <Text className="font-sans-semibold text-base" style={{ color: '#93c5fd' }}>
-              {info.counts.passedBills}
+            <CheckIcon size={iconSize} />
+            <Text className="flex-1 font-sans" style={{ fontSize: statLabelSize, color: '#a1a1aa' }}>
+              Passed bills
             </Text>
-            <Text className="mt-0.5 font-sans text-[11px]" style={{ color: '#e4e4e7' }}>
-              passed bills
+            <Text className="font-sans-semibold" style={{ fontSize: statValueSize, color: '#e4e4e7' }}>
+              {info.counts.passedBills}
             </Text>
           </View>
 
+          {/* Proposed bills (active) */}
           <View
-            className="flex-1 items-center rounded-[10px] py-3"
+            className="flex-row items-center gap-2.5 rounded-[10px] px-3 py-2.5"
             style={{
-              backgroundColor: 'rgba(249,115,22,0.1)',
-              borderWidth: 0.5,
-              borderColor: 'rgba(249,115,22,0.25)',
+              backgroundColor: 'rgba(161,161,170,0.1)',
+              borderWidth: 1,
+              borderColor: 'rgba(161,161,170,0.2)',
             }}>
-            <View
-              className="mb-1.5 h-7 w-7 items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'rgba(249,115,22,0.15)' }}>
-              <BillIcon />
-            </View>
-            <Text className="font-sans-semibold text-base" style={{ color: '#fdba74' }}>
-              {info.counts.activeBills}
+            <ClockIcon size={iconSize} />
+            <Text className="flex-1 font-sans" style={{ fontSize: statLabelSize, color: '#a1a1aa' }}>
+              Proposed bills
             </Text>
-            <Text className="mt-0.5 font-sans text-[11px]" style={{ color: '#e4e4e7' }}>
-              proposed bills
+            <Text className="font-sans-semibold" style={{ fontSize: statValueSize, color: '#e4e4e7' }}>
+              {info.counts.activeBills}
             </Text>
           </View>
         </View>
@@ -281,17 +279,17 @@ function StateDetailPanel({
           className="flex-row items-center justify-center gap-1.5 rounded-[10px] bg-white py-3 active:opacity-80"
           accessibilityRole="button"
           accessibilityLabel={`Explore ${info.name}`}>
-          <Text className="font-sans-semibold text-[13px]" style={{ color: '#18181b' }}>
+          <Text className="font-sans-semibold" style={{ fontSize: ctaSize, color: '#18181b' }}>
             Explore {info.name}
           </Text>
-          <Text style={{ color: '#71717a' }}>→</Text>
+          <Text style={{ fontSize: ctaArrowSize, color: '#71717a' }}>→</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-// ── Hex map (column-based — stable grid, aligned cells) ──
+// ── Hex map ──────────────────────────────────────
 const GRID_COLS = Math.max(...MAP_ROWS.map((r: (string | null)[]) => r.length));
 
 function resolveCellStatus(
@@ -351,6 +349,24 @@ function HexMap({
           </View>
         ))}
       </View>
+      {/* Legend */}
+      <View className="mt-3 flex-row items-center justify-center gap-4">
+        {(['supportive', 'mixed', 'harmful'] as LegislativeStatus[]).map((status) => (
+          <View key={status} className="flex-row items-center gap-1.5">
+            <View
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: LEGEND_COLORS[status],
+              }}
+            />
+            <Text className="font-sans" style={{ fontSize: hintSize, color: '#a1a1aa' }}>
+              {STATUS_STYLES[status].label}
+            </Text>
+          </View>
+        ))}
+      </View>
       <Text className="mt-3 text-center font-sans" style={{ fontSize: hintSize, color: '#a1a1aa' }}>
         Tap a state to view details
       </Text>
@@ -375,7 +391,6 @@ export function StateSearch({
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
   const detailRef = useRef<View>(null);
-
   const containerRef = useRef<View>(null);
 
   useEffect(() => {
@@ -442,7 +457,7 @@ export function StateSearch({
       </View>
 
       {isCompact ? (
-        /* ── Mobile: glass map card with detail inside ── */
+        /* ── Mobile: map card with detail inside ── */
         <View className="overflow-hidden rounded-xl p-4" style={[GLASS_MAP, webBlur]}>
           <HexMap
             selected={selected}
@@ -467,7 +482,7 @@ export function StateSearch({
           )}
         </View>
       ) : (
-        /* ── Desktop: glass map + glass side panel ── */
+        /* ── Desktop: map + side panel ── */
         <View className="flex-row gap-4">
           <View
             className={[

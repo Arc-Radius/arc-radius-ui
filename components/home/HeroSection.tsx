@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Info } from 'lucide-react-native';
 
 function AnimatedArrowDown() {
   const bounce = useRef(new Animated.Value(0)).current;
@@ -50,6 +51,8 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: HeroSectionProps) {
+  const [showStatusInfo, setShowStatusInfo] = useState(false);
+  const [badgeWidth, setBadgeWidth] = useState(0);
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
 
@@ -93,27 +96,48 @@ export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: Her
         </Pressable>
 
         {/* Climate stats — Hero preview palette: #93c5fd, #a1a1aa, #fdba74 (harmful shown as "high risk") */}
-        <View className="flex-row items-center self-start overflow-hidden rounded-xl border border-zinc-200/80 bg-white/90">
-          <StatPill
-            fill="#93c5fd"
-            count={pillCount(statusCounts?.supportive, heroStatsLoading)}
-            label="supportive"
-            textColor="#1e40af"
-          />
-          <View className="h-5 w-px bg-zinc-300" />
-          <StatPill
-            fill="#a1a1aa"
-            count={pillCount(statusCounts?.mixed, heroStatsLoading)}
-            label="mixed"
-            textColor="#52525b"
-          />
-          <View className="h-5 w-px bg-zinc-300" />
-          <StatPill
-            fill="#fdba74"
-            count={pillCount(statusCounts?.harmful, heroStatsLoading)}
-            label="high risk"
-            textColor="#9a3412"
-          />
+        <View className="self-start gap-2">
+          <View className="flex-row items-center gap-1.5">
+            <View
+              className="flex-row items-center overflow-hidden rounded-xl border border-zinc-200/80 bg-white/90"
+              onLayout={(e) => setBadgeWidth(e.nativeEvent.layout.width)}>
+              <StatPill
+                fill="#93c5fd"
+                count={pillCount(statusCounts?.supportive, heroStatsLoading)}
+                label="supportive"
+                textColor="#1e40af"
+              />
+              <View className="h-5 w-px bg-zinc-300" />
+              <StatPill
+                fill="#a1a1aa"
+                count={pillCount(statusCounts?.mixed, heroStatsLoading)}
+                label="mixed"
+                textColor="#52525b"
+              />
+              <View className="h-5 w-px bg-zinc-300" />
+              <StatPill
+                fill="#fdba74"
+                count={pillCount(statusCounts?.harmful, heroStatsLoading)}
+                label="high risk"
+                textColor="#9a3412"
+              />
+            </View>
+            <Pressable
+              onPress={() => setShowStatusInfo((v) => !v)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="How is state status calculated?">
+              <Info size={15} color="#a1a1aa" strokeWidth={2} />
+            </Pressable>
+          </View>
+          {showStatusInfo && badgeWidth > 0 && (
+            <View className="rounded-xl border border-zinc-200/80 bg-white/90 px-3 py-2.5" style={{ width: badgeWidth }}>
+              <Text className="font-sans text-[11px] leading-4 text-zinc-500">
+                State status is calculated by balancing the general political climate with
+                the specific ratio of supportive vs. harmful bills currently being introduced.
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </View>

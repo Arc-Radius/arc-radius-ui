@@ -127,12 +127,12 @@ export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: Her
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel="How is state status calculated?">
-              <Info size={15} color="#a1a1aa" strokeWidth={2} />
+              <Info size={18} color="#a1a1aa" strokeWidth={2} />
             </Pressable>
           </View>
           {showStatusInfo && badgeWidth > 0 && (
             <View className="rounded-xl border border-zinc-200/80 bg-white/90 px-3 py-2.5" style={{ width: badgeWidth }}>
-              <Text className="font-sans text-[11px] leading-4 text-zinc-500">
+              <Text className="font-sans text-[12px] leading-4.5 text-zinc-500">
                 State status is calculated by balancing the general political climate with
                 the specific ratio of supportive vs. harmful bills currently being introduced.
               </Text>
@@ -163,11 +163,11 @@ function StatPill({
 }) {
   return (
     <View className="flex-row items-center gap-1.5 px-3 py-2.5">
-      <View className="h-[7px] w-[7px] rounded-sm" style={{ backgroundColor: fill }} />
+      <View className="h-[9px] w-[9px] rounded-sm" style={{ backgroundColor: fill }} />
       <Text className="font-sans-semibold text-[13px]" style={{ color: textColor }}>
         {count}
       </Text>
-      <Text className="font-sans text-xs text-zinc-500">{label}</Text>
+      <Text className="font-sans-medium text-xs text-zinc-500">{label}</Text>
     </View>
   );
 }

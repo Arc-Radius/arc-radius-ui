@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
 
@@ -178,6 +178,41 @@ function ClockIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+/** Subtle → nudge on the Explore CTA (matches hero arrow rhythm). */
+function AnimatedExploreArrow({ fontSize, color }: { fontSize: number; color: string }) {
+  const nudge = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(nudge, {
+          toValue: 1,
+          duration: 650,
+          useNativeDriver: true,
+        }),
+        Animated.timing(nudge, {
+          toValue: 0,
+          duration: 650,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [nudge]);
+
+  const translateX = nudge.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 5],
+  });
+
+  return (
+    <Animated.View style={{ marginLeft: 4, transform: [{ translateX }] }}>
+      <Text style={{ fontSize, color }}>→</Text>
+    </Animated.View>
+  );
+}
+
 // ── State detail panel ───────────────────────────
 function StateDetailPanel({
   info,
@@ -190,8 +225,8 @@ function StateDetailPanel({
 }) {
   const cell = STATUS_CELL[info.status];
   const webLarge = Platform.OS === 'web';
-  const nameSize = webLarge ? 22 : undefined;
-  const statusBadgeSize = webLarge ? 13 : 11;
+  const nameSize = webLarge ? 21 : undefined;
+  const statusBadgeSize = webLarge ? 12 : 11;
   const statLabelSize = webLarge ? 15 : 13;
   const statValueSize = webLarge ? 17 : 15;
   const ctaSize = webLarge ? 15 : 13;
@@ -226,11 +261,11 @@ function StateDetailPanel({
           </View>
           <Pressable
             onPress={onClose}
-            className="h-[22px] w-[22px] items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+            className="h-7 w-7 items-center justify-center rounded-full"
+            style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
             accessibilityRole="button"
             accessibilityLabel="Close state details">
-            <Text className="text-[10px]" style={{ color: '#52525b' }}>
+            <Text className="font-sans text-xs" style={{ color: '#a1a1aa' }}>
               ✕
             </Text>
           </Pressable>
@@ -282,7 +317,7 @@ function StateDetailPanel({
           <Text className="font-sans-semibold" style={{ fontSize: ctaSize, color: '#18181b' }}>
             Explore {info.name}
           </Text>
-          <Text style={{ fontSize: ctaArrowSize, color: '#71717a' }}>→</Text>
+          <AnimatedExploreArrow fontSize={ctaArrowSize} color="#18181b" />
         </Pressable>
       </View>
     </View>

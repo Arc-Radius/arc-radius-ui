@@ -54,9 +54,9 @@ const STATUS_CELL: Record<
     selectedBorder: '#93c5fd',
   },
   mixed: {
-    gradientTop: 'rgba(63,63,70,0.35)',
+    gradientTop: 'rgba(63,63,70,0.55)',
     gradientBottom: 'rgba(63,63,70,0.1)',
-    border: 'rgba(63,63,70,0.3)',
+    border: 'rgba(63,63,70,0.5)',
     text: '#a1a1aa',
     selectedBorder: '#a1a1aa',
   },
@@ -119,7 +119,7 @@ function StateCell({
 
   const isSelected = selected === abbr;
   const cell = loading ? CELL_LOADING : STATUS_CELL[status];
-  const fontSize = compact ? 9 : 16;
+  const fontSize = compact ? 9 : 15;
 
   return (
     <Pressable

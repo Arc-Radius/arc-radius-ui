@@ -33,9 +33,9 @@ const STANCES: LegislativeStatus[] = ['supportive', 'harmful', 'mixed'];
 
 export function BillFilterSidebar({
   filters,
-  activeCategories,
-  activeYears,
-  activeStatuses,
+  activeCategories: _ac,
+  activeYears: _ay,
+  activeStatuses: _as,
   availableCategories,
   availableYears,
   availableStatuses,
@@ -93,7 +93,7 @@ export function BillFilterSidebar({
               <CheckboxRow
                 key={y}
                 label={String(y)}
-                checked={activeYears.has(y)}
+                checked={filters.years.size === 0 || filters.years.has(y)}
                 count={billCountByYear[y] ?? 0}
                 checkColor={ACCENT_BLUE}
                 onPress={() => onToggleYear(y)}
@@ -128,7 +128,7 @@ export function BillFilterSidebar({
               <CheckboxRow
                 key={s}
                 label={s}
-                checked={activeStatuses.has(s)}
+                checked={filters.statuses.size === 0 || filters.statuses.has(s)}
                 count={billCountByStatus[s] ?? 0}
                 checkColor={ACCENT_BLUE}
                 onPress={() => onToggleStatus(s)}
@@ -145,7 +145,7 @@ export function BillFilterSidebar({
               <CheckboxRow
                 key={c}
                 label={c.replace(/_/g, ' ')}
-                checked={activeCategories.has(c)}
+                checked={filters.categories.size === 0 || filters.categories.has(c)}
                 count={billCountByCategory[c] ?? 0}
                 checkColor={ACCENT_BLUE}
                 onPress={() => onToggleCategory(c)}

@@ -119,18 +119,17 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
       const db = new Date(b.last_action_date ?? 0).getTime();
       return filters.sort === 'newest' ? db - da : da - db;
     });
-  }, [sourceBills, filters.stances, activeCategories, activeYears, filters.sort]);
+  }, [sourceBills, filters.stances, activeStatuses, activeCategories, activeYears, filters.sort]);
 
   const toggleStance = useCallback((stance: LegislativeStatus) => {
     setFilters((prev) => {
       const next = new Set(prev.stances);
       if (next.has(stance)) {
+        if (next.size <= 1) return prev;
         next.delete(stance);
       } else {
         next.add(stance);
       }
-      if (next.size === 0)
-        return { ...prev, stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']) };
       return { ...prev, stances: next };
     });
   }, []);
@@ -138,13 +137,21 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const toggleStatus = useCallback(
     (status: string) => {
       setFilters((prev) => {
-        const base = prev.statuses.size === 0 ? new Set(availableStatuses) : new Set(prev.statuses);
-        if (base.has(status)) {
-          base.delete(status);
-        } else {
-          base.add(status);
+        if (prev.statuses.size === 0) {
+          if (availableStatuses.length <= 1) return prev;
+          return { ...prev, statuses: new Set(availableStatuses.filter((s) => s !== status)) };
         }
-        return { ...prev, statuses: base.size === 0 ? new Set<string>() : base };
+        const next = new Set(prev.statuses);
+        if (next.has(status)) {
+          if (next.size <= 1) return prev;
+          next.delete(status);
+        } else {
+          next.add(status);
+        }
+        if (next.size === availableStatuses.length) {
+          return { ...prev, statuses: new Set<string>() };
+        }
+        return { ...prev, statuses: next };
       });
     },
     [availableStatuses]
@@ -153,14 +160,21 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const toggleCategory = useCallback(
     (cat: string) => {
       setFilters((prev) => {
-        const base =
-          prev.categories.size === 0 ? new Set(availableCategories) : new Set(prev.categories);
-        if (base.has(cat)) {
-          base.delete(cat);
-        } else {
-          base.add(cat);
+        if (prev.categories.size === 0) {
+          if (availableCategories.length <= 1) return prev;
+          return { ...prev, categories: new Set(availableCategories.filter((c) => c !== cat)) };
         }
-        return { ...prev, categories: base.size === 0 ? new Set<string>() : base };
+        const next = new Set(prev.categories);
+        if (next.has(cat)) {
+          if (next.size <= 1) return prev;
+          next.delete(cat);
+        } else {
+          next.add(cat);
+        }
+        if (next.size === availableCategories.length) {
+          return { ...prev, categories: new Set<string>() };
+        }
+        return { ...prev, categories: next };
       });
     },
     [availableCategories]
@@ -169,13 +183,21 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const toggleYear = useCallback(
     (year: number) => {
       setFilters((prev) => {
-        const base = prev.years.size === 0 ? new Set(availableYears) : new Set(prev.years);
-        if (base.has(year)) {
-          base.delete(year);
-        } else {
-          base.add(year);
+        if (prev.years.size === 0) {
+          if (availableYears.length <= 1) return prev;
+          return { ...prev, years: new Set(availableYears.filter((y) => y !== year)) };
         }
-        return { ...prev, years: base.size === 0 ? new Set<number>() : base };
+        const next = new Set(prev.years);
+        if (next.has(year)) {
+          if (next.size <= 1) return prev;
+          next.delete(year);
+        } else {
+          next.add(year);
+        }
+        if (next.size === availableYears.length) {
+          return { ...prev, years: new Set<number>() };
+        }
+        return { ...prev, years: next };
       });
     },
     [availableYears]
@@ -308,7 +330,7 @@ function FilterBottomSheet({
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
               {availableYears.map((y) => {
-                const isOn = activeYears.has(y);
+                const isOn = filters.years.size === 0 || filters.years.has(y);
                 return (
                   <Pressable
                     key={y}
@@ -366,7 +388,7 @@ function FilterBottomSheet({
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
               {availableStatuses.map((st) => {
-                const isOn = activeStatuses.has(st);
+                const isOn = filters.statuses.size === 0 || filters.statuses.has(st);
                 return (
                   <Pressable
                     key={st}
@@ -386,7 +408,7 @@ function FilterBottomSheet({
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
               {availableCategories.map((c) => {
-                const isOn = activeCategories.has(c);
+                const isOn = filters.categories.size === 0 || filters.categories.has(c);
                 return (
                   <Pressable
                     key={c}

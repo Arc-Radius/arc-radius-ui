@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import {
+  Animated,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
 
@@ -57,8 +65,8 @@ const STATUS_CELL: Record<
     gradientTop: 'rgba(63,63,70,0.55)',
     gradientBottom: 'rgba(63,63,70,0.1)',
     border: 'rgba(63,63,70,0.5)',
-    text: '#a1a1aa',
-    selectedBorder: '#a1a1aa',
+    text: '#d4d4d8',
+    selectedBorder: '#d4d4d8',
   },
   harmful: {
     gradientTop: 'rgba(194,65,12,0.35)',
@@ -156,7 +164,14 @@ function CheckIcon({ size = 14 }: { size?: number }) {
   const stroke = size >= 18 ? 1.35 : 1.2;
   return (
     <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
-      <Circle cx={9} cy={9} r={6} stroke="#4ade80" strokeWidth={stroke} fill="rgba(34,197,94,0.1)" />
+      <Circle
+        cx={9}
+        cy={9}
+        r={6}
+        stroke="#4ade80"
+        strokeWidth={stroke}
+        fill="rgba(34,197,94,0.1)"
+      />
       <Path
         d="M6.5 9.5L8 11L11.5 7"
         stroke="#4ade80"
@@ -172,7 +187,14 @@ function ClockIcon({ size = 14 }: { size?: number }) {
   const stroke = size >= 18 ? 1.35 : 1.2;
   return (
     <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
-      <Circle cx={9} cy={9} r={6} stroke="#facc15" strokeWidth={stroke} fill="rgba(250,204,21,0.1)" />
+      <Circle
+        cx={9}
+        cy={9}
+        r={6}
+        stroke="#facc15"
+        strokeWidth={stroke}
+        fill="rgba(250,204,21,0.1)"
+      />
       <Path d="M9 6.5V9.5L11 10.5" stroke="#facc15" strokeWidth={stroke} strokeLinecap="round" />
     </Svg>
   );
@@ -254,7 +276,9 @@ function StateDetailPanel({
                 borderWidth: 0.5,
                 borderColor: cell.border,
               }}>
-              <Text className="font-sans-semibold" style={{ fontSize: statusBadgeSize, color: cell.text }}>
+              <Text
+                className="font-sans-semibold"
+                style={{ fontSize: statusBadgeSize, color: cell.text }}>
                 {STATUS_STYLES[info.status].label}
               </Text>
             </LinearGradient>
@@ -282,10 +306,14 @@ function StateDetailPanel({
               borderColor: 'rgba(161,161,170,0.2)',
             }}>
             <CheckIcon size={iconSize} />
-            <Text className="flex-1 font-sans" style={{ fontSize: statLabelSize, color: '#a1a1aa' }}>
+            <Text
+              className="flex-1 font-sans"
+              style={{ fontSize: statLabelSize, color: '#a1a1aa' }}>
               Passed bills
             </Text>
-            <Text className="font-sans-semibold" style={{ fontSize: statValueSize, color: '#e4e4e7' }}>
+            <Text
+              className="font-sans-semibold"
+              style={{ fontSize: statValueSize, color: '#e4e4e7' }}>
               {info.counts.passedBills}
             </Text>
           </View>
@@ -299,10 +327,14 @@ function StateDetailPanel({
               borderColor: 'rgba(161,161,170,0.2)',
             }}>
             <ClockIcon size={iconSize} />
-            <Text className="flex-1 font-sans" style={{ fontSize: statLabelSize, color: '#a1a1aa' }}>
+            <Text
+              className="flex-1 font-sans"
+              style={{ fontSize: statLabelSize, color: '#a1a1aa' }}>
               Proposed bills
             </Text>
-            <Text className="font-sans-semibold" style={{ fontSize: statValueSize, color: '#e4e4e7' }}>
+            <Text
+              className="font-sans-semibold"
+              style={{ fontSize: statValueSize, color: '#e4e4e7' }}>
               {info.counts.activeBills}
             </Text>
           </View>

@@ -3,11 +3,18 @@ import { z } from 'zod';
 const legislativeStatusSchema = z.enum(['supportive', 'mixed', 'harmful']);
 const billTabSchema = z.enum(['active', 'passed']);
 
-export const relatedBillSchema = z.object({
-  bill_id: z.string(),
-  summary: z.string(),
-  confidence: z.enum(['high', 'medium', 'low']),
-});
+export const relatedBillSchema = z
+  .object({
+    bill_id: z.string().optional(),
+    billPk: z.string().optional(),
+    summary: z.string(),
+    confidence: z.enum(['high', 'medium', 'low']),
+  })
+  .transform((r) => ({
+    bill_id: r.bill_id ?? r.billPk ?? '',
+    summary: r.summary,
+    confidence: r.confidence,
+  }));
 
 export const billDetailSchema = z.object({
   id: z.string(),
@@ -71,7 +78,9 @@ export const apiBillDetailItemSchema = z.object({
   id: z.string(),
   number: z.string().optional(),
   title: z.string(),
+  description: z.string().optional(),
   summary: z.string(),
+  whyMatters: z.string().optional(),
   fullText: z.string().optional(),
   state: z.string().optional(),
   status: z.string().optional(),

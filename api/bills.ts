@@ -1,4 +1,20 @@
 import { apiClient } from '@/api/client';
+
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#160;/g, ' ')
+    .replace(/&mdash;/g, '\u2014')
+    .replace(/&ndash;/g, '\u2013')
+    .replace(/&hellip;/g, '\u2026');
+}
 import {
   billDetailEnvelopeSchema,
   relatedBillSchema,
@@ -27,8 +43,8 @@ export function mapListItemToBill(item: StateBillListItem): Bill {
   return {
     id: item.id,
     bill_number: item.bill_number,
-    title: item.title,
-    description: item.description,
+    title: decodeHtmlEntities(item.title),
+    description: decodeHtmlEntities(item.description),
     stance: item.stance,
     billTab: item.billTab,
     status: item.status,
@@ -120,6 +136,8 @@ export async function fetchBillDetail(
   return {
     ...bill,
     ...(graphRecord ?? {}),
+    title: decodeHtmlEntities(bill.title),
+    summary: decodeHtmlEntities(bill.summary),
     relatedBills,
   };
 }

@@ -2,8 +2,8 @@
  * BillDetailPage — 1:1 React Native port of the web prototype BillDetailView.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import DOMPurify from 'dompurify';
 import { useQueries } from '@tanstack/react-query';
+import RenderHtml from 'react-native-render-html';
 import { useBillTextQuery } from '@/queries/useBillTextQuery';
 import { fetchBillDetail, generateBillLetter, type BillDetailMerged } from '@/api/bills';
 import { queryKeys } from '@/queries/keys';
@@ -629,6 +629,7 @@ export function BillDetailPage({
 
   const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
   const [billTextOpen, setBillTextOpen] = useState(true);
+  const [aiInfoOpen, setAiInfoOpen] = useState(false);
   const detailHistory = useMemo(() => [...(bill.history ?? [])].reverse(), [bill.history]);
   const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
   const legiscanBillId = rawGraph?.bill_id ?? '';
@@ -638,7 +639,28 @@ export function BillDetailPage({
   const sanitizedHtml = useMemo(() => {
     const raw = billTextQuery.data?.html ?? '';
     if (!raw || isPdf) return '';
-    return DOMPurify.sanitize(raw, { ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'div', 'span', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'pre', 'blockquote', 'hr', 'sup', 'sub'], ALLOWED_ATTR: ['href', 'target', 'style', 'align', 'colspan', 'rowspan'] });
+    const ALLOWED_TAGS = new Set([
+      'p', 'br', 'b', 'i', 'em', 'strong', 'u', 'div', 'span',
+      'table', 'tr', 'td', 'th', 'thead', 'tbody',
+      'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'a', 'pre', 'blockquote', 'hr', 'sup', 'sub',
+    ]);
+    const ALLOWED_ATTRS = new Set([
+      'href', 'target', 'style', 'align', 'colspan', 'rowspan',
+    ]);
+    return raw
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/on\w+="[^"]*"/gi, '')
+      .replace(/on\w+='[^']*'/gi, '')
+      .replace(/font-family\s*:[^;"']*/gi, '')
+      .replace(/font-size\s*:[^;"']*/gi, '')
+      .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (tag, name) => {
+        if (!ALLOWED_TAGS.has(name.toLowerCase())) return '';
+        return tag.replace(/\s+([a-z-]+)=/gi, (attrMatch, attr) =>
+          ALLOWED_ATTRS.has(attr.toLowerCase()) ? attrMatch : ' data-removed=',
+        );
+      });
   }, [billTextQuery.data?.html, isPdf]);
   const lifecycleLabel = resolveLifecyclePillLabel(bill.billTab);
   const relatedBillPks = useMemo(
@@ -822,25 +844,31 @@ export function BillDetailPage({
                 {activeTab === 'summary' && (
                   <View className="gap-6">
                     <View
-                      className="rounded-xl border px-4 py-3.5"
-                      style={{
-                        backgroundColor: 'rgba(59,130,246,0.05)',
-                        borderColor: 'rgba(59,130,246,0.12)',
-                      }}>
-                      <View className="flex-row items-start gap-2.5">
-                        <Sparkles size={14} color="#2563eb" style={{ marginTop: 2 }} />
-                        <View className="flex-1">
-                          <Text className="font-sans-semibold text-sm text-zinc-800">
+                      className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                      <Pressable
+                        onPress={() => setAiInfoOpen((v) => !v)}
+                        className="flex-row items-center justify-between active:opacity-70"
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: aiInfoOpen }}>
+                        <View className="flex-row items-center gap-1.5">
+                          <Sparkles size={13} color="#71717a" />
+                          <Text className="font-sans-medium text-sm text-zinc-500">
                             AI-generated from the knowledge graph
                           </Text>
-                          <Text className="mt-0.5 font-sans text-xs leading-5 text-zinc-600">
-                            This summary is generated using our legislative knowledge graph, bill
-                            metadata, and related policy links, and the system was calibrated with
-                            human evaluation to improve reliability. Review official bill text for
-                            legal language.
-                          </Text>
                         </View>
-                      </View>
+                        <View
+                          style={{ transform: [{ rotate: aiInfoOpen ? '180deg' : '0deg' }] }}>
+                          <ChevronDown size={14} color="#a1a1aa" strokeWidth={2} />
+                        </View>
+                      </Pressable>
+                      {aiInfoOpen && (
+                        <Text className="mt-2 font-sans text-xs leading-5 text-zinc-500">
+                          This summary is generated using our legislative knowledge graph, bill
+                          metadata, and related policy links, and the system was calibrated with
+                          human evaluation to improve reliability. Review official bill text for
+                          legal language.
+                        </Text>
+                      )}
                     </View>
                     <View>
                       <View className="mb-2 flex-row items-center gap-1.5">
@@ -918,9 +946,36 @@ export function BillDetailPage({
                                 dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                               />
                             ) : (
-                              <Text className="font-sans text-xs leading-5 text-zinc-600">
-                                {sanitizedHtml.replace(/<[^>]*>/g, '')}
-                              </Text>
+                              <RenderHtml
+                                contentWidth={300}
+                                source={{ html: sanitizedHtml }}
+                                systemFonts={[
+                                  'GreycliffCF_400Regular',
+                                  'GreycliffCF_500Medium',
+                                  'GreycliffCF_600DemiBold',
+                                  'GreycliffCF_700Bold',
+                                ]}
+                                defaultTextProps={{ allowFontScaling: true }}
+                                baseStyle={{
+                                  fontSize: 12,
+                                  lineHeight: 20,
+                                  color: '#52525b',
+                                  fontFamily: 'GreycliffCF_400Regular',
+                                }}
+                                tagsStyles={{
+                                  b: { fontFamily: 'GreycliffCF_700Bold' },
+                                  strong: { fontFamily: 'GreycliffCF_700Bold' },
+                                  em: { fontStyle: 'italic' },
+                                  i: { fontStyle: 'italic' },
+                                  h1: { fontSize: 18, fontFamily: 'GreycliffCF_700Bold', marginVertical: 6 },
+                                  h2: { fontSize: 16, fontFamily: 'GreycliffCF_700Bold', marginVertical: 5 },
+                                  h3: { fontSize: 14, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 4 },
+                                  h4: { fontSize: 13, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 3 },
+                                  p: { marginVertical: 3 },
+                                  li: { marginVertical: 1 },
+                                  a: { color: '#2563eb', textDecorationLine: 'underline' },
+                                }}
+                              />
                             )}
                           </ScrollView>
                         ) : billTextQuery.isLoading ? (

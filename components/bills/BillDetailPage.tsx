@@ -636,14 +636,15 @@ export function BillDetailPage({
   const billTextQuery = useBillTextQuery(legiscanBillId, activeTab === 'details' && !detailBillText);
   const billTextMime = billTextQuery.data?.mime ?? '';
   const isPdf = billTextMime.includes('pdf');
+  const isPlainText = billTextMime === 'text/plain';
   const sanitizedHtml = useMemo(() => {
     const raw = billTextQuery.data?.html ?? '';
-    if (!raw || isPdf) return '';
+    if (!raw || isPdf || isPlainText) return '';
     const ALLOWED_TAGS = new Set([
       'p', 'br', 'b', 'i', 'em', 'strong', 'u', 'div', 'span',
       'table', 'tr', 'td', 'th', 'thead', 'tbody',
       'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'a', 'pre', 'blockquote', 'hr', 'sup', 'sub',
+      'a', 'pre', 'blockquote', 'hr', 'sup', 'sub', 'font',
     ]);
     const ALLOWED_ATTRS = new Set([
       'href', 'target', 'style', 'align', 'colspan', 'rowspan',
@@ -655,6 +656,7 @@ export function BillDetailPage({
       .replace(/on\w+='[^']*'/gi, '')
       .replace(/font-family\s*:[^;"']*/gi, '')
       .replace(/font-size\s*:[^;"']*/gi, '')
+      .replace(/^ {0,5}\d{1,2}  /gm, '  ')
       .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (tag, name) => {
         if (!ALLOWED_TAGS.has(name.toLowerCase())) return '';
         return tag.replace(/\s+([a-z-]+)=/gi, (attrMatch, attr) =>
@@ -936,19 +938,37 @@ export function BillDetailPage({
                               {detailBillText}
                             </Text>
                           </ScrollView>
+                        ) : isPlainText && billTextQuery.data?.html ? (
+                          <ScrollView
+                            className="max-h-96 rounded-lg bg-zinc-50 p-3"
+                            nestedScrollEnabled
+                            horizontal={false}>
+                            <ScrollView horizontal nestedScrollEnabled>
+                              <Text
+                                className="text-[11px] text-zinc-600"
+                                style={{
+                                  fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                                  lineHeight: 18,
+                                  whiteSpace: 'pre',
+                                } as any}>
+                                {billTextQuery.data.html}
+                              </Text>
+                            </ScrollView>
+                          </ScrollView>
                         ) : sanitizedHtml ? (
                           <ScrollView
                             className="max-h-96 rounded-lg bg-zinc-50 p-3"
                             nestedScrollEnabled>
                             {Platform.OS === 'web' ? (
                               <div
-                                className="prose prose-sm max-w-none text-xs leading-5 text-zinc-600"
-                                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                                style={{ fontSize: 12, lineHeight: '1.6', color: '#52525b', fontFamily: 'Greycliff CF, sans-serif' }}
+                                dangerouslySetInnerHTML={{ __html: `<style>pre{font-family:Greycliff CF,sans-serif;white-space:pre-wrap;word-wrap:break-word;font-size:12px;line-height:1.6}</style>${sanitizedHtml}` }}
                               />
                             ) : (
                               <RenderHtml
                                 contentWidth={300}
                                 source={{ html: sanitizedHtml }}
+                                ignoredDomTags={['style', 'basefont', 'font']}
                                 systemFonts={[
                                   'GreycliffCF_400Regular',
                                   'GreycliffCF_500Medium',
@@ -971,6 +991,12 @@ export function BillDetailPage({
                                   h2: { fontSize: 16, fontFamily: 'GreycliffCF_700Bold', marginVertical: 5 },
                                   h3: { fontSize: 14, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 4 },
                                   h4: { fontSize: 13, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 3 },
+                                  pre: {
+                                    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                                    fontSize: 11,
+                                    lineHeight: 16,
+                                    whiteSpace: 'pre',
+                                  },
                                   p: { marginVertical: 3 },
                                   li: { marginVertical: 1 },
                                   a: { color: '#2563eb', textDecorationLine: 'underline' },

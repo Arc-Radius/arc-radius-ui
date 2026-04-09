@@ -21,8 +21,7 @@ import {
 } from 'lucide-react-native';
 import Markdown from 'react-native-markdown-display';
 
-const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY || '';
+import { apiClient } from '@/api/client';
 
 const SUGGESTED_QUESTIONS = [
   'How do different states handle gender marker changes on official documents?',
@@ -202,28 +201,25 @@ export default function AskRoute() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const headers: Record<string, string> = { accept: 'application/json' };
-      if (API_KEY) headers['x-api-key'] = API_KEY;
-      const res = await fetch(
-        `${API_URL}/bills/rag?query=${encodeURIComponent(text.trim())}&top=10`,
-        { headers }
+      const data = await apiClient.get<Record<string, unknown>>(
+        `/bills/rag?query=${encodeURIComponent(text.trim())}&top=10`
       );
-      const data = await res.json();
 
       const assistantMsg: Message = {
         id: nextId.current++,
         role: 'assistant',
-        text: data.answer || 'No answer returned.',
-        sources: mapSources(data.sources),
+        text: (data.answer as string) || 'No answer returned.',
+        sources: mapSources(data.sources as any),
       };
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch {
+    } catch (err) {
+      console.error('[ask] error:', err);
       setMessages((prev) => [
         ...prev,
         {
           id: nextId.current++,
           role: 'assistant',
-          text: 'Something went wrong. Please try again.',
+          text: `Something went wrong: ${err instanceof Error ? err.message : 'Please try again.'}`,
         },
       ]);
     } finally {

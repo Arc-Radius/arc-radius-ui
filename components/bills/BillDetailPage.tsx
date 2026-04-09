@@ -141,7 +141,7 @@ function RelatedBillsSection({
     return (
       <View className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
         <View className="mb-2 flex-row items-center gap-1.5">
-          <Sparkles size={13} color="#a16207" />
+          <Sparkles size={13} color="#71717a" />
           <Text className="font-sans-semibold text-sm text-zinc-800">Related bills</Text>
         </View>
         <Text className="font-sans text-sm leading-relaxed text-zinc-500">Coming soon.</Text>
@@ -161,7 +161,7 @@ function RelatedBillsSection({
   return (
     <View className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
       <View className="mb-2 flex-row items-center gap-1.5">
-        <Sparkles size={13} color="#a16207" />
+        <Sparkles size={13} color="#71717a" />
         <Text className="font-sans-semibold text-sm text-zinc-800">Related bills</Text>
       </View>
       <View className="gap-3">
@@ -872,7 +872,7 @@ export function BillDetailPage({
                     </View>
                     <View>
                       <View className="mb-2 flex-row items-center gap-1.5">
-                        <Sparkles size={13} color="#a16207" />
+                        <Sparkles size={13} color="#71717a" />
                         <Text className="font-sans-semibold text-sm text-zinc-800">What it means</Text>
                       </View>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
@@ -889,7 +889,7 @@ export function BillDetailPage({
                     </View>
                     <View>
                       <View className="mb-2 flex-row items-center gap-1.5">
-                        <Sparkles size={13} color="#a16207" />
+                        <Sparkles size={13} color="#71717a" />
                         <Text className="font-sans-semibold text-sm text-zinc-800">Why it matters</Text>
                       </View>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">

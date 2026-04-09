@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,58 +15,62 @@ import {
   HelpCircle,
   Database,
   GitFork,
+  Lightbulb,
   Loader2,
   MessageCircleMore,
 } from 'lucide-react-native';
+import Markdown from 'react-native-markdown-display';
 
-// ── Mock data ────────────────────────────────────
+const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY || '';
+
 const SUGGESTED_QUESTIONS = [
-  'What bills affect transgender youth healthcare in Texas?',
-  'Compare California and Florida LGBTQ+ protections',
-  'Which states have anti-discrimination employment laws?',
+  'How do different states handle gender marker changes on official documents?',
+  'Which states have religious exemption laws affecting LGBTQ+ rights?',
+  'What curriculum bills restrict LGBTQ+ topics in California schools?',
+  'What bills affect transgender youth healthcare access in Texas?',
+  'Compare Florida and New York LGBTQ+ protections',
 ];
+
+const TOPICS = [
+  'healthcare',
+  'education',
+  'civil_rights',
+  'sports',
+  'curriculum_speech',
+  'facilities',
+  'religious_exemption',
+  'identity_documents',
+  'expression',
+];
+
+interface Source {
+  label: string;
+  type: 'bill' | 'entity' | 'relationship';
+}
 
 interface Message {
   id: number;
   role: 'user' | 'assistant';
   text: string;
-  sources?: { label: string; type: 'bill' | 'entity' | 'relationship' }[];
+  sources?: Source[];
 }
 
-const MOCK_RESPONSES: Record<string, Message> = {
-  'What bills affect transgender youth healthcare in Texas?': {
-    id: 0,
-    role: 'assistant',
-    text: 'Based on our knowledge graph, Texas currently has 3 active bills affecting transgender youth healthcare:\n\n• SB 14 — Restricts gender-affirming care for minors (Classified: Harmful, Confidence: 92%)\n• HB 1686 — Criminalizes providing puberty blockers to minors (Classified: Harmful, Confidence: 88%)\n• SB 1029 — Requires parental consent for mental health referrals (Classified: Harmful, Confidence: 76%)\n\nAll three bills were identified through entity extraction from legislative text and cross-referenced with healthcare policy nodes in the graph.',
-    sources: [
-      { label: 'SB 14', type: 'bill' },
-      { label: 'HB 1686', type: 'bill' },
-      { label: 'transgender youth', type: 'entity' },
-      { label: 'healthcare access → minors', type: 'relationship' },
-    ],
-  },
-  'Compare California and Florida LGBTQ+ protections': {
-    id: 0,
-    role: 'assistant',
-    text: 'Graph traversal across state policy nodes reveals significant divergence:\n\nCalifornia (Supportive)\n• 12 active protective bills\n• Employment, housing, and healthcare anti-discrimination\n• Gender-affirming care access protected\n\nFlorida (Harmful)\n• 8 active restrictive bills\n• "Don\'t Say Gay" education restrictions\n• Gender-affirming care bans for minors\n• Bathroom usage restrictions\n\nThe knowledge graph identifies 4 shared policy domains where these states take opposing legislative approaches.',
-    sources: [
-      { label: 'California', type: 'entity' },
-      { label: 'Florida', type: 'entity' },
-      { label: 'opposes → policy domain', type: 'relationship' },
-      { label: 'AB 1955', type: 'bill' },
-    ],
-  },
-  'Which states have anti-discrimination employment laws?': {
-    id: 0,
-    role: 'assistant',
-    text: 'Querying the knowledge graph for employment protection nodes:\n\n23 states + DC have comprehensive LGBTQ+ employment anti-discrimination laws. Key findings:\n\n• Full protection (sexual orientation + gender identity): CA, NY, WA, CO, IL, MA, and 17 others\n• Partial protection (sexual orientation only): WI, NH\n• No state-level protection: 25 states rely on federal Bostock v. Clayton County (2020)\n\nGraph analysis shows a strong correlation between states with employment protections and those with supportive healthcare legislation (r=0.82).',
-    sources: [
-      { label: 'employment protection', type: 'entity' },
-      { label: 'Bostock v. Clayton County', type: 'entity' },
-      { label: 'protects → employment', type: 'relationship' },
-    ],
-  },
-};
+function mapSources(
+  sources: { bill_number?: string; state?: string; title?: string }[] | undefined
+): Source[] {
+  if (!sources || sources.length === 0) return [];
+  const seen = new Set<string>();
+  const pills: Source[] = [];
+  for (const s of sources) {
+    const key = [s.state, s.bill_number].filter(Boolean).join(' ');
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      pills.push({ label: key, type: 'bill' });
+    }
+  }
+  return pills;
+}
 
 // ── Source pill ───────────────────────────────────
 function SourcePill({ label, type }: { label: string; type: 'bill' | 'entity' | 'relationship' }) {
@@ -90,6 +95,29 @@ function SourcePill({ label, type }: { label: string; type: 'bill' | 'entity' | 
   );
 }
 
+// ── Markdown styles ─────────────────────────────
+const markdownStyles = {
+  body: { fontSize: 14, lineHeight: 22, color: '#27272a', fontFamily: 'GreycliffCF_400Regular' },
+  heading2: {
+    fontSize: 15,
+    fontFamily: 'GreycliffCF_700Bold',
+    color: '#18181b',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  heading3: {
+    fontSize: 14,
+    fontFamily: 'GreycliffCF_600DemiBold',
+    color: '#18181b',
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  strong: { fontFamily: 'GreycliffCF_600DemiBold' },
+  bullet_list: { marginTop: 4 },
+  list_item: { marginBottom: 2 },
+  paragraph: { marginTop: 2, marginBottom: 2 },
+};
+
 // ── Chat bubble ──────────────────────────────────
 function ChatBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user';
@@ -103,10 +131,11 @@ function ChatBubble({ message }: { message: Message }) {
           borderWidth: isUser ? 0 : 1,
           borderColor: isUser ? undefined : 'rgba(228,228,231,0.8)',
         }}>
-        <Text
-          className={`font-sans text-sm leading-relaxed ${isUser ? 'text-white' : 'text-zinc-800'}`}>
-          {message.text}
-        </Text>
+        {isUser ? (
+          <Text className="font-sans text-sm leading-relaxed text-white">{message.text}</Text>
+        ) : (
+          <Markdown style={markdownStyles}>{message.text}</Markdown>
+        )}
       </View>
       {message.sources && message.sources.length > 0 && (
         <View className="mt-1.5 flex-row flex-wrap gap-1.5 px-1">
@@ -119,13 +148,36 @@ function ChatBubble({ message }: { message: Message }) {
   );
 }
 
-// ── Typing indicator ─────────────────────────────
+// ── Typing indicator (spinning + animated dots) ──
 function TypingIndicator() {
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const [dots, setDots] = useState('');
+
+  useEffect(() => {
+    const spin = Animated.loop(
+      Animated.timing(spinAnim, { toValue: 1, duration: 800, useNativeDriver: false })
+    );
+    spin.start();
+    const dotsInterval = setInterval(() => {
+      setDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
+    }, 400);
+    return () => { spin.stop(); clearInterval(dotsInterval); };
+  }, [spinAnim]);
+
+  const rotate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
     <View className="mb-3 items-start">
       <View className="flex-row items-center gap-2 rounded-2xl rounded-bl-md border border-zinc-200 bg-white px-4 py-3">
-        <Loader2 size={14} color="#71717a" />
-        <Text className="font-sans text-sm text-zinc-400">Querying knowledge graph...</Text>
+        <Animated.View style={{ transform: [{ rotate }] }}>
+          <Loader2 size={14} color="#71717a" />
+        </Animated.View>
+        <Text className="font-sans text-sm text-zinc-400">
+          Querying knowledge graph{dots}{'   '.slice(dots.length)}
+        </Text>
       </View>
     </View>
   );
@@ -139,7 +191,7 @@ export default function AskRoute() {
   const scrollRef = useRef<ScrollView>(null);
   const nextId = useRef(1);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
 
     const userMsg: Message = { id: nextId.current++, role: 'user', text: text.trim() };
@@ -149,21 +201,35 @@ export default function AskRoute() {
 
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
-    // Simulate RAG response
-    setTimeout(() => {
-      const mock = MOCK_RESPONSES[text.trim()];
-      const assistantMsg: Message = mock
-        ? { ...mock, id: nextId.current++ }
-        : {
-            id: nextId.current++,
-            role: 'assistant',
-            text: `I searched the knowledge graph for "${text.trim()}" but this query isn't in the demo dataset yet. In production, this would traverse bill entities, policy relationships, and state nodes to generate a comprehensive answer.`,
-            sources: [{ label: 'knowledge graph', type: 'entity' }],
-          };
+    try {
+      const headers: Record<string, string> = { accept: 'application/json' };
+      if (API_KEY) headers['x-api-key'] = API_KEY;
+      const res = await fetch(
+        `${API_URL}/bills/rag?query=${encodeURIComponent(text.trim())}&top=10`,
+        { headers }
+      );
+      const data = await res.json();
+
+      const assistantMsg: Message = {
+        id: nextId.current++,
+        role: 'assistant',
+        text: data.answer || 'No answer returned.',
+        sources: mapSources(data.sources),
+      };
       setMessages((prev) => [...prev, assistantMsg]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextId.current++,
+          role: 'assistant',
+          text: 'Something went wrong. Please try again.',
+        },
+      ]);
+    } finally {
       setIsTyping(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    }, 1500);
+    }
   };
 
   const isEmpty = messages.length === 0;
@@ -219,13 +285,46 @@ export default function AskRoute() {
                           onPress={() => sendMessage(q)}
                           className="flex-row items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2.5 active:bg-gray-100">
                           <MessageCircleMore size={14} color="#3b82f6" />
-                          <Text className="flex-1 font-sans text-[13px] text-gray-700">{q}</Text>
+                          <Text className={`flex-1 font-sans text-gray-700 ${Platform.OS === 'web' ? 'text-[13px]' : 'text-[12px]'}`}>{q}</Text>
                         </Pressable>
                       ))}
                     </View>
                   </View>
 
-                  {/* Graph info */}
+                  {/* Search tips */}
+                  <View
+                    className="w-full rounded-xl p-3.5"
+                    style={{
+                      backgroundColor: 'rgba(59,130,246,0.05)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(59,130,246,0.1)',
+                    }}>
+                    <View className="flex-row items-start gap-2.5">
+                      <Database size={14} color="#3b82f6" style={{ marginTop: 2 }} />
+                      <View className="flex-1">
+                        <Text className="font-sans-medium text-sm text-zinc-700">Search tips</Text>
+                        <Text className="mt-0.5 font-sans text-xs leading-5 text-zinc-600">
+                          For better results, try narrowing your search with a state, topic, year,
+                          or status — e.g. "supportive healthcare bills that are active in Texas in
+                          2025"
+                        </Text>
+                      </View>
+                    </View>
+                    <View className="mt-2.5 flex-row flex-wrap gap-1.5 pl-6">
+                      {TOPICS.map((t) => (
+                        <View
+                          key={t}
+                          className="rounded-full px-2 py-0.5"
+                          style={{ backgroundColor: 'rgba(59,130,246,0.1)' }}>
+                          <Text className="font-sans text-[10px]" style={{ color: '#3b82f6' }}>
+                            {t.replace(/_/g, ' ')}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* How it works */}
                   <View
                     className="w-full flex-row items-start gap-2.5 rounded-xl p-3.5"
                     style={{
@@ -233,7 +332,7 @@ export default function AskRoute() {
                       borderWidth: 1,
                       borderColor: 'rgba(59,130,246,0.1)',
                     }}>
-                    <Database size={14} color="#3b82f6" style={{ marginTop: 2 }} />
+                    <Lightbulb size={14} color="#3b82f6" style={{ marginTop: 2 }} />
                     <View className="flex-1">
                       <Text className="font-sans-medium text-sm text-zinc-700">How it works</Text>
                       <Text className="mt-0.5 font-sans text-xs leading-5 text-zinc-600">
@@ -264,9 +363,14 @@ export default function AskRoute() {
                   onChangeText={setInput}
                   placeholder="Ask about bills, rights, protections..."
                   placeholderTextColor="#a1a1aa"
+                  selectionColor="#3b82f6"
                   multiline
                   className="max-h-[100px] flex-1 font-sans text-sm text-zinc-800"
-                  style={{ paddingTop: 4, paddingBottom: 4 }}
+                  style={{
+                    paddingTop: 4,
+                    paddingBottom: 4,
+                    ...Platform.select({ web: { outlineStyle: 'none' } as any }),
+                  }}
                   onSubmitEditing={() => sendMessage(input)}
                   returnKeyType="send"
                   blurOnSubmit

@@ -8,14 +8,14 @@ import { MaxWidth, screenGutterClass } from '@/components/ui/screen-layout';
 
 export default function AppShell() {
   return (
-    <View className="min-h-screen flex-1 bg-app-bg">
+    <View className="flex-1 bg-app-bg" style={{ height: '100vh', overflow: 'hidden' } as any}>
       <View className="w-full bg-app-bg">
         <MaxWidth>
           <Header />
         </MaxWidth>
       </View>
 
-      <View className={twMerge('min-h-0 w-full flex-1 bg-app-bg pb-10', screenGutterClass)}>
+      <View className={twMerge('min-h-0 w-full flex-1 overflow-auto bg-app-bg pb-10', screenGutterClass)} style={{ WebkitOverflowScrolling: 'touch' } as any}>
         <MaxWidth className="min-h-0 flex-1">
           <Slot />
         </MaxWidth>

@@ -16,7 +16,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="ArcRadius - Policy Navigator" />
         <meta name="twitter:description" content="Track LGBTQ+ legislation across all 50 states. Understand bills, take action, and stay informed." />
-        <meta name="twitter:image" content="https://arcradius.netlify.app/thumbnail-tiny.png" />
+        <meta name="twitter:image" content="https://arcradius.netlify.app/og-thumbnail.png" />
 
         {/* OG tags (property=) are injected by scripts/inject-og-tags.js post-build */}
 

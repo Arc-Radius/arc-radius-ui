@@ -1,12 +1,15 @@
 {
   "expo": {
-    "name": "arc-radius-ui",
+    "name": "ArcRadius - Policy Navigator",
     "slug": "arc-radius-ui",
     "scheme": "arc-radius",
     "version": "1.0.0",
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "ArcRadius - Policy Navigator",
+      "description": "Track LGBTQ+ legislation across all 50 states. Understand bills, take action, and stay informed.",
+      "themeColor": "#18181b"
     },
     "experiments": {
       "tsconfigPaths": true

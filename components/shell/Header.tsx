@@ -81,17 +81,22 @@ export function Header() {
         </View>
       </View>
       {/* Right: About us */}
-      {!isCompact && (
-        <Pressable
-          onPress={() => Linking.openURL('https://ambroquach29.github.io/spring26-mids-capstone/#about')}
-          className="flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:opacity-70"
-          style={{ borderWidth: 1, borderColor: 'rgba(59,130,246,0.25)' }}>
-          <Compass size={13} color="#3b82f6" />
-          <Text className="font-sans-medium text-[12px]" style={{ color: '#3b82f6' }}>
-            About
-          </Text>
-        </Pressable>
-      )}
+      <Pressable
+        onPress={() => Linking.openURL('https://ambroquach29.github.io/spring26-mids-capstone/#about')}
+        className="flex-row items-center gap-1 rounded-lg active:opacity-70"
+        style={{
+          paddingHorizontal: isCompact ? 8 : 12,
+          paddingVertical: isCompact ? 4 : 6,
+          borderWidth: 1,
+          borderColor: 'rgba(59,130,246,0.25)',
+        }}>
+        <Compass size={isCompact ? 11 : 13} color="#3b82f6" />
+        <Text
+          className="font-sans-medium"
+          style={{ color: '#3b82f6', fontSize: isCompact ? 10 : 12 }}>
+          About
+        </Text>
+      </Pressable>
     </View>
   );
 }

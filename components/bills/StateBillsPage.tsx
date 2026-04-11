@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Modal,
@@ -7,20 +7,22 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Search } from 'lucide-react-native';
 
-import { BillFilterSidebar } from './BillFilterSidebar';
+import { BillFilterSidebar, YearFilterSliders } from './BillFilterSidebar';
 import { StateBillCard } from './StateBillCard';
 import { StateDashboard } from './StateDashboard';
 import { StateDropdown } from '@/components/shared/StateDropdown';
 import { StanceLegend } from './StanceLegend';
 import { ScreenContent } from '@/components/ui/screen-layout';
 import type { Bill, BillFilters, BillTab, SortOrder } from '@/static/billConstants';
-import { STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
+import { ACCENT_BLUE, STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
 import { getBillsForState } from '@/static/bills';
 import type { BillDetail } from '@/static/bills';
 import type { LegislativeStatus } from '@/static/states';
@@ -28,6 +30,317 @@ import type { LegislativeStatus } from '@/static/states';
 // ── Constants ────────────────────────────────────
 
 const STANCES: LegislativeStatus[] = ['supportive', 'harmful', 'mixed'];
+
+// ── Connected filter bar section (Airbnb-style) ──
+function FilterBarSection({
+  label,
+  value,
+  active,
+  items,
+  onToggle,
+  onReset,
+}: {
+  label: string;
+  value: string;
+  active: boolean;
+  items: { key: string; label: string; count: number; checked: boolean; dot?: string }[];
+  onToggle: (key: string) => void;
+  onReset: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <View style={{ position: 'relative', zIndex: open ? 50 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="px-3 py-1 active:bg-zinc-50"
+        style={{ backgroundColor: active ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
+        <View className="flex-row items-center gap-1">
+          <Text className="font-sans-medium text-[9.5px] uppercase tracking-wider text-zinc-600">{label}</Text>
+          <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{open ? '▴' : '▾'}</Text>
+        </View>
+        <Text
+          className="font-sans text-[11px]"
+          style={{ color: active ? ACCENT_BLUE : '#a1a1aa' }}
+          numberOfLines={1}>
+          {value}
+        </Text>
+      </Pressable>
+      {open && (
+        <>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={{ position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' } as any}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: 4,
+              minWidth: 160,
+              backgroundColor: '#fff',
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#e4e4e7',
+              paddingVertical: 6,
+              zIndex: 50,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 8,
+            }}>
+            {active && (
+              <Pressable onPress={() => { onReset(); setOpen(false); }} style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                <Text className="font-sans text-[10px] text-blue-500">Select all</Text>
+              </Pressable>
+            )}
+            <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+            {items.map((item) => (
+              <Pressable
+                key={item.key}
+                onPress={() => onToggle(item.key)}
+                className="flex-row items-center gap-2 active:bg-zinc-50"
+                style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{
+                  width: 14, height: 14, borderRadius: 3,
+                  borderWidth: 1.5,
+                  borderColor: item.checked ? (item.dot ?? ACCENT_BLUE) : '#d4d4d8',
+                  backgroundColor: item.checked ? (item.dot ?? ACCENT_BLUE) : 'transparent',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {item.checked && <Text style={{ fontSize: 8, color: '#fff', marginTop: -1 }}>✓</Text>}
+                </View>
+                {item.dot && !item.checked && (
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: item.dot }} />
+                )}
+                <Text className="flex-1 font-sans text-[11px] text-zinc-700">{item.label}</Text>
+                <Text className="font-sans text-[10px] text-zinc-400">{item.count}</Text>
+              </Pressable>
+            ))}
+            </ScrollView>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+// ── Year filter bar section with slider dropdown ──
+function FilterBarYearSection({
+  filters,
+  availableYears,
+  billCountByYear,
+  onSetYearRange,
+}: {
+  filters: BillFilters;
+  availableYears: number[];
+  billCountByYear: Record<number, number>;
+  onSetYearRange: (start: number, end: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const sorted = [...availableYears].sort((a, b) => a - b);
+  const allSelected = filters.years.size === 0 || filters.years.size === availableYears.length;
+  const minY = allSelected ? sorted[0] : Math.min(...[...filters.years]);
+  const maxY = allSelected ? sorted[sorted.length - 1] : Math.max(...[...filters.years]);
+  const value = allSelected ? 'All' : (minY === maxY ? String(minY) : `${minY}–${maxY}`);
+  const active = !allSelected;
+
+  return (
+    <View style={{ position: 'relative', zIndex: open ? 50 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="px-3 py-1 active:bg-zinc-50"
+        style={{ backgroundColor: active ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
+        <View className="flex-row items-center gap-1">
+          <Text className="font-sans-medium tracking-wider text-[10px] text-zinc-600">YEAR</Text>
+          <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{open ? '▴' : '▾'}</Text>
+        </View>
+        <Text className="font-sans text-[11px]" style={{ color: active ? ACCENT_BLUE : '#a1a1aa' }}>
+          {value}
+        </Text>
+      </Pressable>
+      {open && (
+        <>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={{ position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' } as any}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: 4,
+              width: 220,
+              backgroundColor: '#fff',
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#e4e4e7',
+              padding: 12,
+              zIndex: 50,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 8,
+            }}>
+            <View style={{ cursor: 'pointer' } as any}>
+              <YearFilterSliders
+                availableYears={availableYears}
+                selectedYears={filters.years}
+                billCountByYear={billCountByYear}
+                onSetYearRange={onSetYearRange}
+              />
+            </View>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+// ── Category filter bar section with search ──
+function FilterBarCategorySection({
+  filters,
+  availableCategories,
+  billCountByCategory,
+  onToggleCategory,
+  onPickCategoryFromSearch,
+}: {
+  filters: BillFilters;
+  availableCategories: string[];
+  billCountByCategory: Record<string, number>;
+  onToggleCategory: (c: string) => void;
+  onPickCategoryFromSearch: (c: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const allSelected = filters.categories.size === 0 || filters.categories.size === availableCategories.length;
+  const active = !allSelected;
+  const value = allSelected ? 'All' : `${filters.categories.size} of ${availableCategories.length}`;
+
+  const applyFirstMatch = useCallback(() => {
+    if (!search.trim()) return;
+    const q = search.toLowerCase().trim();
+    const first = availableCategories.find((c) => c.replace(/_/g, ' ').toLowerCase().includes(q));
+    if (first) {
+      onPickCategoryFromSearch(first);
+      setSearch('');
+      setOpen(false);
+    }
+  }, [search, availableCategories, onPickCategoryFromSearch]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return availableCategories;
+    const q = search.toLowerCase().trim();
+    return availableCategories.filter((c) => c.replace(/_/g, ' ').toLowerCase().includes(q));
+  }, [availableCategories, search]);
+
+  return (
+    <View style={{ position: 'relative', zIndex: open ? 50 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="px-3 py-1 active:bg-zinc-50"
+        style={{ backgroundColor: active ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
+        <View className="flex-row items-center gap-1">
+          <Text className="font-sans-medium text-[9.5px] uppercase tracking-wider text-zinc-600">Category</Text>
+          <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{open ? '▴' : '▾'}</Text>
+        </View>
+        <Text className="font-sans text-[11px]" style={{ color: active ? ACCENT_BLUE : '#a1a1aa' }}>
+          {value}
+        </Text>
+      </Pressable>
+      {open && (
+        <>
+          <Pressable
+            onPress={() => { setOpen(false); setSearch(''); }}
+            style={{ position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' } as any}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: 4,
+              width: 200,
+              backgroundColor: '#fff',
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#e4e4e7',
+              paddingVertical: 6,
+              zIndex: 50,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 8,
+            }}>
+            {/* Search */}
+            <View style={{ paddingHorizontal: 10, paddingBottom: 4 }}>
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                onSubmitEditing={applyFirstMatch}
+                returnKeyType="search"
+                placeholder="Search..."
+                placeholderTextColor="#a1a1aa"
+                className="font-sans text-[11px] text-zinc-800"
+                style={{
+                  height: 26,
+                  borderWidth: 1,
+                  borderColor: '#e4e4e7',
+                  borderRadius: 6,
+                  paddingHorizontal: 8,
+                  ...({ outlineStyle: 'none' } as any),
+                }}
+              />
+            </View>
+            {/* Select all */}
+            {active && (
+              <Pressable
+                onPress={() => { for (const c of availableCategories) { if (!filters.categories.has(c)) onToggleCategory(c); } setOpen(false); setSearch(''); }}
+                style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                <Text className="font-sans text-[10px] text-blue-500">Select all</Text>
+              </Pressable>
+            )}
+            {/* Items */}
+            <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+              {filtered.map((c) => (
+                <Pressable
+                  key={c}
+                  onPress={() => onToggleCategory(c)}
+                  className="flex-row items-center gap-2 active:bg-zinc-50"
+                  style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                  <View style={{
+                    width: 14, height: 14, borderRadius: 3,
+                    borderWidth: 1.5,
+                    borderColor: (filters.categories.size === 0 || filters.categories.has(c)) ? ACCENT_BLUE : '#d4d4d8',
+                    backgroundColor: (filters.categories.size === 0 || filters.categories.has(c)) ? ACCENT_BLUE : 'transparent',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {(filters.categories.size === 0 || filters.categories.has(c)) && (
+                      <Text style={{ fontSize: 8, color: '#fff', marginTop: -1 }}>✓</Text>
+                    )}
+                  </View>
+                  <Text className="flex-1 font-sans text-[11px] text-zinc-700">{c.replace(/_/g, ' ')}</Text>
+                  <Text className="font-sans text-[10px] text-zinc-400">{billCountByCategory[c] ?? 0}</Text>
+                </Pressable>
+              ))}
+              {filtered.length === 0 && (
+                <Text className="font-sans text-[11px] text-zinc-400" style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                  No matches
+                </Text>
+              )}
+            </ScrollView>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
 
 const TAB_CONFIG: { key: BillTab; title: string; subtitle: string }[] = [
   { key: 'active', title: 'Proposed', subtitle: 'Bills' },
@@ -62,13 +375,18 @@ function mapBillDetailToBill(d: BillDetail, index: number): Bill {
 
 function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const [tab, setTab] = useState<BillTab>('active');
-  const [filters, setFilters] = useState<BillFilters>({
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<BillFilters>(() => ({
     stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']),
-    statuses: new Set<string>(),
-    categories: new Set<string>(),
+    statuses: new Set(
+      [...new Set(activeBills.map((b) => b.status_desc).filter(Boolean))].sort() as string[]
+    ),
+    categories: new Set(
+      [...new Set(activeBills.flatMap((b) => b.issue_categories ?? []))].sort()
+    ),
     years: new Set<number>(),
     sort: 'newest',
-  });
+  }));
 
   const sourceBills = tab === 'active' ? activeBills : passedBills;
 
@@ -88,8 +406,8 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     [sourceBills]
   );
 
+  /** Like `stances`: explicit selected set; prune stale keys, fall back to all if none left. */
   const activeCategories = useMemo(() => {
-    if (filters.categories.size === 0) return new Set(availableCategories);
     const valid = new Set([...filters.categories].filter((c) => availableCategories.includes(c)));
     return valid.size === 0 ? new Set(availableCategories) : valid;
   }, [filters.categories, availableCategories]);
@@ -101,25 +419,29 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   }, [filters.years, availableYears]);
 
   const activeStatuses = useMemo(() => {
-    if (filters.statuses.size === 0) return new Set(availableStatuses);
     const valid = new Set([...filters.statuses].filter((s) => availableStatuses.includes(s)));
     return valid.size === 0 ? new Set(availableStatuses) : valid;
   }, [filters.statuses, availableStatuses]);
 
   const filteredBills = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     const f = sourceBills.filter(
       (b) =>
         filters.stances.has(b.stance ?? 'mixed') &&
         activeStatuses.has(b.status_desc || '') &&
         (b.issue_categories ?? []).some((c) => activeCategories.has(c)) &&
-        activeYears.has(b.year ?? new Date().getFullYear())
+        activeYears.has(b.year ?? new Date().getFullYear()) &&
+        (!q ||
+          (b.title ?? '').toLowerCase().includes(q) ||
+          (b.description ?? '').toLowerCase().includes(q) ||
+          (b.bill_number ?? '').toLowerCase().includes(q))
     );
     return f.sort((a, b) => {
       const da = new Date(a.last_action_date ?? 0).getTime();
       const db = new Date(b.last_action_date ?? 0).getTime();
       return filters.sort === 'newest' ? db - da : da - db;
     });
-  }, [sourceBills, filters.stances, activeStatuses, activeCategories, activeYears, filters.sort]);
+  }, [sourceBills, filters.stances, activeStatuses, activeCategories, activeYears, filters.sort, searchQuery]);
 
   const toggleStance = useCallback((stance: LegislativeStatus) => {
     setFilters((prev) => {
@@ -134,70 +456,49 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     });
   }, []);
 
-  const toggleStatus = useCallback(
-    (status: string) => {
-      setFilters((prev) => {
-        if (prev.statuses.size === 0) {
-          if (availableStatuses.length <= 1) return prev;
-          return { ...prev, statuses: new Set(availableStatuses.filter((s) => s !== status)) };
-        }
-        const next = new Set(prev.statuses);
-        if (next.has(status)) {
-          if (next.size <= 1) return prev;
-          next.delete(status);
-        } else {
-          next.add(status);
-        }
-        if (next.size === availableStatuses.length) {
-          return { ...prev, statuses: new Set<string>() };
-        }
-        return { ...prev, statuses: next };
-      });
-    },
-    [availableStatuses]
-  );
+  /** Same rules as `toggleStance`: toggle membership; cannot remove the last selected option. */
+  const toggleStatus = useCallback((status: string) => {
+    setFilters((prev) => {
+      const next = new Set(prev.statuses);
+      if (next.has(status)) {
+        if (next.size <= 1) return prev;
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return { ...prev, statuses: next };
+    });
+  }, []);
 
-  const toggleCategory = useCallback(
-    (cat: string) => {
-      setFilters((prev) => {
-        if (prev.categories.size === 0) {
-          if (availableCategories.length <= 1) return prev;
-          return { ...prev, categories: new Set(availableCategories.filter((c) => c !== cat)) };
-        }
-        const next = new Set(prev.categories);
-        if (next.has(cat)) {
-          if (next.size <= 1) return prev;
-          next.delete(cat);
-        } else {
-          next.add(cat);
-        }
-        if (next.size === availableCategories.length) {
-          return { ...prev, categories: new Set<string>() };
-        }
-        return { ...prev, categories: next };
-      });
-    },
-    [availableCategories]
-  );
+  const toggleCategory = useCallback((cat: string) => {
+    setFilters((prev) => {
+      const next = new Set(prev.categories);
+      if (next.has(cat)) {
+        if (next.size <= 1) return prev;
+        next.delete(cat);
+      } else {
+        next.add(cat);
+      }
+      return { ...prev, categories: next };
+    });
+  }, []);
 
-  const toggleYear = useCallback(
-    (year: number) => {
+  /** Category search Enter: narrow to a single category (sidebar). */
+  const pickCategoryFromSearch = useCallback((cat: string) => {
+    setFilters((prev) => ({ ...prev, categories: new Set([cat]) }));
+  }, []);
+
+  const setYearRange = useCallback(
+    (start: number, end: number) => {
+      const sorted = [...availableYears].sort((a, b) => a - b);
+      const lo = Math.min(start, end);
+      const hi = Math.max(start, end);
+      const inRange = sorted.filter((y) => y >= lo && y <= hi);
       setFilters((prev) => {
-        if (prev.years.size === 0) {
-          if (availableYears.length <= 1) return prev;
-          return { ...prev, years: new Set(availableYears.filter((y) => y !== year)) };
-        }
-        const next = new Set(prev.years);
-        if (next.has(year)) {
-          if (next.size <= 1) return prev;
-          next.delete(year);
-        } else {
-          next.add(year);
-        }
-        if (next.size === availableYears.length) {
+        if (inRange.length === 0 || inRange.length === sorted.length) {
           return { ...prev, years: new Set<number>() };
         }
-        return { ...prev, years: next };
+        return { ...prev, years: new Set(inRange) };
       });
     },
     [availableYears]
@@ -207,30 +508,67 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     setFilters((prev) => ({ ...prev, sort }));
   }, []);
 
-  const switchTab = useCallback((newTab: BillTab) => {
-    setTab(newTab);
-    setFilters((prev) => ({ ...prev, statuses: new Set<string>(), categories: new Set<string>(), years: new Set<number>() }));
-  }, []);
+  const switchTab = useCallback(
+    (newTab: BillTab) => {
+      setTab(newTab);
+      setSearchQuery('');
+      const bills = newTab === 'active' ? activeBills : passedBills;
+      const nextStatuses = [...new Set(bills.map((b) => b.status_desc).filter(Boolean))].sort() as string[];
+      const nextCategories = [...new Set(bills.flatMap((b) => b.issue_categories ?? []))].sort();
+      setFilters((prev) => ({
+        ...prev,
+        statuses: new Set(nextStatuses),
+        categories: new Set(nextCategories),
+        years: new Set<number>(),
+      }));
+    },
+    [activeBills, passedBills]
+  );
+
+  /** When options load or change, prune invalid keys; if none left, default to all (stance-style full set). */
+  useLayoutEffect(() => {
+    setFilters((prev) => {
+      if (availableStatuses.length === 0 && availableCategories.length === 0) {
+        if (prev.statuses.size === 0 && prev.categories.size === 0) return prev;
+        return { ...prev, statuses: new Set<string>(), categories: new Set<string>() };
+      }
+      const prunedS = new Set([...prev.statuses].filter((s) => availableStatuses.includes(s)));
+      const prunedC = new Set([...prev.categories].filter((c) => availableCategories.includes(c)));
+      const nextS = prunedS.size > 0 ? prunedS : new Set(availableStatuses);
+      const nextC = prunedC.size > 0 ? prunedC : new Set(availableCategories);
+      if (
+        nextS.size === prev.statuses.size &&
+        [...nextS].every((x) => prev.statuses.has(x)) &&
+        nextC.size === prev.categories.size &&
+        [...nextC].every((x) => prev.categories.has(x))
+      ) {
+        return prev;
+      }
+      return { ...prev, statuses: nextS, categories: nextC };
+    });
+  }, [availableStatuses, availableCategories]);
 
   const resetAll = useCallback(() => {
     setFilters({
       stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']),
-      statuses: new Set<string>(),
-      categories: new Set<string>(),
+      statuses: new Set(availableStatuses),
+      categories: new Set(availableCategories),
       years: new Set<number>(),
       sort: 'newest',
     });
-  }, []);
+  }, [availableStatuses, availableCategories]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.stances.size < 3) count++;
-    if (filters.statuses.size > 0) count++;
-    if (filters.categories.size > 0) count++;
+    if (availableStatuses.length > 0 && filters.statuses.size < availableStatuses.length) count++;
+    if (availableCategories.length > 0 && filters.categories.size < availableCategories.length) {
+      count++;
+    }
     if (filters.years.size > 0) count++;
     if (filters.sort !== 'newest') count++;
     return count;
-  }, [filters]);
+  }, [filters, availableStatuses.length, availableCategories.length]);
 
   return {
     tab,
@@ -245,10 +583,13 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     availableStatuses,
     filteredBills,
     sourceBills,
+    searchQuery,
+    setSearchQuery,
     toggleStance,
     toggleStatus,
     toggleCategory,
-    toggleYear,
+    pickCategoryFromSearch,
+    setYearRange,
     setSort,
     resetAll,
   };
@@ -283,7 +624,7 @@ function FilterBottomSheet({
   onToggleStance,
   onToggleStatus,
   onToggleCategory,
-  onToggleYear,
+  onSetYearRange,
   onSetSort,
   onReset,
 }: {
@@ -303,7 +644,7 @@ function FilterBottomSheet({
   onToggleStance: (s: LegislativeStatus) => void;
   onToggleStatus: (s: string) => void;
   onToggleCategory: (c: string) => void;
-  onToggleYear: (y: number) => void;
+  onSetYearRange: (start: number, end: number) => void;
   onSetSort: (s: SortOrder) => void;
   onReset: () => void;
 }) {
@@ -325,27 +666,20 @@ function FilterBottomSheet({
             </View>
 
             {/* Year */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Year
             </Text>
-            <View className="mb-5 flex-row flex-wrap gap-2">
-              {availableYears.map((y) => {
-                const isOn = filters.years.size === 0 || filters.years.has(y);
-                return (
-                  <Pressable
-                    key={y}
-                    onPress={() => onToggleYear(y)}
-                    style={[chipStyles.chip, isOn && chipStyles.chipActive]}>
-                    <Text style={[chipStyles.chipText, isOn && chipStyles.chipTextActive]}>
-                      {y} · {billCountByYear[y] ?? 0}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+            <View className="mb-5">
+              <YearFilterSliders
+                availableYears={availableYears}
+                selectedYears={filters.years}
+                billCountByYear={billCountByYear}
+                onSetYearRange={onSetYearRange}
+              />
             </View>
 
             {/* Stance */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Stance
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
@@ -383,7 +717,7 @@ function FilterBottomSheet({
             </View>
 
             {/* Status */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Status
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
@@ -403,7 +737,7 @@ function FilterBottomSheet({
             </View>
 
             {/* Category */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Category
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
@@ -423,7 +757,7 @@ function FilterBottomSheet({
             </View>
 
             {/* Sort */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Sort
             </Text>
             <View className="mb-5 flex-row gap-2">
@@ -550,10 +884,13 @@ export function StateBillsPage({
     availableStatuses,
     filteredBills,
     sourceBills,
+    searchQuery,
+    setSearchQuery,
     toggleStance,
     toggleStatus,
     toggleCategory,
-    toggleYear,
+    pickCategoryFromSearch,
+    setYearRange,
     setSort,
     resetAll,
   } = useBillFilters(activeBills, passedBills);
@@ -654,10 +991,14 @@ export function StateBillsPage({
     onToggleStance: toggleStance,
     onToggleStatus: toggleStatus,
     onToggleCategory: toggleCategory,
-    onToggleYear: toggleYear,
+    onPickCategoryFromSearch: pickCategoryFromSearch,
+    onSetYearRange: setYearRange,
     onSetSort: setSort,
     onReset: resetAll,
   };
+
+  const { onPickCategoryFromSearch: _omitCategorySearchFromSheet, ...filterSheetProps } =
+    sidebarProps;
 
   return (
     <SafeAreaView className="flex-1 bg-app-bg" edges={[]}>
@@ -684,7 +1025,7 @@ export function StateBillsPage({
           </View>
 
           {/* Main card: flat border like StateDashboard (no elevation shadow) */}
-          <View className="mt-3 overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <View className="mt-3 rounded-xl border border-zinc-200 bg-white">
             <View className="px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-3.5">
               {/* Active / Passed segmented control */}
               <View
@@ -744,19 +1085,128 @@ export function StateBillsPage({
               {/* Legend */}
               <StanceLegend />
 
-              {/* Main: list + sidebar (desktop) or list only (mobile) */}
-              <View className={isWide ? 'flex-row gap-5' : ''}>
-                {/* Bill list */}
+              {/* Main content */}
+              <View>
                 <View className="flex-1 px-0 pt-2.5">
-                  <Text className="mb-2 font-sans text-[11px] leading-tight text-zinc-500">
-                    {filteredBills.length} bill{filteredBills.length !== 1 ? 's' : ''}
-                    {filteredBills.length > 0 ? (
-                      <Text className="font-sans text-[11px] text-zinc-400">
-                        {' · '}Tap a card for the full bill
-                      </Text>
-                    ) : null}
-                  </Text>
-                  <View className="gap-2.5">
+                  {/* Bill count + filters row */}
+                  <View className="mb-2 flex-row items-center justify-between gap-2" style={{ zIndex: 50, position: 'relative' } as any}>
+                    <Text className="shrink-0 font-sans text-[11px] leading-tight text-zinc-500">
+                      {filteredBills.length} bill{filteredBills.length !== 1 ? 's' : ''}
+                      {filteredBills.length > 0 ? (
+                        <Text className="font-sans text-[11px] text-zinc-400">
+                          {' · '}Tap a card for bill details
+                        </Text>
+                      ) : null}
+                    </Text>
+
+                    {/* Web: connected filter bar */}
+                    {isWide && (
+                      <View className="flex-row items-stretch overflow-visible rounded-xl border border-zinc-200/80 bg-white" style={{ zIndex: 50, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                        {activeFilterCount > 0 && (
+                          <>
+                            <Pressable
+                              onPress={resetAll}
+                              className="items-center justify-center px-2.5 active:opacity-70"
+                              accessibilityLabel="Reset all filters">
+                              <Text className="font-sans-bold text-[11px] text-zinc-400">✕</Text>
+                            </Pressable>
+                            <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                          </>
+                        )}
+                        <FilterBarYearSection
+                          filters={filters}
+                          availableYears={availableYears}
+                          billCountByYear={billCountByYear}
+                          onSetYearRange={setYearRange}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <FilterBarSection
+                          label="Stance"
+                          value={filters.stances.size === STANCES.length ? 'All' : `${filters.stances.size} of ${STANCES.length}`}
+                          active={filters.stances.size < STANCES.length}
+                          items={STANCES.map((s) => ({ key: s, label: STANCE_LABEL[s], count: billCountByStance[s] ?? 0, checked: filters.stances.has(s), dot: STANCE_CHECK_BG[s] }))}
+                          onToggle={(key) => toggleStance(key as LegislativeStatus)}
+                          onReset={() => { for (const s of STANCES) { if (!filters.stances.has(s)) toggleStance(s); } }}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <FilterBarSection
+                          label="Status"
+                          value={filters.statuses.size === 0 || filters.statuses.size === availableStatuses.length ? 'All' : `${filters.statuses.size} of ${availableStatuses.length}`}
+                          active={filters.statuses.size > 0 && filters.statuses.size < availableStatuses.length && availableStatuses.length > 1}
+                          items={availableStatuses.map((s) => ({ key: s, label: s, count: billCountByStatus[s] ?? 0, checked: filters.statuses.size === 0 || filters.statuses.has(s) }))}
+                          onToggle={(key) => toggleStatus(key)}
+                          onReset={() => { for (const s of availableStatuses) { if (!filters.statuses.has(s)) toggleStatus(s); } }}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <FilterBarCategorySection
+                          filters={filters}
+                          availableCategories={availableCategories}
+                          billCountByCategory={billCountByCategory}
+                          onToggleCategory={toggleCategory}
+                          onPickCategoryFromSearch={pickCategoryFromSearch}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <Pressable
+                          onPress={() => setSort(filters.sort === 'newest' ? 'oldest' : 'newest')}
+                          className="justify-center px-3 py-1 active:bg-zinc-50"
+                          style={{ width: 65 }}>
+                          <View className="flex-row items-center gap-1">
+                            <Text className="font-sans-medium text-[9.5px] uppercase tracking-wider text-zinc-600">Sort</Text>
+                            <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{filters.sort === 'newest' ? '▾' : '▴'}</Text>
+                          </View>
+                          <Text className="font-sans text-[11px] text-zinc-400">
+                            {filters.sort === 'newest' ? 'Newest' : 'Oldest'}
+                          </Text>
+                        </Pressable>
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <View className="flex-row items-center" style={{ width: 120 }}>
+                          <View style={{ paddingLeft: 12 }}>
+                            <Search size={13} color="#a1a1aa" />
+                          </View>
+                          <TextInput
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="Search bills..."
+                            placeholderTextColor="#a1a1aa"
+                            className="flex-1 px-2 font-sans text-[12px] text-zinc-800"
+                            style={{ height: '100%', ...({ outlineStyle: 'none' } as any) } as any}
+                          />
+                          {searchQuery.length > 0 && (
+                            <Pressable onPress={() => setSearchQuery('')} className="pr-3 active:opacity-70">
+                              <Text className="font-sans text-[12px] text-zinc-400">✕</Text>
+                            </Pressable>
+                          )}
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Native: search box */}
+                    {!isWide && (
+                      <View className="shrink flex-row items-center rounded-lg border border-zinc-200 bg-white"
+                        style={{ height: 28, minWidth: Platform.OS === 'web' ? 90 : 140, maxWidth: Platform.OS === 'web' ? 140 : 200 }}>
+                        <View style={{ paddingLeft: 8 }}>
+                          <Search size={12} color="#a1a1aa" />
+                        </View>
+                        <TextInput
+                          value={searchQuery}
+                          onChangeText={setSearchQuery}
+                          placeholder="Search bills..."
+                          placeholderTextColor="#a1a1aa"
+                          className="flex-1 px-1.5 font-sans text-[11px] text-zinc-800"
+                          style={{ height: 28 }}
+                        />
+                        {searchQuery.length > 0 && (
+                          <Pressable
+                            onPress={() => setSearchQuery('')}
+                            className="items-center justify-center pr-2 active:opacity-70"
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                            <Text className="font-sans text-[11px] text-zinc-400">✕</Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                  <View className="gap-2.5" style={{ zIndex: 1, position: 'relative' } as any}>
                     {tabError ? (
                       <Text className="py-8 text-center font-sans text-sm text-zinc-400">
                         {tabError}
@@ -797,8 +1247,6 @@ export function StateBillsPage({
                   </View>
                 </View>
 
-                {/* Desktop: sidebar */}
-                {isWide && <BillFilterSidebar {...sidebarProps} />}
               </View>
             </View>
           </View>
@@ -833,7 +1281,7 @@ export function StateBillsPage({
         <FilterBottomSheet
           visible={filterSheetOpen}
           onClose={() => setFilterSheetOpen(false)}
-          {...sidebarProps}
+          {...filterSheetProps}
         />
       )}
     </SafeAreaView>
@@ -877,7 +1325,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   fab: {
-    backgroundColor: 'rgba(24,24,27,0.88)',
+    backgroundColor: 'rgba(24,24,27,0.90)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -901,7 +1349,7 @@ const chipStyles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   chipActive: {
-    backgroundColor: 'rgba(24,24,27,0.88)',
+    backgroundColor: 'rgba(24,24,27,0.95)',
     borderColor: '#18181b',
   },
   chipText: {

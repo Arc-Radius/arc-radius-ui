@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View, useWindowDimensions } from 'react-native';
-import { Info } from 'lucide-react-native';
+import { ChevronDown } from 'lucide-react-native';
 
 function AnimatedArrowDown() {
   const bounce = useRef(new Animated.Value(0)).current;
@@ -88,7 +88,8 @@ export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: Her
         {/* CTA button */}
         <Pressable
           onPress={onFindState}
-          className="flex-row items-center self-start rounded-full bg-zinc-800 px-7 py-3.5 active:opacity-80"
+          className="flex-row items-center self-start rounded-full px-7 py-3.5 active:opacity-80"
+          style={{ backgroundColor: '#18181b' }}
           accessibilityRole="button"
           accessibilityLabel="Find your state">
           <Text className="font-sans-semibold text-sm text-zinc-50">Find your state</Text>
@@ -125,13 +126,23 @@ export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: Her
             <Pressable
               onPress={() => setShowStatusInfo((v) => !v)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              className="items-center justify-center rounded-full active:opacity-70"
+              style={{
+                width: 24,
+                height: 24,
+                backgroundColor: showStatusInfo ? '#d4d4d8' : 'rgba(228,228,231,0.5)',
+                borderWidth: 1,
+                borderColor: showStatusInfo ? '#a1a1aa' : 'rgba(212,212,216,0.6)',
+              }}
               accessibilityRole="button"
               accessibilityLabel="How is state status calculated?">
-              <Info size={18} color="#a1a1aa" strokeWidth={2} />
+              <View style={{ transform: [{ rotate: showStatusInfo ? '180deg' : '0deg' }], marginTop: showStatusInfo ? 0 : 1 }}>
+                <ChevronDown size={14} color={showStatusInfo ? '#52525b' : '#71717a'} strokeWidth={2.5} />
+              </View>
             </Pressable>
           </View>
           {showStatusInfo && badgeWidth > 0 && (
-            <View className="rounded-xl border border-zinc-200/80 bg-white/90 px-3 py-2.5" style={{ width: badgeWidth }}>
+            <View className="rounded-xl border border-zinc-200/50 bg-white/60 px-3 py-2.5" style={{ width: badgeWidth }}>
               <Text className="font-sans text-[12px] leading-4.5 text-zinc-500">
                 State status is calculated by balancing the general political climate with
                 the specific ratio of supportive vs. harmful bills currently being introduced.

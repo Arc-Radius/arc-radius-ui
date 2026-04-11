@@ -945,9 +945,8 @@ export function BillDetailPage({
                             horizontal={false}>
                             <ScrollView horizontal nestedScrollEnabled>
                               <Text
-                                className="text-[11px] text-zinc-600"
+                                className="font-sans text-[11px] text-zinc-600"
                                 style={{
-                                  fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
                                   lineHeight: 18,
                                   whiteSpace: 'pre',
                                 } as any}>
@@ -962,7 +961,7 @@ export function BillDetailPage({
                             {Platform.OS === 'web' ? (
                               <div
                                 style={{ fontSize: 12, lineHeight: '1.6', color: '#52525b', fontFamily: 'Greycliff CF, sans-serif' }}
-                                dangerouslySetInnerHTML={{ __html: `<style>pre{font-family:Greycliff CF,sans-serif;white-space:pre-wrap;word-wrap:break-word;font-size:12px;line-height:1.6}</style>${sanitizedHtml}` }}
+                                dangerouslySetInnerHTML={{ __html: `<style>pre,pre *,b,strong,span,div,p,li,td,th,a{font-family:Greycliff CF,sans-serif!important}pre{white-space:pre-wrap;word-wrap:break-word;font-size:12px;line-height:1.6}</style>${sanitizedHtml}` }}
                               />
                             ) : (
                               <RenderHtml
@@ -992,10 +991,9 @@ export function BillDetailPage({
                                   h3: { fontSize: 14, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 4 },
                                   h4: { fontSize: 13, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 3 },
                                   pre: {
-                                    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-                                    fontSize: 11,
-                                    lineHeight: 16,
-                                    whiteSpace: 'pre',
+                                    fontFamily: 'GreycliffCF_400Regular',
+                                    fontSize: 12,
+                                    lineHeight: 20,
                                   },
                                   p: { marginVertical: 3 },
                                   li: { marginVertical: 1 },

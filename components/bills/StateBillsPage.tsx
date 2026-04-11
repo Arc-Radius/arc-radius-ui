@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Modal,
@@ -13,7 +13,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BillFilterSidebar } from './BillFilterSidebar';
+import { BillFilterSidebar, YearFilterSliders } from './BillFilterSidebar';
 import { StateBillCard } from './StateBillCard';
 import { StateDashboard } from './StateDashboard';
 import { StateDropdown } from '@/components/shared/StateDropdown';
@@ -62,13 +62,17 @@ function mapBillDetailToBill(d: BillDetail, index: number): Bill {
 
 function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const [tab, setTab] = useState<BillTab>('active');
-  const [filters, setFilters] = useState<BillFilters>({
+  const [filters, setFilters] = useState<BillFilters>(() => ({
     stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']),
-    statuses: new Set<string>(),
-    categories: new Set<string>(),
+    statuses: new Set(
+      [...new Set(activeBills.map((b) => b.status_desc).filter(Boolean))].sort() as string[]
+    ),
+    categories: new Set(
+      [...new Set(activeBills.flatMap((b) => b.issue_categories ?? []))].sort()
+    ),
     years: new Set<number>(),
     sort: 'newest',
-  });
+  }));
 
   const sourceBills = tab === 'active' ? activeBills : passedBills;
 
@@ -88,8 +92,8 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     [sourceBills]
   );
 
+  /** Like `stances`: explicit selected set; prune stale keys, fall back to all if none left. */
   const activeCategories = useMemo(() => {
-    if (filters.categories.size === 0) return new Set(availableCategories);
     const valid = new Set([...filters.categories].filter((c) => availableCategories.includes(c)));
     return valid.size === 0 ? new Set(availableCategories) : valid;
   }, [filters.categories, availableCategories]);
@@ -101,7 +105,6 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   }, [filters.years, availableYears]);
 
   const activeStatuses = useMemo(() => {
-    if (filters.statuses.size === 0) return new Set(availableStatuses);
     const valid = new Set([...filters.statuses].filter((s) => availableStatuses.includes(s)));
     return valid.size === 0 ? new Set(availableStatuses) : valid;
   }, [filters.statuses, availableStatuses]);
@@ -134,70 +137,49 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     });
   }, []);
 
-  const toggleStatus = useCallback(
-    (status: string) => {
-      setFilters((prev) => {
-        if (prev.statuses.size === 0) {
-          if (availableStatuses.length <= 1) return prev;
-          return { ...prev, statuses: new Set(availableStatuses.filter((s) => s !== status)) };
-        }
-        const next = new Set(prev.statuses);
-        if (next.has(status)) {
-          if (next.size <= 1) return prev;
-          next.delete(status);
-        } else {
-          next.add(status);
-        }
-        if (next.size === availableStatuses.length) {
-          return { ...prev, statuses: new Set<string>() };
-        }
-        return { ...prev, statuses: next };
-      });
-    },
-    [availableStatuses]
-  );
+  /** Same rules as `toggleStance`: toggle membership; cannot remove the last selected option. */
+  const toggleStatus = useCallback((status: string) => {
+    setFilters((prev) => {
+      const next = new Set(prev.statuses);
+      if (next.has(status)) {
+        if (next.size <= 1) return prev;
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return { ...prev, statuses: next };
+    });
+  }, []);
 
-  const toggleCategory = useCallback(
-    (cat: string) => {
-      setFilters((prev) => {
-        if (prev.categories.size === 0) {
-          if (availableCategories.length <= 1) return prev;
-          return { ...prev, categories: new Set(availableCategories.filter((c) => c !== cat)) };
-        }
-        const next = new Set(prev.categories);
-        if (next.has(cat)) {
-          if (next.size <= 1) return prev;
-          next.delete(cat);
-        } else {
-          next.add(cat);
-        }
-        if (next.size === availableCategories.length) {
-          return { ...prev, categories: new Set<string>() };
-        }
-        return { ...prev, categories: next };
-      });
-    },
-    [availableCategories]
-  );
+  const toggleCategory = useCallback((cat: string) => {
+    setFilters((prev) => {
+      const next = new Set(prev.categories);
+      if (next.has(cat)) {
+        if (next.size <= 1) return prev;
+        next.delete(cat);
+      } else {
+        next.add(cat);
+      }
+      return { ...prev, categories: next };
+    });
+  }, []);
 
-  const toggleYear = useCallback(
-    (year: number) => {
+  /** Category search Enter: narrow to a single category (sidebar). */
+  const pickCategoryFromSearch = useCallback((cat: string) => {
+    setFilters((prev) => ({ ...prev, categories: new Set([cat]) }));
+  }, []);
+
+  const setYearRange = useCallback(
+    (start: number, end: number) => {
+      const sorted = [...availableYears].sort((a, b) => a - b);
+      const lo = Math.min(start, end);
+      const hi = Math.max(start, end);
+      const inRange = sorted.filter((y) => y >= lo && y <= hi);
       setFilters((prev) => {
-        if (prev.years.size === 0) {
-          if (availableYears.length <= 1) return prev;
-          return { ...prev, years: new Set(availableYears.filter((y) => y !== year)) };
-        }
-        const next = new Set(prev.years);
-        if (next.has(year)) {
-          if (next.size <= 1) return prev;
-          next.delete(year);
-        } else {
-          next.add(year);
-        }
-        if (next.size === availableYears.length) {
+        if (inRange.length === 0 || inRange.length === sorted.length) {
           return { ...prev, years: new Set<number>() };
         }
-        return { ...prev, years: next };
+        return { ...prev, years: new Set(inRange) };
       });
     },
     [availableYears]
@@ -207,30 +189,66 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     setFilters((prev) => ({ ...prev, sort }));
   }, []);
 
-  const switchTab = useCallback((newTab: BillTab) => {
-    setTab(newTab);
-    setFilters((prev) => ({ ...prev, statuses: new Set<string>(), categories: new Set<string>(), years: new Set<number>() }));
-  }, []);
+  const switchTab = useCallback(
+    (newTab: BillTab) => {
+      setTab(newTab);
+      const bills = newTab === 'active' ? activeBills : passedBills;
+      const nextStatuses = [...new Set(bills.map((b) => b.status_desc).filter(Boolean))].sort() as string[];
+      const nextCategories = [...new Set(bills.flatMap((b) => b.issue_categories ?? []))].sort();
+      setFilters((prev) => ({
+        ...prev,
+        statuses: new Set(nextStatuses),
+        categories: new Set(nextCategories),
+        years: new Set<number>(),
+      }));
+    },
+    [activeBills, passedBills]
+  );
+
+  /** When options load or change, prune invalid keys; if none left, default to all (stance-style full set). */
+  useLayoutEffect(() => {
+    setFilters((prev) => {
+      if (availableStatuses.length === 0 && availableCategories.length === 0) {
+        if (prev.statuses.size === 0 && prev.categories.size === 0) return prev;
+        return { ...prev, statuses: new Set<string>(), categories: new Set<string>() };
+      }
+      const prunedS = new Set([...prev.statuses].filter((s) => availableStatuses.includes(s)));
+      const prunedC = new Set([...prev.categories].filter((c) => availableCategories.includes(c)));
+      const nextS = prunedS.size > 0 ? prunedS : new Set(availableStatuses);
+      const nextC = prunedC.size > 0 ? prunedC : new Set(availableCategories);
+      if (
+        nextS.size === prev.statuses.size &&
+        [...nextS].every((x) => prev.statuses.has(x)) &&
+        nextC.size === prev.categories.size &&
+        [...nextC].every((x) => prev.categories.has(x))
+      ) {
+        return prev;
+      }
+      return { ...prev, statuses: nextS, categories: nextC };
+    });
+  }, [availableStatuses, availableCategories]);
 
   const resetAll = useCallback(() => {
     setFilters({
       stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']),
-      statuses: new Set<string>(),
-      categories: new Set<string>(),
+      statuses: new Set(availableStatuses),
+      categories: new Set(availableCategories),
       years: new Set<number>(),
       sort: 'newest',
     });
-  }, []);
+  }, [availableStatuses, availableCategories]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.stances.size < 3) count++;
-    if (filters.statuses.size > 0) count++;
-    if (filters.categories.size > 0) count++;
+    if (availableStatuses.length > 0 && filters.statuses.size < availableStatuses.length) count++;
+    if (availableCategories.length > 0 && filters.categories.size < availableCategories.length) {
+      count++;
+    }
     if (filters.years.size > 0) count++;
     if (filters.sort !== 'newest') count++;
     return count;
-  }, [filters]);
+  }, [filters, availableStatuses.length, availableCategories.length]);
 
   return {
     tab,
@@ -248,7 +266,8 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     toggleStance,
     toggleStatus,
     toggleCategory,
-    toggleYear,
+    pickCategoryFromSearch,
+    setYearRange,
     setSort,
     resetAll,
   };
@@ -283,7 +302,7 @@ function FilterBottomSheet({
   onToggleStance,
   onToggleStatus,
   onToggleCategory,
-  onToggleYear,
+  onSetYearRange,
   onSetSort,
   onReset,
 }: {
@@ -303,7 +322,7 @@ function FilterBottomSheet({
   onToggleStance: (s: LegislativeStatus) => void;
   onToggleStatus: (s: string) => void;
   onToggleCategory: (c: string) => void;
-  onToggleYear: (y: number) => void;
+  onSetYearRange: (start: number, end: number) => void;
   onSetSort: (s: SortOrder) => void;
   onReset: () => void;
 }) {
@@ -325,27 +344,20 @@ function FilterBottomSheet({
             </View>
 
             {/* Year */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Year
             </Text>
-            <View className="mb-5 flex-row flex-wrap gap-2">
-              {availableYears.map((y) => {
-                const isOn = filters.years.size === 0 || filters.years.has(y);
-                return (
-                  <Pressable
-                    key={y}
-                    onPress={() => onToggleYear(y)}
-                    style={[chipStyles.chip, isOn && chipStyles.chipActive]}>
-                    <Text style={[chipStyles.chipText, isOn && chipStyles.chipTextActive]}>
-                      {y} · {billCountByYear[y] ?? 0}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+            <View className="mb-5">
+              <YearFilterSliders
+                availableYears={availableYears}
+                selectedYears={filters.years}
+                billCountByYear={billCountByYear}
+                onSetYearRange={onSetYearRange}
+              />
             </View>
 
             {/* Stance */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Stance
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
@@ -383,7 +395,7 @@ function FilterBottomSheet({
             </View>
 
             {/* Status */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Status
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
@@ -403,7 +415,7 @@ function FilterBottomSheet({
             </View>
 
             {/* Category */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Category
             </Text>
             <View className="mb-5 flex-row flex-wrap gap-2">
@@ -423,7 +435,7 @@ function FilterBottomSheet({
             </View>
 
             {/* Sort */}
-            <Text className="mb-2 font-sans-semibold text-[10px] uppercase tracking-widest text-zinc-400">
+            <Text className="mb-2 font-sans-semibold text-[11px] uppercase tracking-widest text-zinc-400">
               Sort
             </Text>
             <View className="mb-5 flex-row gap-2">
@@ -553,7 +565,8 @@ export function StateBillsPage({
     toggleStance,
     toggleStatus,
     toggleCategory,
-    toggleYear,
+    pickCategoryFromSearch,
+    setYearRange,
     setSort,
     resetAll,
   } = useBillFilters(activeBills, passedBills);
@@ -654,10 +667,14 @@ export function StateBillsPage({
     onToggleStance: toggleStance,
     onToggleStatus: toggleStatus,
     onToggleCategory: toggleCategory,
-    onToggleYear: toggleYear,
+    onPickCategoryFromSearch: pickCategoryFromSearch,
+    onSetYearRange: setYearRange,
     onSetSort: setSort,
     onReset: resetAll,
   };
+
+  const { onPickCategoryFromSearch: _omitCategorySearchFromSheet, ...filterSheetProps } =
+    sidebarProps;
 
   return (
     <SafeAreaView className="flex-1 bg-app-bg" edges={[]}>
@@ -833,7 +850,7 @@ export function StateBillsPage({
         <FilterBottomSheet
           visible={filterSheetOpen}
           onClose={() => setFilterSheetOpen(false)}
-          {...sidebarProps}
+          {...filterSheetProps}
         />
       )}
     </SafeAreaView>

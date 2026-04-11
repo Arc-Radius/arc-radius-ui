@@ -35,6 +35,7 @@ module.exports = {
         'sans-medium': ['GreycliffCF_500Medium', 'Greycliff CF', 'sans-serif'],
         'sans-semibold': ['GreycliffCF_600DemiBold', 'Greycliff CF', 'sans-serif'],
         'sans-bold': ['GreycliffCF_700Bold', 'Greycliff CF', 'sans-serif'],
+        mono: ['DankMono_400Regular', 'Dank Mono', 'monospace'],
       },
     },
   },

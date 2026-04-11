@@ -24,6 +24,7 @@ const GreycliffFonts = {
   GreycliffCF_500Medium: require('@/fonts/Greycliff/GreycliffCF-Medium.otf'),
   GreycliffCF_600DemiBold: require('@/fonts/Greycliff/GreycliffCF-DemiBold.otf'),
   GreycliffCF_700Bold: require('@/fonts/Greycliff/GreycliffCF-Bold.otf'),
+  DankMono_400Regular: require('@/fonts/DankMono/DankMono-Regular.otf'),
 };
 
 export default function Layout() {

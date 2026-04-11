@@ -960,8 +960,9 @@ export function BillDetailPage({
                             nestedScrollEnabled>
                             {Platform.OS === 'web' ? (
                               <div
-                                style={{ fontSize: 12, lineHeight: '1.6', color: '#52525b', fontFamily: 'Greycliff CF, sans-serif' }}
-                                dangerouslySetInnerHTML={{ __html: `<style>pre,pre *,b,strong,span,div,p,li,td,th,a{font-family:Greycliff CF,sans-serif!important}pre{white-space:pre-wrap;word-wrap:break-word;font-size:12px;line-height:1.6}</style>${sanitizedHtml}` }}
+                                className="bill-text-html"
+                                style={{ fontSize: 12, lineHeight: '1.6', color: '#52525b', fontFamily: 'GreycliffCF_400Regular, Greycliff CF, sans-serif', wordWrap: 'break-word' }}
+                                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                               />
                             ) : (
                               <RenderHtml

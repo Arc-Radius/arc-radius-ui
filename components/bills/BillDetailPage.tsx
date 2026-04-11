@@ -714,14 +714,16 @@ export function BillDetailPage({
                 }}>
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="min-w-0 flex-1 pr-1">
-                    <View className="flex-row items-center gap-2.5">
-                      <FileText
-                        size={20}
-                        color="#71717a"
-                        strokeWidth={2}
-                        accessibilityElementsHidden
-                      />
-                      <Text className="min-w-0 flex-1 font-sans-bold text-lg leading-tight tracking-tight text-zinc-900">
+                    <View className="flex-row items-start gap-2.5">
+                      <View className="mt-px h-[22.5px] justify-center">
+                        <FileText
+                          size={20}
+                          color="#71717a"
+                          strokeWidth={2}
+                          accessibilityElementsHidden
+                        />
+                      </View>
+                      <Text className="min-w-0 flex-1 font-sans-semibold text-lg leading-tight tracking-normal text-zinc-900">
                         {bill.title}
                       </Text>
                     </View>

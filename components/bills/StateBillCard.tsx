@@ -183,7 +183,7 @@ export function StateBillCard({ bill, onPress }: StateBillCardProps) {
             <View className="mt-3 flex-row flex-wrap gap-1">
               {(bill.issue_categories ?? []).map((topic) => (
                 <View key={topic} className="rounded-full bg-zinc-100 px-2 py-0.5">
-                  <Text className="font-sans text-[11px] text-zinc-500">{topic}</Text>
+                  <Text className="font-sans text-[11px] text-zinc-500">{topic.replace(/_/g, ' ')}</Text>
                 </View>
               ))}
             </View>

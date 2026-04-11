@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -62,6 +63,7 @@ function mapBillDetailToBill(d: BillDetail, index: number): Bill {
 
 function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const [tab, setTab] = useState<BillTab>('active');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<BillFilters>(() => ({
     stances: new Set<LegislativeStatus>(['supportive', 'harmful', 'mixed']),
     statuses: new Set(
@@ -110,19 +112,24 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   }, [filters.statuses, availableStatuses]);
 
   const filteredBills = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     const f = sourceBills.filter(
       (b) =>
         filters.stances.has(b.stance ?? 'mixed') &&
         activeStatuses.has(b.status_desc || '') &&
         (b.issue_categories ?? []).some((c) => activeCategories.has(c)) &&
-        activeYears.has(b.year ?? new Date().getFullYear())
+        activeYears.has(b.year ?? new Date().getFullYear()) &&
+        (!q ||
+          (b.title ?? '').toLowerCase().includes(q) ||
+          (b.description ?? '').toLowerCase().includes(q) ||
+          (b.bill_number ?? '').toLowerCase().includes(q))
     );
     return f.sort((a, b) => {
       const da = new Date(a.last_action_date ?? 0).getTime();
       const db = new Date(b.last_action_date ?? 0).getTime();
       return filters.sort === 'newest' ? db - da : da - db;
     });
-  }, [sourceBills, filters.stances, activeStatuses, activeCategories, activeYears, filters.sort]);
+  }, [sourceBills, filters.stances, activeStatuses, activeCategories, activeYears, filters.sort, searchQuery]);
 
   const toggleStance = useCallback((stance: LegislativeStatus) => {
     setFilters((prev) => {
@@ -192,6 +199,7 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
   const switchTab = useCallback(
     (newTab: BillTab) => {
       setTab(newTab);
+      setSearchQuery('');
       const bills = newTab === 'active' ? activeBills : passedBills;
       const nextStatuses = [...new Set(bills.map((b) => b.status_desc).filter(Boolean))].sort() as string[];
       const nextCategories = [...new Set(bills.flatMap((b) => b.issue_categories ?? []))].sort();
@@ -263,6 +271,8 @@ function useBillFilters(activeBills: Bill[], passedBills: Bill[]) {
     availableStatuses,
     filteredBills,
     sourceBills,
+    searchQuery,
+    setSearchQuery,
     toggleStance,
     toggleStatus,
     toggleCategory,
@@ -562,6 +572,8 @@ export function StateBillsPage({
     availableStatuses,
     filteredBills,
     sourceBills,
+    searchQuery,
+    setSearchQuery,
     toggleStance,
     toggleStatus,
     toggleCategory,
@@ -765,14 +777,39 @@ export function StateBillsPage({
               <View className={isWide ? 'flex-row gap-5' : ''}>
                 {/* Bill list */}
                 <View className="flex-1 px-0 pt-2.5">
-                  <Text className="mb-2 font-sans text-[11px] leading-tight text-zinc-500">
-                    {filteredBills.length} bill{filteredBills.length !== 1 ? 's' : ''}
-                    {filteredBills.length > 0 ? (
-                      <Text className="font-sans text-[11px] text-zinc-400">
-                        {' · '}Tap a card for the full bill
-                      </Text>
-                    ) : null}
-                  </Text>
+                  <View className="mb-2 flex-row items-center justify-between gap-2">
+                    <Text className="font-sans text-[11px] leading-tight text-zinc-500">
+                      {filteredBills.length} bill{filteredBills.length !== 1 ? 's' : ''}
+                      {!searchQuery && filteredBills.length > 0 ? (
+                        <Text className="font-sans text-[11px] text-zinc-400">
+                          {' · '}Tap a card for the full bill
+                        </Text>
+                      ) : null}
+                    </Text>
+                    <View
+                      className="flex-row items-center rounded-lg border border-zinc-200 bg-white"
+                      style={{ maxWidth: 160, height: 28 }}>
+                      <TextInput
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholder="Search bills..."
+                        placeholderTextColor="#a1a1aa"
+                        className="flex-1 px-2 font-sans text-[11px] text-zinc-800"
+                        style={{
+                          height: 28,
+                          ...Platform.select({ web: { outlineStyle: 'none' } as any }),
+                        }}
+                      />
+                      {searchQuery.length > 0 && (
+                        <Pressable
+                          onPress={() => setSearchQuery('')}
+                          className="items-center justify-center pr-2 active:opacity-70"
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                          <Text className="font-sans text-[11px] text-zinc-400">✕</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
                   <View className="gap-2.5">
                     {tabError ? (
                       <Text className="py-8 text-center font-sans text-sm text-zinc-400">

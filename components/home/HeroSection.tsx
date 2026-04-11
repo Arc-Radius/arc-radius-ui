@@ -88,7 +88,8 @@ export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: Her
         {/* CTA button */}
         <Pressable
           onPress={onFindState}
-          className="flex-row items-center self-start rounded-full bg-zinc-800 px-7 py-3.5 active:opacity-80"
+          className="flex-row items-center self-start rounded-full px-7 py-3.5 active:opacity-80"
+          style={{ backgroundColor: '#18181b' }}
           accessibilityRole="button"
           accessibilityLabel="Find your state">
           <Text className="font-sans-semibold text-sm text-zinc-50">Find your state</Text>

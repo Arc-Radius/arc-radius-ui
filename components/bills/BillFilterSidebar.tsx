@@ -71,7 +71,7 @@ export function YearFilterSliders({
 
   const webThumb =
     Platform.OS === 'web'
-      ? ({ thumbSize: 13, trackHeight: 3 } as Record<string, unknown>)
+      ? ({ thumbSize: 11, trackHeight: 3 } as Record<string, unknown>)
       : {};
 
   return (

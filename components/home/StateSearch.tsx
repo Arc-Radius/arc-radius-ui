@@ -518,7 +518,7 @@ export function StateSearch({
         <StateDropdown
           value={selected}
           onChange={onStateSelect}
-          placeholder="Search state..."
+          placeholder="Search states..."
           stateOptions={stateDropdownOptions}
         />
       </View>

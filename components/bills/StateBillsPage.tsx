@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Search } from 'lucide-react-native';
 
 import { BillFilterSidebar, YearFilterSliders } from './BillFilterSidebar';
 import { StateBillCard } from './StateBillCard';
@@ -21,7 +22,7 @@ import { StateDropdown } from '@/components/shared/StateDropdown';
 import { StanceLegend } from './StanceLegend';
 import { ScreenContent } from '@/components/ui/screen-layout';
 import type { Bill, BillFilters, BillTab, SortOrder } from '@/static/billConstants';
-import { STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
+import { ACCENT_BLUE, STANCE_CHECK_BG, STANCE_DOT, STANCE_LABEL } from '@/static/billConstants';
 import { getBillsForState } from '@/static/bills';
 import type { BillDetail } from '@/static/bills';
 import type { LegislativeStatus } from '@/static/states';
@@ -29,6 +30,317 @@ import type { LegislativeStatus } from '@/static/states';
 // ── Constants ────────────────────────────────────
 
 const STANCES: LegislativeStatus[] = ['supportive', 'harmful', 'mixed'];
+
+// ── Connected filter bar section (Airbnb-style) ──
+function FilterBarSection({
+  label,
+  value,
+  active,
+  items,
+  onToggle,
+  onReset,
+}: {
+  label: string;
+  value: string;
+  active: boolean;
+  items: { key: string; label: string; count: number; checked: boolean; dot?: string }[];
+  onToggle: (key: string) => void;
+  onReset: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <View style={{ position: 'relative', zIndex: open ? 50 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="px-3 py-1 active:bg-zinc-50"
+        style={{ backgroundColor: active ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
+        <View className="flex-row items-center gap-1">
+          <Text className="font-sans-medium text-[9.5px] uppercase tracking-wider text-zinc-600">{label}</Text>
+          <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{open ? '▴' : '▾'}</Text>
+        </View>
+        <Text
+          className="font-sans text-[11px]"
+          style={{ color: active ? ACCENT_BLUE : '#a1a1aa' }}
+          numberOfLines={1}>
+          {value}
+        </Text>
+      </Pressable>
+      {open && (
+        <>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={{ position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' } as any}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: 4,
+              minWidth: 160,
+              backgroundColor: '#fff',
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#e4e4e7',
+              paddingVertical: 6,
+              zIndex: 50,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 8,
+            }}>
+            {active && (
+              <Pressable onPress={() => { onReset(); setOpen(false); }} style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                <Text className="font-sans text-[10px] text-blue-500">Select all</Text>
+              </Pressable>
+            )}
+            <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+            {items.map((item) => (
+              <Pressable
+                key={item.key}
+                onPress={() => onToggle(item.key)}
+                className="flex-row items-center gap-2 active:bg-zinc-50"
+                style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{
+                  width: 14, height: 14, borderRadius: 3,
+                  borderWidth: 1.5,
+                  borderColor: item.checked ? (item.dot ?? ACCENT_BLUE) : '#d4d4d8',
+                  backgroundColor: item.checked ? (item.dot ?? ACCENT_BLUE) : 'transparent',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {item.checked && <Text style={{ fontSize: 8, color: '#fff', marginTop: -1 }}>✓</Text>}
+                </View>
+                {item.dot && !item.checked && (
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: item.dot }} />
+                )}
+                <Text className="flex-1 font-sans text-[11px] text-zinc-700">{item.label}</Text>
+                <Text className="font-sans text-[10px] text-zinc-400">{item.count}</Text>
+              </Pressable>
+            ))}
+            </ScrollView>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+// ── Year filter bar section with slider dropdown ──
+function FilterBarYearSection({
+  filters,
+  availableYears,
+  billCountByYear,
+  onSetYearRange,
+}: {
+  filters: BillFilters;
+  availableYears: number[];
+  billCountByYear: Record<number, number>;
+  onSetYearRange: (start: number, end: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const sorted = [...availableYears].sort((a, b) => a - b);
+  const allSelected = filters.years.size === 0 || filters.years.size === availableYears.length;
+  const minY = allSelected ? sorted[0] : Math.min(...[...filters.years]);
+  const maxY = allSelected ? sorted[sorted.length - 1] : Math.max(...[...filters.years]);
+  const value = allSelected ? 'All' : (minY === maxY ? String(minY) : `${minY}–${maxY}`);
+  const active = !allSelected;
+
+  return (
+    <View style={{ position: 'relative', zIndex: open ? 50 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="px-3 py-1 active:bg-zinc-50"
+        style={{ backgroundColor: active ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
+        <View className="flex-row items-center gap-1">
+          <Text className="font-sans-medium tracking-wider text-[10px] text-zinc-600">YEAR</Text>
+          <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{open ? '▴' : '▾'}</Text>
+        </View>
+        <Text className="font-sans text-[11px]" style={{ color: active ? ACCENT_BLUE : '#a1a1aa' }}>
+          {value}
+        </Text>
+      </Pressable>
+      {open && (
+        <>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={{ position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' } as any}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: 4,
+              width: 220,
+              backgroundColor: '#fff',
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#e4e4e7',
+              padding: 12,
+              zIndex: 50,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 8,
+            }}>
+            <View style={{ cursor: 'pointer' } as any}>
+              <YearFilterSliders
+                availableYears={availableYears}
+                selectedYears={filters.years}
+                billCountByYear={billCountByYear}
+                onSetYearRange={onSetYearRange}
+              />
+            </View>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+// ── Category filter bar section with search ──
+function FilterBarCategorySection({
+  filters,
+  availableCategories,
+  billCountByCategory,
+  onToggleCategory,
+  onPickCategoryFromSearch,
+}: {
+  filters: BillFilters;
+  availableCategories: string[];
+  billCountByCategory: Record<string, number>;
+  onToggleCategory: (c: string) => void;
+  onPickCategoryFromSearch: (c: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const allSelected = filters.categories.size === 0 || filters.categories.size === availableCategories.length;
+  const active = !allSelected;
+  const value = allSelected ? 'All' : `${filters.categories.size} of ${availableCategories.length}`;
+
+  const applyFirstMatch = useCallback(() => {
+    if (!search.trim()) return;
+    const q = search.toLowerCase().trim();
+    const first = availableCategories.find((c) => c.replace(/_/g, ' ').toLowerCase().includes(q));
+    if (first) {
+      onPickCategoryFromSearch(first);
+      setSearch('');
+      setOpen(false);
+    }
+  }, [search, availableCategories, onPickCategoryFromSearch]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return availableCategories;
+    const q = search.toLowerCase().trim();
+    return availableCategories.filter((c) => c.replace(/_/g, ' ').toLowerCase().includes(q));
+  }, [availableCategories, search]);
+
+  return (
+    <View style={{ position: 'relative', zIndex: open ? 50 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="px-3 py-1 active:bg-zinc-50"
+        style={{ backgroundColor: active ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
+        <View className="flex-row items-center gap-1">
+          <Text className="font-sans-medium text-[9.5px] uppercase tracking-wider text-zinc-600">Category</Text>
+          <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{open ? '▴' : '▾'}</Text>
+        </View>
+        <Text className="font-sans text-[11px]" style={{ color: active ? ACCENT_BLUE : '#a1a1aa' }}>
+          {value}
+        </Text>
+      </Pressable>
+      {open && (
+        <>
+          <Pressable
+            onPress={() => { setOpen(false); setSearch(''); }}
+            style={{ position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' } as any}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: 4,
+              width: 200,
+              backgroundColor: '#fff',
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#e4e4e7',
+              paddingVertical: 6,
+              zIndex: 50,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 8,
+            }}>
+            {/* Search */}
+            <View style={{ paddingHorizontal: 10, paddingBottom: 4 }}>
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                onSubmitEditing={applyFirstMatch}
+                returnKeyType="search"
+                placeholder="Search..."
+                placeholderTextColor="#a1a1aa"
+                className="font-sans text-[11px] text-zinc-800"
+                style={{
+                  height: 26,
+                  borderWidth: 1,
+                  borderColor: '#e4e4e7',
+                  borderRadius: 6,
+                  paddingHorizontal: 8,
+                  ...({ outlineStyle: 'none' } as any),
+                }}
+              />
+            </View>
+            {/* Select all */}
+            {active && (
+              <Pressable
+                onPress={() => { for (const c of availableCategories) { if (!filters.categories.has(c)) onToggleCategory(c); } setOpen(false); setSearch(''); }}
+                style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                <Text className="font-sans text-[10px] text-blue-500">Select all</Text>
+              </Pressable>
+            )}
+            {/* Items */}
+            <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+              {filtered.map((c) => (
+                <Pressable
+                  key={c}
+                  onPress={() => onToggleCategory(c)}
+                  className="flex-row items-center gap-2 active:bg-zinc-50"
+                  style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                  <View style={{
+                    width: 14, height: 14, borderRadius: 3,
+                    borderWidth: 1.5,
+                    borderColor: (filters.categories.size === 0 || filters.categories.has(c)) ? ACCENT_BLUE : '#d4d4d8',
+                    backgroundColor: (filters.categories.size === 0 || filters.categories.has(c)) ? ACCENT_BLUE : 'transparent',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {(filters.categories.size === 0 || filters.categories.has(c)) && (
+                      <Text style={{ fontSize: 8, color: '#fff', marginTop: -1 }}>✓</Text>
+                    )}
+                  </View>
+                  <Text className="flex-1 font-sans text-[11px] text-zinc-700">{c.replace(/_/g, ' ')}</Text>
+                  <Text className="font-sans text-[10px] text-zinc-400">{billCountByCategory[c] ?? 0}</Text>
+                </Pressable>
+              ))}
+              {filtered.length === 0 && (
+                <Text className="font-sans text-[11px] text-zinc-400" style={{ paddingHorizontal: 12, paddingVertical: 5 }}>
+                  No matches
+                </Text>
+              )}
+            </ScrollView>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
 
 const TAB_CONFIG: { key: BillTab; title: string; subtitle: string }[] = [
   { key: 'active', title: 'Proposed', subtitle: 'Bills' },
@@ -713,7 +1025,7 @@ export function StateBillsPage({
           </View>
 
           {/* Main card: flat border like StateDashboard (no elevation shadow) */}
-          <View className="mt-3 overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <View className="mt-3 rounded-xl border border-zinc-200 bg-white">
             <View className="px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-3.5">
               {/* Active / Passed segmented control */}
               <View
@@ -773,44 +1085,128 @@ export function StateBillsPage({
               {/* Legend */}
               <StanceLegend />
 
-              {/* Main: list + sidebar (desktop) or list only (mobile) */}
-              <View className={isWide ? 'flex-row gap-5' : ''}>
-                {/* Bill list */}
+              {/* Main content */}
+              <View>
                 <View className="flex-1 px-0 pt-2.5">
-                  <View className="mb-2 flex-row items-center justify-between gap-2">
-                    <Text className="font-sans text-[11px] leading-tight text-zinc-500">
+                  {/* Bill count + filters row */}
+                  <View className="mb-2 flex-row items-center justify-between gap-2" style={{ zIndex: 50, position: 'relative' } as any}>
+                    <Text className="shrink-0 font-sans text-[11px] leading-tight text-zinc-500">
                       {filteredBills.length} bill{filteredBills.length !== 1 ? 's' : ''}
-                      {!searchQuery && filteredBills.length > 0 ? (
+                      {filteredBills.length > 0 ? (
                         <Text className="font-sans text-[11px] text-zinc-400">
-                          {' · '}Tap a card for the full bill
+                          {' · '}Tap a card for bill details
                         </Text>
                       ) : null}
                     </Text>
-                    <View
-                      className="flex-row items-center rounded-lg border border-zinc-200 bg-white"
-                      style={{ maxWidth: 160, height: 28 }}>
-                      <TextInput
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        placeholder="Search bills..."
-                        placeholderTextColor="#a1a1aa"
-                        className="flex-1 px-2 font-sans text-[11px] text-zinc-800"
-                        style={{
-                          height: 28,
-                          ...Platform.select({ web: { outlineStyle: 'none' } as any }),
-                        }}
-                      />
-                      {searchQuery.length > 0 && (
+
+                    {/* Web: connected filter bar */}
+                    {isWide && (
+                      <View className="flex-row items-stretch overflow-visible rounded-xl border border-zinc-200/80 bg-white" style={{ zIndex: 50, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}>
+                        {activeFilterCount > 0 && (
+                          <>
+                            <Pressable
+                              onPress={resetAll}
+                              className="items-center justify-center px-2.5 active:opacity-70"
+                              accessibilityLabel="Reset all filters">
+                              <Text className="font-sans-bold text-[11px] text-zinc-400">✕</Text>
+                            </Pressable>
+                            <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                          </>
+                        )}
+                        <FilterBarYearSection
+                          filters={filters}
+                          availableYears={availableYears}
+                          billCountByYear={billCountByYear}
+                          onSetYearRange={setYearRange}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <FilterBarSection
+                          label="Stance"
+                          value={filters.stances.size === STANCES.length ? 'All' : `${filters.stances.size} of ${STANCES.length}`}
+                          active={filters.stances.size < STANCES.length}
+                          items={STANCES.map((s) => ({ key: s, label: STANCE_LABEL[s], count: billCountByStance[s] ?? 0, checked: filters.stances.has(s), dot: STANCE_CHECK_BG[s] }))}
+                          onToggle={(key) => toggleStance(key as LegislativeStatus)}
+                          onReset={() => { for (const s of STANCES) { if (!filters.stances.has(s)) toggleStance(s); } }}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <FilterBarSection
+                          label="Status"
+                          value={filters.statuses.size === 0 || filters.statuses.size === availableStatuses.length ? 'All' : `${filters.statuses.size} of ${availableStatuses.length}`}
+                          active={filters.statuses.size > 0 && filters.statuses.size < availableStatuses.length && availableStatuses.length > 1}
+                          items={availableStatuses.map((s) => ({ key: s, label: s, count: billCountByStatus[s] ?? 0, checked: filters.statuses.size === 0 || filters.statuses.has(s) }))}
+                          onToggle={(key) => toggleStatus(key)}
+                          onReset={() => { for (const s of availableStatuses) { if (!filters.statuses.has(s)) toggleStatus(s); } }}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <FilterBarCategorySection
+                          filters={filters}
+                          availableCategories={availableCategories}
+                          billCountByCategory={billCountByCategory}
+                          onToggleCategory={toggleCategory}
+                          onPickCategoryFromSearch={pickCategoryFromSearch}
+                        />
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
                         <Pressable
-                          onPress={() => setSearchQuery('')}
-                          className="items-center justify-center pr-2 active:opacity-70"
-                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                          <Text className="font-sans text-[11px] text-zinc-400">✕</Text>
+                          onPress={() => setSort(filters.sort === 'newest' ? 'oldest' : 'newest')}
+                          className="justify-center px-3 py-1 active:bg-zinc-50"
+                          style={{ width: 65 }}>
+                          <View className="flex-row items-center gap-1">
+                            <Text className="font-sans-medium text-[9.5px] uppercase tracking-wider text-zinc-600">Sort</Text>
+                            <Text style={{ fontSize: 12, color: '#a1a1aa' }}>{filters.sort === 'newest' ? '▾' : '▴'}</Text>
+                          </View>
+                          <Text className="font-sans text-[11px] text-zinc-400">
+                            {filters.sort === 'newest' ? 'Newest' : 'Oldest'}
+                          </Text>
                         </Pressable>
-                      )}
-                    </View>
+                        <View className="w-px self-center bg-zinc-300" style={{ height: 18 }} />
+                        <View className="flex-row items-center" style={{ width: 120 }}>
+                          <View style={{ paddingLeft: 12 }}>
+                            <Search size={13} color="#a1a1aa" />
+                          </View>
+                          <TextInput
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="Search bills..."
+                            placeholderTextColor="#a1a1aa"
+                            className="flex-1 px-2 font-sans text-[12px] text-zinc-800"
+                            style={{ height: '100%', ...({ outlineStyle: 'none' } as any) } as any}
+                          />
+                          {searchQuery.length > 0 && (
+                            <Pressable onPress={() => setSearchQuery('')} className="pr-3 active:opacity-70">
+                              <Text className="font-sans text-[12px] text-zinc-400">✕</Text>
+                            </Pressable>
+                          )}
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Native: search box */}
+                    {!isWide && (
+                      <View className="shrink flex-row items-center rounded-lg border border-zinc-200 bg-white"
+                        style={{ height: 28, minWidth: Platform.OS === 'web' ? 90 : 140, maxWidth: Platform.OS === 'web' ? 140 : 200 }}>
+                        <View style={{ paddingLeft: 8 }}>
+                          <Search size={12} color="#a1a1aa" />
+                        </View>
+                        <TextInput
+                          value={searchQuery}
+                          onChangeText={setSearchQuery}
+                          placeholder="Search bills..."
+                          placeholderTextColor="#a1a1aa"
+                          className="flex-1 px-1.5 font-sans text-[11px] text-zinc-800"
+                          style={{ height: 28 }}
+                        />
+                        {searchQuery.length > 0 && (
+                          <Pressable
+                            onPress={() => setSearchQuery('')}
+                            className="items-center justify-center pr-2 active:opacity-70"
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                            <Text className="font-sans text-[11px] text-zinc-400">✕</Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    )}
                   </View>
-                  <View className="gap-2.5">
+                  <View className="gap-2.5" style={{ zIndex: 1, position: 'relative' } as any}>
                     {tabError ? (
                       <Text className="py-8 text-center font-sans text-sm text-zinc-400">
                         {tabError}
@@ -851,8 +1247,6 @@ export function StateBillsPage({
                   </View>
                 </View>
 
-                {/* Desktop: sidebar */}
-                {isWide && <BillFilterSidebar {...sidebarProps} />}
               </View>
             </View>
           </View>
@@ -931,7 +1325,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   fab: {
-    backgroundColor: 'rgba(24,24,27,0.88)',
+    backgroundColor: 'rgba(24,24,27,0.90)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -955,7 +1349,7 @@ const chipStyles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   chipActive: {
-    backgroundColor: 'rgba(24,24,27,0.88)',
+    backgroundColor: 'rgba(24,24,27,0.95)',
     borderColor: '#18181b',
   },
   chipText: {

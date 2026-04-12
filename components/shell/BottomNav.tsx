@@ -21,7 +21,7 @@ interface BottomNavProps {
   onTabPress?: (tab: Tab) => void;
 }
 
-const ICON_SIZE = 22;
+const ICON_SIZE = Platform.OS === 'web' ? 22 : 26;
 
 // Dark nav — matches state map & state overview card + HeroSection glass palette
 const PALETTE = {
@@ -102,7 +102,7 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
   return (
     <View
       style={{
-        paddingBottom: Platform.OS === 'web' ? insets.bottom : Math.max(2, insets.bottom * 0.4),
+        paddingBottom: Platform.OS === 'web' ? insets.bottom : Math.max(8, insets.bottom * 0.7),
         backgroundColor: '#18181b',
         borderTopWidth: 1,
         borderTopColor: 'rgba(63, 63, 70, 0.6)',
@@ -118,7 +118,7 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
           elevation: 8,
         }),
       }}>
-      <View className="flex-row px-2 pt-1" style={{ paddingBottom: Platform.OS === 'web' ? 4 : 0 }}>
+      <View className="flex-row px-2 pt-2" style={{ paddingBottom: Platform.OS === 'web' ? 4 : 2 }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key;
           const isCrisis = tab.key === 'crisis';
@@ -153,13 +153,13 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
               accessibilityLabel={tab.label}
               accessibilityState={{ selected: isActive }}>
               <View
-                className="h-8 w-8 items-center justify-center rounded-lg"
+                className={`${Platform.OS === 'web' ? 'h-8 w-8' : 'h-10 w-10'} items-center justify-center rounded-lg`}
                 style={iconCardStyle}>
                 <TabIcon tab={tab.key} active={isActive} />
               </View>
 
               <Text
-                className="font-sans text-[11px]"
+                className={`font-sans ${Platform.OS === 'web' ? 'text-[11px]' : 'text-[13px]'}`}
                 style={{
                   color: labelColor,
                   fontWeight: isActive || isCrisis ? '500' : '400',

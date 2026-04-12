@@ -1,9 +1,34 @@
 {
   "expo": {
     "name": "ArcRadius - Policy Navigator",
-    "slug": "arc-radius-ui",
+    "slug": "arc-radius",
     "scheme": "arc-radius",
     "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#001D3A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "edu.berkeley.ischool.arcradius",
+      "infoPlist": {
+        "CFBundleDisplayName": "Arc Radius",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#001D3A"
+      }
+    },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png",
@@ -14,24 +39,16 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": ["expo-font", "expo-router"],
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": ["**/*"],
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+    "plugins": [
+      "expo-font",
+      "expo-router"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6155d0d9-aeaa-45b4-b1d2-9bf03fb05b7c"
       }
-    }
+    },
+    "owner": "arcradius-organization"
   }
 }

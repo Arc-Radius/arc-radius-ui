@@ -19,7 +19,7 @@ const ACTIONS = [
     title: 'Join a campaign',
     description: 'Browse LGBTQ+ advocacy organizations and find verified resources in your community.',
     status: 'Coming Soon',
-    dotColor: '#60a5fa',
+    dotColor: '#a1a1aa',
     icon: 'campaign',
     dimmed: true,
   },

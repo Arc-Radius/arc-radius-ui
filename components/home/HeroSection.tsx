@@ -89,7 +89,7 @@ export function HeroSection({ onFindState, statusCounts, heroStatsLoading }: Her
         <Pressable
           onPress={onFindState}
           className="flex-row items-center self-start rounded-full px-7 py-3.5 active:opacity-80"
-          style={{ backgroundColor: '#18181b' }}
+          style={{ backgroundColor: 'rgba(24,24,27,0.93)' }}
           accessibilityRole="button"
           accessibilityLabel="Find your state">
           <Text className="font-sans-semibold text-sm text-zinc-50">Find your state</Text>

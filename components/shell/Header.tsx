@@ -1,5 +1,5 @@
 import { Link, usePathname } from 'expo-router';
-import { Linking, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Linking, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Compass } from 'lucide-react-native';
 import { twMerge } from 'tailwind-merge';
 
@@ -85,17 +85,19 @@ export function Header() {
         onPress={() => Linking.openURL('https://arcradius.org')}
         className="flex-row items-center gap-1 rounded-lg active:opacity-70"
         style={{
-          paddingHorizontal: isCompact ? 8 : 12,
-          paddingVertical: isCompact ? 4 : 6,
+          paddingHorizontal: Platform.OS === 'web' ? (isCompact ? 8 : 12) : 6,
+          paddingVertical: Platform.OS === 'web' ? (isCompact ? 4 : 6) : 6,
           borderWidth: 1,
           borderColor: 'rgba(59,130,246,0.25)',
         }}>
-        <Compass size={isCompact ? 11 : 13} color="#3b82f6" />
-        <Text
-          className="font-sans-medium"
-          style={{ color: '#3b82f6', fontSize: isCompact ? 10 : 12 }}>
-          About
-        </Text>
+        <Compass size={Platform.OS === 'web' ? (isCompact ? 11 : 13) : 14} color="#3b82f6" />
+        {Platform.OS === 'web' && (
+          <Text
+            className="font-sans-medium"
+            style={{ color: '#3b82f6', fontSize: isCompact ? 10 : 12 }}>
+            About
+          </Text>
+        )}
       </Pressable>
     </View>
   );

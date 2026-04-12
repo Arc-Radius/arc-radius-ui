@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Landmark } from 'lucide-react-native';
 
@@ -78,20 +78,43 @@ export function StateDashboard({
         }}>
         <View
           className={`gap-3 ${headerStacked ? 'flex-col' : 'flex-row items-center justify-between'}`}>
-          <View className="flex-row items-center gap-2.5">
-            <Landmark size={20} color="#71717a" strokeWidth={2} accessibilityElementsHidden />
-            <Text className="font-sans-bold text-lg leading-tight tracking-tight text-zinc-900">
-              {info.name}
-            </Text>
-            {displayHost ? (
-              <Pressable
-                className="flex-row items-center gap-1 active:opacity-70"
-                onPress={() => Linking.openURL(fullUrl)}>
-                <ExternalLinkIcon />
-                <Text className="font-sans text-xs text-blue-500">{displayHost}</Text>
-              </Pressable>
-            ) : null}
-          </View>
+          {Platform.OS === 'web' ? (
+            <View className="flex-row items-end gap-2.5">
+              <View className="mb-[2px]">
+                <Landmark size={20} color="#71717a" strokeWidth={2} accessibilityElementsHidden />
+              </View>
+              <Text className="font-sans-bold text-lg leading-tight tracking-tight text-zinc-900">
+                {info.name}
+              </Text>
+              {displayHost ? (
+                <Pressable
+                  className="mb-[1px] flex-row items-center gap-1 active:opacity-70"
+                  onPress={() => Linking.openURL(fullUrl)}>
+                  <ExternalLinkIcon />
+                  <Text className="font-sans text-xs text-blue-500">{displayHost}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : (
+            <View className="flex-row items-start gap-2.5">
+              <View className="h-[22px] justify-center">
+                <Landmark size={20} color="#71717a" strokeWidth={2} accessibilityElementsHidden />
+              </View>
+              <View className="gap-1">
+                <Text className="font-sans-bold text-lg leading-[22px] tracking-tight text-zinc-900">
+                  {info.name}
+                </Text>
+                {displayHost ? (
+                  <Pressable
+                    className="flex-row items-center gap-1 active:opacity-70"
+                    onPress={() => Linking.openURL(fullUrl)}>
+                    <ExternalLinkIcon />
+                    <Text className="font-sans text-xs text-blue-500">{displayHost}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+          )}
           {headerRight}
         </View>
       </View>
@@ -144,9 +167,6 @@ function StatRow({
       style={!last ? { borderBottomWidth: 0.5, borderBottomColor: '#e4e4e7' } : undefined}>
       <Text className="font-sans text-xs text-zinc-500">{label}</Text>
       <View className="flex-row items-center gap-2">
-        <Text className="font-sans-medium text-sm" style={{ color: valueColor ?? '#18181b' }}>
-          {value}
-        </Text>
         {badge && (
           <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: badge.bg }}>
             <Text className="font-sans-semibold text-[10px]" style={{ color: badge.color }}>
@@ -154,6 +174,9 @@ function StatRow({
             </Text>
           </View>
         )}
+        <Text className="font-sans-medium text-sm" style={{ color: valueColor ?? '#18181b' }}>
+          {value}
+        </Text>
       </View>
     </View>
   );

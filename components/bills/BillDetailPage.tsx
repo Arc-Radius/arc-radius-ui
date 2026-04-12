@@ -175,47 +175,50 @@ function RelatedBillsSection({
               <Text className="font-sans text-[11px] text-zinc-400">{tier.label}</Text>
             </View>
             <View className="overflow-hidden rounded-lg border border-zinc-200">
-              {tier.bills.map((rb, idx) => (
+              {tier.bills.map((rb, idx) =>
                 (() => {
                   const detail = relatedBillDetailsByPk?.get(rb.bill_id);
                   const displayId =
                     detail?.number?.trim() || detail?.bill_number?.trim() || rb.bill_id;
                   const title = detail?.title?.trim() || '';
-                  const status = (detail as BillDetailMerged | undefined)?.status_desc?.trim() || '';
+                  const status =
+                    (detail as BillDetailMerged | undefined)?.status_desc?.trim() || '';
                   const lastActionDate = detail?.lastActionDate?.trim() || '';
                   return (
-                <Pressable
-                  key={rb.bill_id}
-                  onPress={() => onPressBill?.(rb.bill_id)}
-                  className="bg-white px-3.5 py-3 active:bg-zinc-50"
-                  style={
-                    idx < tier.bills.length - 1
-                      ? { borderBottomWidth: 0.5, borderBottomColor: 'rgba(228,228,231,0.9)' }
-                      : undefined
-                  }>
-                  <View className="mb-0.5 flex-row items-center gap-1.5">
-                    <Text className="font-sans-semibold text-[13px] text-zinc-800">{displayId}</Text>
-                    {displayId !== rb.bill_id ? (
-                      <Text className="font-mono text-[11px] text-zinc-400">{rb.bill_id}</Text>
-                    ) : null}
-                  </View>
-                  {title ? (
-                    <Text className="mb-1 font-sans text-[12px] text-zinc-500">{title}</Text>
-                  ) : null}
-                  <Text className="font-sans text-[13px] leading-relaxed text-zinc-600">
-                    {rb.summary}
-                  </Text>
-                  {status || lastActionDate ? (
-                    <Text className="mt-1.5 font-sans text-[11px] text-zinc-400">
-                      {[status, lastActionDate ? `Last action: ${lastActionDate}` : '']
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </Text>
-                  ) : null}
-                </Pressable>
+                    <Pressable
+                      key={rb.bill_id}
+                      onPress={() => onPressBill?.(rb.bill_id)}
+                      className="bg-white px-3.5 py-3 active:bg-zinc-50"
+                      style={
+                        idx < tier.bills.length - 1
+                          ? { borderBottomWidth: 0.5, borderBottomColor: 'rgba(228,228,231,0.9)' }
+                          : undefined
+                      }>
+                      <View className="mb-0.5 flex-row items-center gap-1.5">
+                        <Text className="font-sans-semibold text-[13px] text-zinc-800">
+                          {displayId}
+                        </Text>
+                        {displayId !== rb.bill_id ? (
+                          <Text className="font-mono text-[11px] text-zinc-400">{rb.bill_id}</Text>
+                        ) : null}
+                      </View>
+                      {title ? (
+                        <Text className="mb-1 font-sans text-[12px] text-zinc-500">{title}</Text>
+                      ) : null}
+                      <Text className="font-sans text-[13px] leading-relaxed text-zinc-600">
+                        {rb.summary}
+                      </Text>
+                      {status || lastActionDate ? (
+                        <Text className="mt-1.5 font-sans text-[11px] text-zinc-400">
+                          {[status, lastActionDate ? `Last action: ${lastActionDate}` : '']
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </Text>
+                      ) : null}
+                    </Pressable>
                   );
                 })()
-              ))}
+              )}
             </View>
           </View>
         ))}
@@ -539,7 +542,11 @@ export function BillDetailPage({
       issues: str(r.issues, bill.subjects.length ? bill.subjects.join(', ') : undefined),
       issue_categories: str(
         r.issue_categories,
-        bill.subjects?.length ? bill.subjects.join(', ') : (r.tags?.length ? JSON.stringify(r.tags) : undefined)
+        bill.subjects?.length
+          ? bill.subjects.join(', ')
+          : r.tags?.length
+            ? JSON.stringify(r.tags)
+            : undefined
       ),
       sponsor_names: str(r.sponsor_names, sponsorLine || undefined),
       primary_sponsor: str(r.primary_sponsor, bill.sponsors[0]?.name),
@@ -572,7 +579,10 @@ export function BillDetailPage({
     );
     spin.start();
     dots.start();
-    return () => { spin.stop(); dots.stop(); };
+    return () => {
+      spin.stop();
+      dots.stop();
+    };
   }, [isGeneratingLetter, spinAnim, dotsAnim]);
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<'email' | 'phone'>('email');
@@ -629,11 +639,15 @@ export function BillDetailPage({
 
   const detailBillText = useMemo(() => bill.fullText?.trim() ?? '', [bill.fullText]);
   const [billTextOpen, setBillTextOpen] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(true);
   const [aiInfoOpen, setAiInfoOpen] = useState(false);
   const detailHistory = useMemo(() => [...(bill.history ?? [])].reverse(), [bill.history]);
   const rawGraph = rawBill as (Bill & Partial<GraphBillRecord>) | null | undefined;
   const legiscanBillId = rawGraph?.bill_id ?? '';
-  const billTextQuery = useBillTextQuery(legiscanBillId, activeTab === 'details' && !detailBillText);
+  const billTextQuery = useBillTextQuery(
+    legiscanBillId,
+    activeTab === 'details' && !detailBillText
+  );
   const billTextMime = billTextQuery.data?.mime ?? '';
   const isPdf = billTextMime.includes('pdf');
   const isPlainText = billTextMime === 'text/plain';
@@ -641,14 +655,39 @@ export function BillDetailPage({
     const raw = billTextQuery.data?.html ?? '';
     if (!raw || isPdf || isPlainText) return '';
     const ALLOWED_TAGS = new Set([
-      'p', 'br', 'b', 'i', 'em', 'strong', 'u', 'div', 'span',
-      'table', 'tr', 'td', 'th', 'thead', 'tbody',
-      'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'a', 'pre', 'blockquote', 'hr', 'sup', 'sub', 'font',
+      'p',
+      'br',
+      'b',
+      'i',
+      'em',
+      'strong',
+      'u',
+      'div',
+      'span',
+      'table',
+      'tr',
+      'td',
+      'th',
+      'thead',
+      'tbody',
+      'ol',
+      'ul',
+      'li',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'a',
+      'pre',
+      'blockquote',
+      'hr',
+      'sup',
+      'sub',
+      'font',
     ]);
-    const ALLOWED_ATTRS = new Set([
-      'href', 'target', 'style', 'align', 'colspan', 'rowspan',
-    ]);
+    const ALLOWED_ATTRS = new Set(['href', 'target', 'style', 'align', 'colspan', 'rowspan']);
     return raw
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -660,7 +699,7 @@ export function BillDetailPage({
       .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (tag, name) => {
         if (!ALLOWED_TAGS.has(name.toLowerCase())) return '';
         return tag.replace(/\s+([a-z-]+)=/gi, (attrMatch, attr) =>
-          ALLOWED_ATTRS.has(attr.toLowerCase()) ? attrMatch : ' data-removed=',
+          ALLOWED_ATTRS.has(attr.toLowerCase()) ? attrMatch : ' data-removed='
         );
       });
   }, [billTextQuery.data?.html, isPdf]);
@@ -715,7 +754,7 @@ export function BillDetailPage({
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="min-w-0 flex-1 pr-1">
                     <View className="flex-row items-start gap-2.5">
-                      <View className="mt-px h-[22.5px] justify-center">
+                      <View className="mt-0.5 h-[22.5px] justify-center">
                         <FileText
                           size={20}
                           color="#71717a"
@@ -745,10 +784,7 @@ export function BillDetailPage({
                         />
                         <Text
                           className="font-sans-semibold text-xs leading-none tracking-tight"
-                          style={[
-                            { color: STANCE_BADGE[stanceKey].text },
-                            PILL_LABEL_TEXT_STYLE,
-                          ]}>
+                          style={[{ color: STANCE_BADGE[stanceKey].text }, PILL_LABEL_TEXT_STYLE]}>
                           {STANCE_WORD[stanceKey]}
                         </Text>
                       </View>
@@ -785,9 +821,7 @@ export function BillDetailPage({
                 <View className="mt-3 flex-row flex-wrap items-center gap-2">
                   <Text className="font-sans text-xs text-zinc-500">Sponsors:</Text>
                   {bill.sponsors.map((sponsor, idx) => (
-                    <View
-                      key={idx}
-                      className="rounded bg-zinc-100 px-2 py-0.5">
+                    <View key={idx} className="rounded bg-zinc-100 px-2 py-0.5">
                       <Text className="font-sans-medium text-xs text-zinc-700">
                         {sponsor.name} ({sponsor.party})
                       </Text>
@@ -819,7 +853,8 @@ export function BillDetailPage({
                           borderBottomColor: active ? tabStanceHighlight.border : 'transparent',
                           backgroundColor: active ? tabStanceHighlight.bg : 'transparent',
                           borderRadius: 8,
-                          marginVertical: 4,
+                          marginBottom: 0,
+                          marginTop: 4,
                           marginHorizontal: 4,
                         },
                       ]}>
@@ -847,8 +882,7 @@ export function BillDetailPage({
                 {/* ── SUMMARY ── */}
                 {activeTab === 'summary' && (
                   <View className="gap-6">
-                    <View
-                      className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                    <View className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                       <Pressable
                         onPress={() => setAiInfoOpen((v) => !v)}
                         className="flex-row items-center justify-between active:opacity-70"
@@ -860,8 +894,7 @@ export function BillDetailPage({
                             AI-generated from the knowledge graph
                           </Text>
                         </View>
-                        <View
-                          style={{ transform: [{ rotate: aiInfoOpen ? '180deg' : '0deg' }] }}>
+                        <View style={{ transform: [{ rotate: aiInfoOpen ? '180deg' : '0deg' }] }}>
                           <ChevronDown size={14} color="#a1a1aa" strokeWidth={2} />
                         </View>
                       </Pressable>
@@ -877,7 +910,9 @@ export function BillDetailPage({
                     <View>
                       <View className="mb-2 flex-row items-center gap-1.5">
                         <Sparkles size={13} color="#71717a" />
-                        <Text className="font-sans-semibold text-sm text-zinc-800">What it means</Text>
+                        <Text className="font-sans-semibold text-sm text-zinc-800">
+                          What it means
+                        </Text>
                       </View>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
                         {bill.summary?.trim() ? (
@@ -894,7 +929,9 @@ export function BillDetailPage({
                     <View>
                       <View className="mb-2 flex-row items-center gap-1.5">
                         <Sparkles size={13} color="#71717a" />
-                        <Text className="font-sans-semibold text-sm text-zinc-800">Why it matters</Text>
+                        <Text className="font-sans-semibold text-sm text-zinc-800">
+                          Why it matters
+                        </Text>
                       </View>
                       <View className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4">
                         {bill.whyMatters?.trim() ? (
@@ -921,179 +958,222 @@ export function BillDetailPage({
                         className="mb-2 flex-row items-center gap-1 self-start rounded-md py-0.5 active:opacity-70"
                         accessibilityRole="button"
                         accessibilityState={{ expanded: billTextOpen }}
-                        accessibilityLabel={billTextOpen ? 'Collapse bill text' : 'Expand bill text'}>
-                        <Text className="font-sans-semibold text-sm text-zinc-800">
-                          Bill text
-                        </Text>
+                        accessibilityLabel={
+                          billTextOpen ? 'Collapse bill text' : 'Expand bill text'
+                        }>
+                        <Text className="font-sans-semibold text-sm text-zinc-800">Bill text</Text>
                         <View
                           className="h-5 w-[18px] items-center justify-center"
                           style={{ transform: [{ rotate: billTextOpen ? '180deg' : '0deg' }] }}>
                           <ChevronDown size={18} color="#71717a" strokeWidth={2} />
                         </View>
                       </Pressable>
-                      {billTextOpen && <View className="rounded-xl border border-zinc-200 bg-white p-4">
-                        {detailBillText.length > 0 ? (
-                          <ScrollView
-                            className="max-h-52 rounded-lg bg-zinc-50 p-3"
-                            nestedScrollEnabled>
-                            <Text className="font-sans text-xs leading-5 text-zinc-600">
-                              {detailBillText}
-                            </Text>
-                          </ScrollView>
-                        ) : isPlainText && billTextQuery.data?.html ? (
-                          <ScrollView
-                            className="max-h-96 rounded-lg bg-zinc-50 p-3"
-                            nestedScrollEnabled
-                            horizontal={false}>
-                            <ScrollView horizontal nestedScrollEnabled>
-                              <Text
-                                className="font-sans text-[11px] text-zinc-600"
-                                style={{
-                                  lineHeight: 18,
-                                  whiteSpace: 'pre',
-                                } as any}>
-                                {billTextQuery.data.html}
+                      {billTextOpen && (
+                        <View className="rounded-xl border border-zinc-200 bg-white p-4">
+                          {detailBillText.length > 0 ? (
+                            <ScrollView
+                              className="max-h-52 rounded-lg bg-zinc-50 p-3"
+                              nestedScrollEnabled>
+                              <Text className="font-sans text-xs leading-5 text-zinc-600">
+                                {detailBillText}
                               </Text>
                             </ScrollView>
-                          </ScrollView>
-                        ) : sanitizedHtml ? (
-                          <ScrollView
-                            className="max-h-96 rounded-lg bg-zinc-50 p-3"
-                            nestedScrollEnabled>
-                            {Platform.OS === 'web' ? (
-                              <div
-                                className="bill-text-html"
-                                style={{ fontSize: 12, lineHeight: '1.6', color: '#52525b', fontFamily: 'GreycliffCF_400Regular, Greycliff CF, sans-serif', wordWrap: 'break-word' }}
-                                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-                              />
-                            ) : (
-                              <RenderHtml
-                                contentWidth={300}
-                                source={{ html: sanitizedHtml }}
-                                ignoredDomTags={['style', 'basefont', 'font']}
-                                systemFonts={[
-                                  'GreycliffCF_400Regular',
-                                  'GreycliffCF_500Medium',
-                                  'GreycliffCF_600DemiBold',
-                                  'GreycliffCF_700Bold',
-                                ]}
-                                defaultTextProps={{ allowFontScaling: true }}
-                                baseStyle={{
-                                  fontSize: 12,
-                                  lineHeight: 20,
-                                  color: '#52525b',
-                                  fontFamily: 'GreycliffCF_400Regular',
-                                }}
-                                tagsStyles={{
-                                  b: { fontFamily: 'GreycliffCF_700Bold' },
-                                  strong: { fontFamily: 'GreycliffCF_700Bold' },
-                                  em: { fontStyle: 'italic' },
-                                  i: { fontStyle: 'italic' },
-                                  h1: { fontSize: 18, fontFamily: 'GreycliffCF_700Bold', marginVertical: 6 },
-                                  h2: { fontSize: 16, fontFamily: 'GreycliffCF_700Bold', marginVertical: 5 },
-                                  h3: { fontSize: 14, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 4 },
-                                  h4: { fontSize: 13, fontFamily: 'GreycliffCF_600DemiBold', marginVertical: 3 },
-                                  pre: {
-                                    fontFamily: 'GreycliffCF_400Regular',
+                          ) : isPlainText && billTextQuery.data?.html ? (
+                            <ScrollView
+                              className="max-h-96 rounded-lg bg-zinc-50 p-3"
+                              nestedScrollEnabled
+                              horizontal={false}>
+                              <ScrollView horizontal nestedScrollEnabled>
+                                <Text
+                                  className="font-sans text-[11px] text-zinc-600"
+                                  style={
+                                    {
+                                      lineHeight: 18,
+                                      whiteSpace: 'pre',
+                                    } as any
+                                  }>
+                                  {billTextQuery.data.html}
+                                </Text>
+                              </ScrollView>
+                            </ScrollView>
+                          ) : sanitizedHtml ? (
+                            <ScrollView
+                              className="max-h-96 rounded-lg bg-zinc-50 p-3"
+                              nestedScrollEnabled>
+                              {Platform.OS === 'web' ? (
+                                <div
+                                  className="bill-text-html"
+                                  style={{
+                                    fontSize: 12,
+                                    lineHeight: '1.6',
+                                    color: '#52525b',
+                                    fontFamily: 'GreycliffCF_400Regular, Greycliff CF, sans-serif',
+                                    wordWrap: 'break-word',
+                                  }}
+                                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                                />
+                              ) : (
+                                <RenderHtml
+                                  contentWidth={300}
+                                  source={{ html: sanitizedHtml }}
+                                  ignoredDomTags={['style', 'basefont', 'font']}
+                                  systemFonts={[
+                                    'GreycliffCF_400Regular',
+                                    'GreycliffCF_500Medium',
+                                    'GreycliffCF_600DemiBold',
+                                    'GreycliffCF_700Bold',
+                                  ]}
+                                  defaultTextProps={{ allowFontScaling: true }}
+                                  baseStyle={{
                                     fontSize: 12,
                                     lineHeight: 20,
-                                  },
-                                  p: { marginVertical: 3 },
-                                  li: { marginVertical: 1 },
-                                  a: { color: '#2563eb', textDecorationLine: 'underline' },
-                                }}
-                              />
-                            )}
-                          </ScrollView>
-                        ) : billTextQuery.isLoading ? (
-                          <Text className="font-sans text-sm text-zinc-400">
-                            Loading bill text...
-                          </Text>
-                        ) : isPdf && rawGraph?.url?.trim() ? (
-                          <View className="gap-3">
-                            <Text className="font-sans text-sm leading-relaxed text-zinc-600">
-                              This bill text is available as a PDF.
+                                    color: '#52525b',
+                                    fontFamily: 'GreycliffCF_400Regular',
+                                  }}
+                                  tagsStyles={{
+                                    b: { fontFamily: 'GreycliffCF_700Bold' },
+                                    strong: { fontFamily: 'GreycliffCF_700Bold' },
+                                    em: { fontStyle: 'italic' },
+                                    i: { fontStyle: 'italic' },
+                                    h1: {
+                                      fontSize: 18,
+                                      fontFamily: 'GreycliffCF_700Bold',
+                                      marginVertical: 6,
+                                    },
+                                    h2: {
+                                      fontSize: 16,
+                                      fontFamily: 'GreycliffCF_700Bold',
+                                      marginVertical: 5,
+                                    },
+                                    h3: {
+                                      fontSize: 14,
+                                      fontFamily: 'GreycliffCF_600DemiBold',
+                                      marginVertical: 4,
+                                    },
+                                    h4: {
+                                      fontSize: 13,
+                                      fontFamily: 'GreycliffCF_600DemiBold',
+                                      marginVertical: 3,
+                                    },
+                                    pre: {
+                                      fontFamily: 'GreycliffCF_400Regular',
+                                      fontSize: 12,
+                                      lineHeight: 20,
+                                    },
+                                    p: { marginVertical: 3 },
+                                    li: { marginVertical: 1 },
+                                    a: { color: '#2563eb', textDecorationLine: 'underline' },
+                                  }}
+                                />
+                              )}
+                            </ScrollView>
+                          ) : billTextQuery.isLoading ? (
+                            <Text className="font-sans text-sm text-zinc-400">
+                              Loading bill text...
                             </Text>
-                            <Pressable
-                              onPress={() => void Linking.openURL(rawGraph.url!.trim())}
-                              className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
-                              <Text className="font-sans-medium text-xs text-zinc-800">
-                                View PDF on LegiScan
+                          ) : isPdf && rawGraph?.url?.trim() ? (
+                            <View className="gap-3">
+                              <Text className="font-sans text-sm leading-relaxed text-zinc-600">
+                                This bill text is available as a PDF.
                               </Text>
-                            </Pressable>
-                          </View>
-                        ) : (
-                          <View className="gap-3">
-                            <Text className="font-sans text-sm leading-relaxed text-zinc-600">
-                              Full bill text is not available. Open the official source.
-                            </Text>
-                            <View className="flex-row flex-wrap gap-2">
-                              {rawGraph?.url?.trim() ? (
-                                <Pressable
-                                  onPress={() =>
-                                    void Linking.openURL(rawGraph.url!.trim())
-                                  }
-                                  className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
-                                  <Text className="font-sans-medium text-xs text-zinc-800">
-                                    LegiScan
-                                  </Text>
-                                </Pressable>
-                              ) : null}
-                              {rawGraph?.state_link?.trim() ? (
-                                <Pressable
-                                  onPress={() =>
-                                    void Linking.openURL(rawGraph.state_link!.trim())
-                                  }
-                                  className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
-                                  <Text className="font-sans-medium text-xs text-zinc-800">
-                                    State legislature
-                                  </Text>
-                                </Pressable>
+                              <Pressable
+                                onPress={() => void Linking.openURL(rawGraph.url!.trim())}
+                                className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
+                                <Text className="font-sans-medium text-xs text-zinc-800">
+                                  View PDF on LegiScan
+                                </Text>
+                              </Pressable>
+                            </View>
+                          ) : (
+                            <View className="gap-3">
+                              <Text className="font-sans text-sm leading-relaxed text-zinc-600">
+                                Full bill text is not available. Open the official source.
+                              </Text>
+                              <View className="flex-row flex-wrap gap-2">
+                                {rawGraph?.url?.trim() ? (
+                                  <Pressable
+                                    onPress={() => void Linking.openURL(rawGraph.url!.trim())}
+                                    className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
+                                    <Text className="font-sans-medium text-xs text-zinc-800">
+                                      LegiScan
+                                    </Text>
+                                  </Pressable>
+                                ) : null}
+                                {rawGraph?.state_link?.trim() ? (
+                                  <Pressable
+                                    onPress={() =>
+                                      void Linking.openURL(rawGraph.state_link!.trim())
+                                    }
+                                    className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 active:bg-zinc-100">
+                                    <Text className="font-sans-medium text-xs text-zinc-800">
+                                      State legislature
+                                    </Text>
+                                  </Pressable>
+                                ) : null}
+                              </View>
+                              {!rawGraph?.url?.trim() && !rawGraph?.state_link?.trim() ? (
+                                <Text className="font-sans text-xs text-zinc-400">
+                                  No external link was provided for this bill.
+                                </Text>
                               ) : null}
                             </View>
-                            {!rawGraph?.url?.trim() && !rawGraph?.state_link?.trim() ? (
-                              <Text className="font-sans text-xs text-zinc-400">
-                                No external link was provided for this bill.
-                              </Text>
-                            ) : null}
-                          </View>
-                        )}
-                      </View>}
+                          )}
+                        </View>
+                      )}
                     </View>
                     <BillGraphRecordPlaceholder values={graphRecordValues} stanceKey={stanceKey} />
                     <View>
-                      <Text className="mb-2 font-sans-semibold text-sm text-zinc-800">
-                        Legislative history
-                      </Text>
-                      <View className="rounded-xl border border-zinc-200 bg-white p-4">
-                        {detailHistory.length === 0 ? (
-                          <Text className="font-sans text-sm text-zinc-500">
-                            No actions recorded yet.
-                          </Text>
-                        ) : (
-                          detailHistory.map((entry, i) => (
-                            <View
-                              key={i}
-                              className="mb-3.5 pb-3.5"
-                              style={
-                                i < detailHistory.length - 1
-                                  ? {
-                                      borderBottomWidth: 0.5,
-                                      borderBottomColor: 'rgba(228,228,231,0.9)',
-                                    }
-                                  : { paddingBottom: 0, marginBottom: 0 }
-                              }>
-                              <Text className="mb-1 font-sans text-[11px] text-zinc-400">
-                                {entry.date}
-                                {entry.chamber ? ` · ${entry.chamber}` : ''}
-                              </Text>
-                              <Text className="font-sans text-[13px] leading-relaxed text-zinc-800">
-                                {entry.action}
-                              </Text>
-                            </View>
-                          ))
-                        )}
-                      </View>
+                      <Pressable
+                        onPress={() => setHistoryOpen((o) => !o)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        className="mb-2 flex-row items-center gap-1 self-start rounded-md py-0.5 active:opacity-70"
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: historyOpen }}
+                        accessibilityLabel={
+                          historyOpen
+                            ? 'Collapse legislative history'
+                            : 'Expand legislative history'
+                        }>
+                        <Text className="font-sans-semibold text-sm text-zinc-800">
+                          Legislative history
+                        </Text>
+                        <View
+                          className="h-5 w-[18px] items-center justify-center"
+                          style={{ transform: [{ rotate: historyOpen ? '180deg' : '0deg' }] }}>
+                          <ChevronDown size={18} color="#71717a" strokeWidth={2} />
+                        </View>
+                      </Pressable>
+                      {historyOpen && (
+                        <View className="rounded-xl border border-zinc-200 bg-white p-4">
+                          {detailHistory.length === 0 ? (
+                            <Text className="font-sans text-sm text-zinc-500">
+                              No actions recorded yet.
+                            </Text>
+                          ) : (
+                            detailHistory.map((entry, i) => (
+                              <View
+                                key={i}
+                                className="mb-3.5 pb-3.5"
+                                style={
+                                  i < detailHistory.length - 1
+                                    ? {
+                                        borderBottomWidth: 0.5,
+                                        borderBottomColor: 'rgba(228,228,231,0.9)',
+                                      }
+                                    : { paddingBottom: 0, marginBottom: 0 }
+                                }>
+                                <Text className="mb-1 font-sans text-[11px] text-zinc-400">
+                                  {entry.date}
+                                  {entry.chamber ? ` · ${entry.chamber}` : ''}
+                                </Text>
+                                <Text className="font-sans text-[13px] leading-relaxed text-zinc-800">
+                                  {entry.action}
+                                </Text>
+                              </View>
+                            ))
+                          )}
+                        </View>
+                      )}
                     </View>
                   </View>
                 )}
@@ -1196,12 +1276,14 @@ export function BillDetailPage({
                             <View className="flex-row items-center gap-2">
                               <Animated.View
                                 style={{
-                                  transform: [{
-                                    rotate: spinAnim.interpolate({
-                                      inputRange: [0, 1],
-                                      outputRange: ['0deg', '360deg'],
-                                    }),
-                                  }],
+                                  transform: [
+                                    {
+                                      rotate: spinAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: ['0deg', '360deg'],
+                                      }),
+                                    },
+                                  ],
                                 }}>
                                 <Loader2 size={16} color="#fff" />
                               </Animated.View>

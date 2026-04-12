@@ -21,7 +21,7 @@ interface BottomNavProps {
   onTabPress?: (tab: Tab) => void;
 }
 
-const ICON_SIZE = Platform.OS === 'web' ? 22 : 26;
+const ICON_SIZE = Platform.OS === 'web' ? 22 : 24;
 
 // Dark nav — matches state map & state overview card + HeroSection glass palette
 const PALETTE = {
@@ -159,7 +159,7 @@ export function BottomNav({ activeTab: activeTabProp, onTabPress }: BottomNavPro
               </View>
 
               <Text
-                className={`font-sans ${Platform.OS === 'web' ? 'text-[11px]' : 'text-[13px]'}`}
+                className={`font-sans ${Platform.OS === 'web' ? 'text-[11px]' : 'text-[12px]'}`}
                 style={{
                   color: labelColor,
                   fontWeight: isActive || isCrisis ? '500' : '400',

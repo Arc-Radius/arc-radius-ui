@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Send,
   HelpCircle,
@@ -189,6 +189,7 @@ export default function AskRoute() {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const nextId = useRef(1);
+  const insets = useSafeAreaInsets();
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
@@ -235,7 +236,7 @@ export default function AskRoute() {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}>
         <View className="flex-1">
           {/* Chat area */}
           <ScrollView

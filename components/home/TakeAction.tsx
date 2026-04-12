@@ -8,26 +8,50 @@ const ACTIONS = [
   {
     key: 'contact',
     title: 'Contact your reps',
-    description: 'Send a message to your elected officials about bills that matter to you.',
-    cta: 'Get started →',
+    description: 'Find your elected officials in your zipcode and send them a message about bills that matter to you.',
+    status: 'In Development',
     dotColor: '#3b82f6',
     icon: 'contact',
-  },
-  {
-    key: 'legal',
-    title: 'Find legal aid',
-    description: 'Connect with LGBTQ+-affirming legal services and know your options.',
-    cta: 'Find help →',
-    dotColor: '#60a5fa',
-    icon: 'legal',
+    dimmed: false,
   },
   {
     key: 'campaign',
     title: 'Join a campaign',
-    description: 'Organize with your community and amplify your impact together.',
-    cta: 'Get involved →',
-    dotColor: '#93c5fd',
+    description: 'Browse LGBTQ+ advocacy organizations and find verified resources in your community.',
+    status: 'Coming Soon',
+    dotColor: '#60a5fa',
     icon: 'campaign',
+    dimmed: true,
+  },
+] as const;
+
+const ROADMAP = [
+  {
+    key: 'ask',
+    title: 'Ask anything',
+    description: 'Query bills, compare states and years with natural language.',
+    status: 'Live — In Testing',
+    dotColor: '#3b82f6',
+    icon: 'contact',
+    dimmed: false,
+  },
+  {
+    key: 'accessibility',
+    title: 'Accessibility & explainability',
+    description: 'Improving readability of summaries and transparency of classification and graph-based reasoning.',
+    status: 'Planned',
+    dotColor: '#a1a1aa',
+    icon: 'legal',
+    dimmed: true,
+  },
+  {
+    key: 'explore',
+    title: 'Data exploration',
+    description: 'Dive into legislative trends, diffusion patterns, and insights — all driven by our knowledge graph.',
+    status: 'Planned',
+    dotColor: '#a1a1aa',
+    icon: 'campaign',
+    dimmed: true,
   },
 ] as const;
 
@@ -96,29 +120,54 @@ function ActionIcon({ type }: { type: string }) {
   }
 }
 
+// ── Shared card type ────────────────────────────
+type CardAction = {
+  readonly key: string;
+  readonly title: string;
+  readonly description: string;
+  readonly status: string;
+  readonly dotColor: string;
+  readonly icon: string;
+  readonly dimmed: boolean;
+};
+
 // ── Mobile: vertical timeline card ───────────────
-function TimelineCard({ action, isLast }: { action: (typeof ACTIONS)[number]; isLast: boolean }) {
+function TimelineCard({ action, isLast, index }: { action: CardAction; isLast: boolean; index: number }) {
   return (
-    <View className={`flex-row ${isLast ? '' : 'mb-3'}`}>
-      {/* Dot + line */}
-      <View className="mr-3.5 w-[9px] items-center pt-1.5">
+    <View className={`flex-row ${isLast ? '' : 'mb-3'}`} style={action.dimmed ? { opacity: 0.5 } : undefined}>
+      {/* Number + line */}
+      <View className="mr-3 w-[20px] items-center pt-1">
         <View
-          className="h-[9px] w-[9px] rounded-full"
-          style={{ backgroundColor: action.dotColor }}
-        />
-        <View
-          className="mt-1 w-[1.5px] flex-1 rounded-full"
-          style={{ backgroundColor: action.dotColor, opacity: 0.4 }}
-        />
+          className="h-[20px] w-[20px] items-center justify-center rounded-full"
+          style={{ backgroundColor: action.dotColor }}>
+          <Text className="font-sans-semibold text-[10px] text-white">{index + 1}</Text>
+        </View>
+        {!isLast && (
+          <View
+            className="mt-1 w-[1.5px] flex-1 rounded-full"
+            style={{ backgroundColor: action.dotColor, opacity: 0.4 }}
+          />
+        )}
       </View>
 
       {/* Card */}
       <View
         className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-3.5"
         accessibilityLabel={action.title}>
-        <View className="mb-1.5 flex-row items-center gap-2">
-          <ActionIcon type={action.icon} />
-          <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
+        <View className="mb-1.5 flex-row items-center justify-between">
+          <View className="flex-row items-center gap-2">
+            <ActionIcon type={action.icon} />
+            <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
+          </View>
+          <View
+            className="rounded-full px-2 py-0.5"
+            style={{ backgroundColor: action.dimmed ? 'rgba(161,161,170,0.15)' : 'rgba(59,130,246,0.1)' }}>
+            <Text
+              className="font-sans-medium text-[9px]"
+              style={{ color: action.dimmed ? '#a1a1aa' : '#3b82f6' }}>
+              {action.status}
+            </Text>
+          </View>
         </View>
         <Text className="font-sans text-xs leading-[18px] text-zinc-600">{action.description}</Text>
       </View>
@@ -127,20 +176,33 @@ function TimelineCard({ action, isLast }: { action: (typeof ACTIONS)[number]; is
 }
 
 // ── Desktop: horizontal card ─────────────────────
-function HorizontalCard({ action }: { action: (typeof ACTIONS)[number] }) {
+function HorizontalCard({ action, index }: { action: CardAction; index: number }) {
   return (
     <View
       className="relative flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-4"
+      style={action.dimmed ? { opacity: 0.5 } : undefined}
       accessibilityLabel={action.title}>
-      {/* Dot peeks above card */}
+      {/* Number peeks above card */}
       <View
-        className="absolute -top-[5px] left-5 h-[9px] w-[9px] rounded-full"
-        style={{ backgroundColor: action.dotColor }}
-      />
+        className="absolute -top-[10px] left-5 h-[20px] w-[20px] items-center justify-center rounded-full"
+        style={{ backgroundColor: action.dotColor }}>
+        <Text className="font-sans-semibold text-[10px] text-white">{index + 1}</Text>
+      </View>
 
-      <View className="mb-2 flex-row items-center gap-2">
-        <ActionIcon type={action.icon} />
-        <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
+      <View className="mb-2 flex-row items-center justify-between">
+        <View className="flex-row items-center gap-2">
+          <ActionIcon type={action.icon} />
+          <Text className="font-sans-semibold text-sm text-zinc-800">{action.title}</Text>
+        </View>
+        <View
+          className="rounded-full px-2 py-0.5"
+          style={{ backgroundColor: action.dimmed ? 'rgba(161,161,170,0.15)' : 'rgba(59,130,246,0.1)' }}>
+          <Text
+            className="font-sans-medium text-[9px]"
+            style={{ color: action.dimmed ? '#a1a1aa' : '#3b82f6' }}>
+            {action.status}
+          </Text>
+        </View>
       </View>
 
       <Text className="font-sans text-xs leading-[18px] text-zinc-600">{action.description}</Text>
@@ -199,23 +261,62 @@ export function TakeAction({ onCrisisResources }: TakeActionProps) {
       {/* Header */}
       <View className="mb-5">
         <Text className="font-sans-bold text-lg text-zinc-800">Make your voice heard</Text>
-        <Text className="mt-1 font-sans text-xs text-zinc-500">Three ways to create change</Text>
+        <Text className="mt-1 font-sans text-xs text-zinc-500">
+          <Text className="font-sans-semibold">Coming to Arc Radius</Text>
+          {' — new ways to take action'}
+        </Text>
       </View>
 
       {/* Action cards */}
       {isCompact ? (
         <View className="mb-5">
           {ACTIONS.map((action, i) => (
-            <TimelineCard key={action.key} action={action} isLast={i === ACTIONS.length - 1} />
+            <TimelineCard
+              key={action.key}
+              action={action}
+              isLast={i === ACTIONS.length - 1}
+              index={i}
+            />
           ))}
         </View>
       ) : (
         <View className="mb-5 flex-row gap-3">
-          {ACTIONS.map((action) => (
-            <HorizontalCard key={action.key} action={action} />
+          {ACTIONS.map((action, i) => (
+            <HorizontalCard key={action.key} action={action} index={i} />
           ))}
         </View>
       )}
+
+      {/* GraphRAG roadmap */}
+      <View className="mb-5">
+        <View className="mb-5">
+          <Text className="font-sans-bold text-lg text-zinc-800">
+            Powered by our Knowledge Graph
+          </Text>
+          <Text className="mt-1 font-sans text-xs text-zinc-500">
+            <Text className="font-sans-semibold">Our catalyst GraphRAG engine</Text>
+            {' — and what it powers next'}
+          </Text>
+        </View>
+        {isCompact ? (
+          <View>
+            {ROADMAP.map((item, i) => (
+              <TimelineCard
+                key={item.key}
+                action={item}
+                isLast={i === ROADMAP.length - 1}
+                index={i}
+              />
+            ))}
+          </View>
+        ) : (
+          <View className="flex-row gap-3">
+            {ROADMAP.map((item, i) => (
+              <HorizontalCard key={item.key} action={item} index={i} />
+            ))}
+          </View>
+        )}
+      </View>
 
       {/* Crisis callout */}
       <CrisisCallout onPress={onCrisisResources} />

@@ -62,9 +62,9 @@ export function StateDropdown({
         <Pressable
           className="flex-row items-center gap-2 self-start rounded-full active:opacity-80"
           style={{
-            paddingVertical: 8,
-            paddingLeft: 12,
-            paddingRight: 12,
+            paddingVertical: Platform.OS === 'web' ? 8 : 6,
+            paddingLeft: Platform.OS === 'web' ? 12 : 10,
+            paddingRight: Platform.OS === 'web' ? 12 : 10,
             borderWidth: 0.5,
             borderColor: '#d4d4d8',
             backgroundColor: '#fff',

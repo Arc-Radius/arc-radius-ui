@@ -82,7 +82,7 @@ export function Header() {
       </View>
       {/* Right: About us */}
       <Pressable
-        onPress={() => Linking.openURL('https://ambroquach29.github.io/spring26-mids-capstone/#about')}
+        onPress={() => Linking.openURL('https://arcradius.org')}
         className="flex-row items-center gap-1 rounded-lg active:opacity-70"
         style={{
           paddingHorizontal: isCompact ? 8 : 12,

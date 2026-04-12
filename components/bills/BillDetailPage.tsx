@@ -1320,6 +1320,9 @@ export function BillDetailPage({
                               Think this classification is wrong?
                             </Text>
                           </View>
+                          <Text className="mt-2 font-sans text-[9px] leading-3 text-zinc-400">
+                            Reporting requires Google sign-in to prevent abuse. We only receive your display name and email — no other data is accessed or stored beyond the report.
+                          </Text>
                         </View>
                       </View>
                     )}

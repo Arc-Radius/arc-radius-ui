@@ -220,7 +220,9 @@ export default function AskRoute() {
         {
           id: nextId.current++,
           role: 'assistant',
-          text: `Something went wrong: ${err instanceof Error ? err.message : 'Please try again.'}`,
+          text: err instanceof Error && err.message.includes('timed out')
+            ? 'The request timed out — our knowledge graph can take a moment on complex queries. Please try again.'
+            : `Something went wrong: ${err instanceof Error ? err.message : 'Please try again.'}`,
         },
       ]);
     } finally {

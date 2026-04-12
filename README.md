@@ -1,4 +1,4 @@
-# ArcRadius — Policy Navigator
+# ArcRadius — UI Client
 
 ArcRadius helps people follow LGBTQ+ legislation across the U.S.: what’s moving in each state, what a bill actually does, and ways to respond when it matters. This repo is the ui client - Expo + React Native
 

@@ -1,6 +1,6 @@
 # ArcRadius — Policy Navigator
 
-ArcRadius helps people follow LGBTQ+ legislation across the U.S.: what’s moving in each state, what a bill actually does, and ways to respond when it matters. This repo is the ui client - Expo + React Native with a web build we can ship like a normal site.
+ArcRadius helps people follow LGBTQ+ legislation across the U.S.: what’s moving in each state, what a bill actually does, and ways to respond when it matters. This repo is the ui client - Expo + React Native
 
 If you just want to see it: **[arcradi.us](https://arcradi.us)**
 
@@ -22,7 +22,7 @@ In the terminal UI, use **single-key shortcuts** to open a target (e.g. **w** we
 
 ## Scripts
 
-These npm scripts wrap the same [Expo CLI](https://docs.expo.dev/more/expo-cli/) commands above:
+These npm scripts wrap the [Expo CLI](https://docs.expo.dev/more/expo-cli/) commands:
 
 | Command | What it does |
 |--------|----------------|

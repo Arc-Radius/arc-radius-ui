@@ -46,8 +46,8 @@ const ROADMAP = [
   },
   {
     key: 'explore',
-    title: 'Data exploration',
-    description: 'Dive into legislative trends, diffusion patterns, and insights — all driven by our knowledge graph.',
+    title: 'Policy insight capabilities',
+    description: 'Dive into legislative trends, diffusion patterns, visualizations, and insights — all driven by our knowledge graph.',
     status: 'Planned',
     dotColor: '#a1a1aa',
     icon: 'campaign',

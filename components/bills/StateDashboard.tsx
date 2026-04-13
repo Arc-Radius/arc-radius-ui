@@ -97,7 +97,7 @@ export function StateDashboard({
             </View>
           ) : (
             <View className="flex-row items-start gap-2.5">
-              <View className="h-[22px] justify-center">
+              <View className="mt-0.5 h-[22.5px] justify-center">
                 <Landmark size={20} color="#71717a" strokeWidth={2} accessibilityElementsHidden />
               </View>
               <View className="gap-1">

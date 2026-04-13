@@ -1,7 +1,10 @@
 import { Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ShieldCheck } from 'lucide-react-native';
 
 export function PrivacyBanner() {
+  const router = useRouter();
+
   return (
     <View className="flex-row gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-4">
       <ShieldCheck size={20} color="#71717a" style={{ marginTop: 2 }} />
@@ -12,9 +15,17 @@ export function PrivacyBanner() {
         <Text className="font-sans text-xs leading-5 text-zinc-500">
           Arc Radius does not store, share, or sell your location or personal data. All searches are
           anonymous. We believe safety starts with privacy — especially for LGBTQ+ youth in
-          vulnerable environments.{' '}
-          <Text className="font-sans text-xs leading-5 text-zinc-700 underline" onPress={() => {}}>
-            Read our full privacy policy
+          vulnerable environments.{'  '}
+          <Text
+            className="font-sans text-xs leading-5 text-zinc-700 underline"
+            onPress={() => router.push('/privacy' as any)}>
+            Privacy Policy
+          </Text>
+          {' · '}
+          <Text
+            className="font-sans text-xs leading-5 text-zinc-700 underline"
+            onPress={() => router.push('/terms' as any)}>
+            Terms of Service
           </Text>
         </Text>
       </View>

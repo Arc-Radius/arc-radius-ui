@@ -1094,7 +1094,7 @@ export function StateBillsPage({
                       {filteredBills.length} bill{filteredBills.length !== 1 ? 's' : ''}
                       {filteredBills.length > 0 ? (
                         <Text className="font-sans text-[11px] text-zinc-400">
-                          {' · '}Tap a card for bill details
+                          {' · '}Tap a card
                         </Text>
                       ) : null}
                     </Text>
@@ -1183,17 +1183,17 @@ export function StateBillsPage({
                     {/* Native: search box */}
                     {!isWide && (
                       <View className="shrink flex-row items-center rounded-lg border border-zinc-200 bg-white"
-                        style={{ height: 28, minWidth: Platform.OS === 'web' ? 90 : 140, maxWidth: Platform.OS === 'web' ? 140 : 200 }}>
-                        <View style={{ paddingLeft: 8 }}>
-                          <Search size={12} color="#a1a1aa" />
+                        style={{ height: Platform.OS === 'web' ? 28 : 32, minWidth: Platform.OS === 'web' ? 90 : 140, maxWidth: Platform.OS === 'web' ? 140 : 200 }}>
+                        <View style={{ paddingLeft: Platform.OS === 'web' ? 8 : 10 }}>
+                          <Search size={Platform.OS === 'web' ? 12 : 13} color="#a1a1aa" />
                         </View>
                         <TextInput
                           value={searchQuery}
                           onChangeText={setSearchQuery}
                           placeholder="Search bills..."
                           placeholderTextColor="#a1a1aa"
-                          className="flex-1 px-1.5 font-sans text-[11px] text-zinc-800"
-                          style={{ height: 28 }}
+                          className={`flex-1 px-1.5 font-sans ${Platform.OS === 'web' ? 'text-[11px]' : 'text-[12px]'} text-zinc-800`}
+                          style={{ height: Platform.OS === 'web' ? 28 : 32 }}
                         />
                         {searchQuery.length > 0 && (
                           <Pressable
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   fab: {
-    backgroundColor: 'rgba(24,24,27,0.90)',
+    backgroundColor: 'rgba(24,24,27,0.93)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',

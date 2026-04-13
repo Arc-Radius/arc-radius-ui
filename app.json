@@ -1,37 +1,54 @@
 {
   "expo": {
-    "name": "ArcRadius - Policy Navigator",
-    "slug": "arc-radius-ui",
+    "name": "Arc Radius - Policy Navigator",
+    "slug": "arc-radius",
     "scheme": "arc-radius",
     "version": "1.0.0",
-    "web": {
-      "bundler": "metro",
-      "favicon": "./assets/favicon.png",
-      "name": "ArcRadius - Policy Navigator",
-      "description": "Track LGBTQ+ legislation across all 50 states. Understand bills, take action, and stay informed.",
-      "themeColor": "#18181b"
-    },
-    "experiments": {
-      "tsconfigPaths": true
-    },
-    "plugins": ["expo-font", "expo-router"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#00264d"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "edu.berkeley.ischool.arcradius",
+      "infoPlist": {
+        "CFBundleDisplayName": "Arc Radius",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#00264d"
       }
-    }
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png",
+      "name": "Arc Radius - Policy Navigator",
+      "description": "Track LGBTQ+ legislation across all 50 states. Understand bills, take action, and stay informed.",
+      "themeColor": "#18181b"
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "plugins": [
+      "expo-font",
+      "expo-router"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6155d0d9-aeaa-45b4-b1d2-9bf03fb05b7c"
+      }
+    },
+    "owner": "arcradius-organization"
   }
 }

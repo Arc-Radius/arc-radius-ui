@@ -27,9 +27,9 @@ export default function BillsStatePickerRoute() {
     <SafeAreaView className="flex-1 bg-app-bg" edges={[]}>
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <ScreenContent className="pt-8">
-          <Text className="font-sans-bold text-xl text-zinc-900">State bills</Text>
-          <Text className="mt-2 font-sans text-sm leading-relaxed text-zinc-600">
-            Choose a state to see active and passed bills tracked in Arc Radius.
+          <Text className="font-sans-bold text-2xl text-zinc-900">State bills</Text>
+          <Text className="mt-1 font-sans text-base leading-7 text-zinc-600">
+            Choose a state to see proposed and passed bills tracked in Arc Radius.
           </Text>
           <View className="mt-6 max-w-md">
             <StateDropdown

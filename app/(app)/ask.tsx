@@ -160,7 +160,10 @@ function TypingIndicator() {
     const dotsInterval = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
     }, 400);
-    return () => { spin.stop(); clearInterval(dotsInterval); };
+    return () => {
+      spin.stop();
+      clearInterval(dotsInterval);
+    };
   }, [spinAnim]);
 
   const rotate = spinAnim.interpolate({
@@ -175,7 +178,8 @@ function TypingIndicator() {
           <Loader2 size={14} color="#71717a" />
         </Animated.View>
         <Text className="font-sans text-sm text-zinc-400">
-          Querying knowledge graph{dots}{'   '.slice(dots.length)}
+          Querying knowledge graph{dots}
+          {'   '.slice(dots.length)}
         </Text>
       </View>
     </View>
@@ -220,9 +224,10 @@ export default function AskRoute() {
         {
           id: nextId.current++,
           role: 'assistant',
-          text: err instanceof Error && err.message.includes('timed out')
-            ? 'The request timed out — our knowledge graph can take a moment on complex queries. Please try again.'
-            : `Something went wrong: ${err instanceof Error ? err.message : 'Please try again.'}`,
+          text:
+            err instanceof Error && err.message.includes('timed out')
+              ? 'The request timed out — our knowledge graph can take a moment on complex queries. Please try again.'
+              : `Something went wrong: ${err instanceof Error ? err.message : 'Please try again.'}`,
         },
       ]);
     } finally {
@@ -252,9 +257,10 @@ export default function AskRoute() {
             <View className="w-full max-w-[880px] self-center">
               {/* Header */}
               <View className="mb-5">
-                <Text className="font-sans-bold text-2xl text-zinc-900">Ask anything</Text>
+                <Text className="font-sans-bold text-2xl text-zinc-900">Ask with Agency</Text>
                 <Text className="mt-1 font-sans text-base leading-7 text-zinc-600">
-                  Powered by our Legislative Knowledge Graph.
+                  Grounded, structured answers beyond obscured chatbot interactions. Powered by our Legislative
+                  Knowledge Graph.
                 </Text>
               </View>
             </View>
@@ -284,7 +290,10 @@ export default function AskRoute() {
                           onPress={() => sendMessage(q)}
                           className="flex-row items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2.5 active:bg-gray-100">
                           <MessageCircleMore size={14} color="#3b82f6" />
-                          <Text className={`flex-1 font-sans text-gray-700 ${Platform.OS === 'web' ? 'text-[13px]' : 'text-[12px]'}`}>{q}</Text>
+                          <Text
+                            className={`flex-1 font-sans text-gray-700 ${Platform.OS === 'web' ? 'text-[13px]' : 'text-[12px]'}`}>
+                            {q}
+                          </Text>
                         </Pressable>
                       ))}
                     </View>

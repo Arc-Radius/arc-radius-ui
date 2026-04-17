@@ -146,6 +146,7 @@ export interface GenerateLetterParams {
   medium: 'email' | 'phone';
   stance: 'support' | 'oppose';
   tone: 'formal' | 'conversational';
+  representative_name?: string;
 }
 
 export async function generateBillLetter(

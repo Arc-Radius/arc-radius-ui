@@ -6,10 +6,18 @@ import { useQueries } from '@tanstack/react-query';
 import RenderHtml from 'react-native-render-html';
 import { useBillTextQuery } from '@/queries/useBillTextQuery';
 import { fetchBillDetail, generateBillLetter, type BillDetailMerged } from '@/api/bills';
+import {
+  lookupRepresentatives,
+  getRepEmail,
+  getRepPhone,
+  type Representative,
+} from '@/api/representatives';
+import * as MailComposer from 'expo-mail-composer';
 import { queryKeys } from '@/queries/keys';
 import type { Href } from 'expo-router';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Linking,
@@ -18,6 +26,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -32,6 +41,10 @@ import {
   AlertCircle,
   LogIn,
   ChevronDown,
+  Search,
+  MapPin,
+  Mail,
+  Phone,
 } from 'lucide-react-native';
 
 import { ScreenContent } from '@/components/ui/screen-layout';
@@ -76,6 +89,18 @@ interface HealthImpact {
   magnitude: 'significant' | 'moderate' | 'minor';
   description: string;
 }
+
+const stripMarkdownFormatting = (text: string): string =>
+  text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/\r\n/g, '\n')
+    // LLM output sometimes includes trailing spaces for markdown hard breaks.
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+
+const encodeMailtoValue = (value: string): string =>
+  encodeURIComponent(value).replace(/%0A/g, '%0D%0A');
 interface SponsorContact {
   name: string;
   email?: string;
@@ -588,6 +613,36 @@ export function BillDetailPage({
   const [format, setFormat] = useState<'email' | 'phone'>('email');
   const [tone, setTone] = useState<'formal' | 'conversational'>('formal');
   const [reportModal, setReportModal] = useState<'closed' | 'form' | 'submitted'>('closed');
+  const pageScrollRef = useRef<ScrollView>(null);
+  const takeActionTopYRef = useRef(0);
+
+  // Representative lookup
+  const [zipcode, setZipcode] = useState('');
+  const [reps, setReps] = useState<Representative[]>([]);
+  const [selectedRep, setSelectedRep] = useState<Representative | null>(null);
+  const [isLoadingReps, setIsLoadingReps] = useState(false);
+  const [repError, setRepError] = useState<string | null>(null);
+
+  const searchReps = async () => {
+    if (zipcode.length !== 5) return;
+    setIsLoadingReps(true);
+    setRepError(null);
+    setSelectedRep(null);
+    setReps([]);
+    try {
+      const data = await lookupRepresentatives(zipcode);
+      const all = [...data.state_legislators, ...data.federal_legislators];
+      if (all.length === 0) {
+        setRepError('No representatives found for this zip code.');
+      } else {
+        setReps(all);
+      }
+    } catch {
+      setRepError('Failed to look up representatives. Please try again.');
+    } finally {
+      setIsLoadingReps(false);
+    }
+  };
 
   const letterStance: 'support' | 'oppose' = stanceKey === 'harmful' ? 'oppose' : 'support';
   const accent = ACTION_ACCENT[stanceKey];
@@ -597,10 +652,14 @@ export function BillDetailPage({
     if (!billPk) return;
     setIsGeneratingLetter(true);
     try {
+      const repTitle = selectedRep?.title ?? '';
+      const repName = selectedRep?.name ?? '';
+      const fullRepName = repTitle && repName ? `${repTitle} ${repName}` : repName || undefined;
       const answer = await generateBillLetter(billPk, {
         medium: format,
         stance: letterStance,
         tone,
+        representative_name: fullRepName,
       });
       setDraftLetter(answer);
     } catch {
@@ -630,6 +689,20 @@ export function BillDetailPage({
     }),
     [stanceKey]
   );
+
+  const scrollToTakeActionTop = useCallback(() => {
+    requestAnimationFrame(() => {
+      pageScrollRef.current?.scrollTo({
+        y: Math.max(0, takeActionTopYRef.current - 12),
+        animated: true,
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'action') return;
+    scrollToTakeActionTop();
+  }, [activeTab, draftLetter, scrollToTakeActionTop]);
 
   const tabDef = [
     { key: 'summary' as const, label: 'Summary', Icon: Sparkles },
@@ -737,7 +810,7 @@ export function BillDetailPage({
 
   return (
     <View className="flex-1 bg-app-bg">
-      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+      <ScrollView ref={pageScrollRef} className="flex-1" contentContainerClassName="pb-10">
         <ScreenContent>
           <View className={Platform.OS === 'web' ? 'pt-4' : 'pt-2'}>
             <View
@@ -1180,7 +1253,11 @@ export function BillDetailPage({
 
                 {/* ── TAKE ACTION ── */}
                 {activeTab === 'action' && (
-                  <View className="gap-3">
+                  <View
+                    className="gap-3"
+                    onLayout={(event) => {
+                      takeActionTopYRef.current = event.nativeEvent.layout.y;
+                    }}>
                     {/* Idle state */}
                     {!draftLetter && (
                       <View className="gap-3">
@@ -1230,6 +1307,111 @@ export function BillDetailPage({
                               </Text>
                             </View>
                           </View>
+                          <View
+                            className="border-t"
+                            style={{ borderColor: 'rgba(228,228,231,0.9)' }}
+                          />
+
+                          {/* Zipcode → Representative lookup */}
+                          <View className="gap-2">
+                            <Text className="font-sans-medium text-xs text-zinc-500">
+                              Find your representative
+                            </Text>
+                            <View className="flex-row items-center gap-2">
+                              <View className="flex-1 flex-row items-center rounded-lg border border-zinc-200 bg-zinc-50"
+                                style={{ height: 36 }}>
+                                <View style={{ paddingLeft: 10 }}>
+                                  <MapPin size={13} color="#a1a1aa" />
+                                </View>
+                                <TextInput
+                                  value={zipcode}
+                                  onChangeText={(t) => setZipcode(t.replace(/\D/g, '').slice(0, 5))}
+                                  placeholder="Zip code"
+                                  placeholderTextColor="#a1a1aa"
+                                  keyboardType="number-pad"
+                                  maxLength={5}
+                                  returnKeyType="search"
+                                  onSubmitEditing={searchReps}
+                                  className="flex-1 px-2 font-sans text-[13px] text-zinc-800"
+                                  style={{ height: 36, ...({ outlineStyle: 'none' } as any) } as any}
+                                />
+                                {zipcode.length > 0 && (
+                                  <Pressable
+                                    onPress={() => { setZipcode(''); setReps([]); setSelectedRep(null); setRepError(null); }}
+                                    className="pr-2 active:opacity-70"
+                                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                                    <X size={12} color="#a1a1aa" />
+                                  </Pressable>
+                                )}
+                              </View>
+                              <Pressable
+                                onPress={searchReps}
+                                disabled={zipcode.length !== 5 || isLoadingReps}
+                                className="items-center justify-center rounded-lg px-3 active:opacity-90"
+                                style={{
+                                  height: 36,
+                                  backgroundColor: zipcode.length === 5 ? accent.button : '#d1d5db',
+                                }}>
+                                {isLoadingReps ? (
+                                  <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                  <Search size={14} color="#fff" />
+                                )}
+                              </Pressable>
+                            </View>
+
+                            {repError && (
+                              <Text className="font-sans text-xs text-red-500">{repError}</Text>
+                            )}
+
+                            {/* Rep results */}
+                            {reps.length > 0 && (
+                              <View className="gap-1.5">
+                                {reps.map((rep, i) => {
+                                  const isSelected = selectedRep === rep;
+                                  const email = getRepEmail(rep);
+                                  const phone = getRepPhone(rep);
+                                  return (
+                                    <Pressable
+                                      key={`${rep.name}-${i}`}
+                                      onPress={() => setSelectedRep(isSelected ? null : rep)}
+                                      className="flex-row items-center gap-3 rounded-lg border p-3 active:opacity-90"
+                                      style={{
+                                        borderColor: isSelected ? accent.button : '#e4e4e7',
+                                        backgroundColor: isSelected ? accent.activeBg : '#fff',
+                                      }}>
+                                      <View className="flex-1">
+                                        <Text className="font-sans-medium text-[13px] text-zinc-800">
+                                          {rep.title ? `${rep.title} ` : ''}{rep.name}
+                                        </Text>
+                                        <Text className="font-sans text-[11px] text-zinc-500">
+                                          {rep.chamber}{rep.party ? ` · ${rep.party}` : ''}{rep.district ? ` · Dist. ${rep.district}` : ''}
+                                        </Text>
+                                        {(email || phone) && (
+                                          <View className="mt-1 flex-row flex-wrap items-center gap-x-3 gap-y-0.5">
+                                            {email && (
+                                              <View className="shrink flex-row items-center gap-1" style={{ maxWidth: '100%' }}>
+                                                <Mail size={10} color="#71717a" style={{ flexShrink: 0 }} />
+                                                <Text className="shrink font-sans text-[10px] text-zinc-400" numberOfLines={1}>{email}</Text>
+                                              </View>
+                                            )}
+                                            {phone && (
+                                              <View className="flex-row items-center gap-1">
+                                                <Phone size={10} color="#71717a" style={{ flexShrink: 0 }} />
+                                                <Text className="font-sans text-[10px] text-zinc-400">{phone}</Text>
+                                              </View>
+                                            )}
+                                          </View>
+                                        )}
+                                      </View>
+                                      {isSelected && <Check size={16} color={accent.button} />}
+                                    </Pressable>
+                                  );
+                                })}
+                              </View>
+                            )}
+                          </View>
+
                           <View
                             className="border-t"
                             style={{ borderColor: 'rgba(228,228,231,0.9)' }}
@@ -1335,6 +1517,89 @@ export function BillDetailPage({
                             Generated {format === 'email' ? 'email message' : 'phone script'}
                           </Text>
                           <View className="flex-row items-center gap-1.5">
+                            {/* Send Email button */}
+                            {format === 'email' && selectedRep && getRepEmail(selectedRep) && (
+                              <Pressable
+                                onPress={async () => {
+                                  const email = getRepEmail(selectedRep)!;
+                                  const subjectMatch = draftLetter.match(/Subject:\s*(.+)/i);
+                                  const rawSubject = subjectMatch?.[1]?.trim() ?? '';
+                                  const subject = stripMarkdownFormatting(rawSubject);
+                                  const rawBody = subjectMatch
+                                    ? draftLetter.slice(draftLetter.indexOf('\n', subjectMatch.index!) + 1).trim()
+                                    : draftLetter;
+                                  const body = stripMarkdownFormatting(rawBody);
+                                  const plainMessage = `To: ${email}\nSubject: ${subject}\n\n${body}`;
+
+                                  if (Platform.OS === 'web') {
+                                    const webMailto = `mailto:${email}?subject=${encodeMailtoValue(subject)}&body=${encodeMailtoValue(body)}`;
+                                    try {
+                                      await Linking.openURL(webMailto);
+                                      return;
+                                    } catch {
+                                      await copyToClipboard(plainMessage);
+                                      Alert.alert(
+                                        'Unable to open email app',
+                                        'We copied your message so you can paste it manually.'
+                                      );
+                                      return;
+                                    }
+                                  }
+                                  try {
+                                    await MailComposer.composeAsync({
+                                      recipients: [email],
+                                      subject,
+                                      body,
+                                    });
+                                  } catch {
+                                    const mailtoUrl = `mailto:${email}?subject=${encodeMailtoValue(subject)}&body=${encodeMailtoValue(body)}`;
+                                    try {
+                                      // Simulator/no configured account can fail composeAsync but still allow mailto.
+                                      const canOpenMailto = await Linking.canOpenURL(mailtoUrl);
+                                      if (!canOpenMailto) {
+                                        await copyToClipboard(plainMessage);
+                                        Alert.alert(
+                                          'No email app available',
+                                          'We copied your message so you can paste it into an email app.'
+                                        );
+                                        return;
+                                      }
+                                      await Linking.openURL(mailtoUrl);
+                                    } catch {
+                                      await copyToClipboard(plainMessage);
+                                      Alert.alert(
+                                        'Unable to open email app',
+                                        'We copied your message so you can paste it manually.'
+                                      );
+                                    }
+                                  }
+                                }}
+                                className="flex-row items-center gap-1 rounded-lg border px-3 py-1.5 active:opacity-90"
+                                style={{ borderColor: accent.button, backgroundColor: accent.activeBg }}>
+                                <Mail size={11} color={accent.button} />
+                                <Text className="font-sans-medium text-xs" style={{ color: accent.button }}>
+                                  Email
+                                </Text>
+                              </Pressable>
+                            )}
+
+                            {/* Call button */}
+                            {format === 'phone' && selectedRep && getRepPhone(selectedRep) && (
+                              <Pressable
+                                onPress={() => {
+                                  const phone = getRepPhone(selectedRep)!;
+                                  Linking.openURL(`tel:${phone.replace(/\D/g, '')}`);
+                                }}
+                                className="flex-row items-center gap-1 rounded-lg border px-3 py-1.5 active:opacity-90"
+                                style={{ borderColor: accent.button, backgroundColor: accent.activeBg }}>
+                                <Phone size={11} color={accent.button} />
+                                <Text className="font-sans-medium text-xs" style={{ color: accent.button }}>
+                                  {getRepPhone(selectedRep)}
+                                </Text>
+                              </Pressable>
+                            )}
+
+                            {/* Copy button */}
                             <Pressable
                               onPress={() => copyToClipboard(draftLetter)}
                               className="items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-1.5 active:bg-zinc-50">
